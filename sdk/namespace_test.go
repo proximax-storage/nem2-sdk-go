@@ -5,12 +5,21 @@ import (
 	"testing"
 )
 
-func TestNamespaceService_GetNameSpaceInfo(t *testing.T) {
-	serv := NamespaceService{}
+func setup() (*Config, error) {
+	return LoadTestnetConfig("http://catapult.internal.proximax.io:3000")
+}
+func TestNamespaceService_GetNamespace(t *testing.T) {
+
+	conf, err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serv := NewNamespaceService(nil, conf)
 
 	ctx := context.TODO()
 	nsId := 0
-	nsInfo, resp, err := serv.GetNameSpaceInfo(ctx, nsId)
+	nsInfo, resp, err := serv.GetNamespace(ctx, nsId)
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,21 +33,27 @@ func TestNamespaceService_GetNameSpaceInfo(t *testing.T) {
 	}
 }
 
-func TestNamespaceService_GetAccountNameSpaceInfo(t *testing.T) {
-	serv := NamespaceService{}
+func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
+
+	conf, err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	serv := NewNamespaceService(nil, conf)
 
 	ctx := context.TODO()
 	nsId := 0
 	pageSize := 1
 	addresses := Addresses{}
 
-	nsInfo, resp, err := serv.GetAccountNameSpaceInfo(ctx, nsId, pageSize, addresses)
+	nsInfo, resp, err := serv.GetNamespacesFromAccounts(ctx, addresses, nsId, pageSize)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if nsId != nsInfo.id {
-		t.Error("id request & Id responce not equal")
+	if len(nsInfo) == 0 {
+		t.Error("return result must have length > 0")
 	}
 
 	if resp.Status != "200" {

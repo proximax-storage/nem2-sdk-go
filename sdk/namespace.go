@@ -1,18 +1,3 @@
-/*
- * Copyright 2018 NEM
- *
- * Licensed under the Apache License, Version 2.0 (the "License")
- * you may not use ref file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package sdk
 
 import (
@@ -20,16 +5,22 @@ import (
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
+	"strconv"
 )
 
 type NamespaceService service
 
-type NamespaceId struct { /* public  */
+func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
+	ref := &NamespaceService{client: NewClient(httpClient, conf)}
 
+	return ref
+}
+
+type NamespaceId struct {
 	id       int64
 	fullName string
 } /* NamespaceId */
-func NewNamespaceId(id int64, namespaceName string) (ref *NamespaceId, err error) { /* public  */
+func NewNamespaceId(id int64, namespaceName string) (ref *NamespaceId, err error) {
 	if namespaceName == "" {
 		return nil, errors.New("nameSpace is empty")
 	}
@@ -46,9 +37,8 @@ const (
 	RootNamespace NamespaceType = iota
 	SubNamespace
 ) /* NamespaceType */
-//NamespaceInfo contains the state information of a namespace.
-type NamespaceInfo struct { /* public  */
-
+// NamespaceInfo contains the state information of a namespace.
+type NamespaceInfo struct {
 	active bool
 
 	id int
@@ -59,7 +49,7 @@ type NamespaceInfo struct { /* public  */
 
 	depth int
 
-	levels []NamespaceId /* List */
+	levels []NamespaceId
 
 	parentId NamespaceId
 
@@ -69,23 +59,10 @@ type NamespaceInfo struct { /* public  */
 
 	endHeight int64
 } /* NamespaceInfo */
-func NewNamespaceInfo(active bool, id int, metaId string, typeSpace NamespaceType, depth int, levels []NamespaceId,
-	parentId NamespaceId, owner PublicAccount, startHeight int64, endHeight int64) *NamespaceInfo { /* public  */
-	ref := &NamespaceInfo{
-		active,
-		id,
-		metaId,
-		typeSpace,
-		depth,
-		levels,
-		parentId,
-		owner,
-		startHeight,
-		endHeight,
-	}
-	return ref
-}
-func (ref *NamespaceService) GetNameSpaceInfo(ctx context.Context, nsId int) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+
+type ListNamespaceInfo []*NamespaceInfo
+
+func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId int) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
 	req, err = ref.client.NewRequest("GET", fmt.Sprintf("/namespace/%d", nsId), nil)
@@ -96,7 +73,7 @@ func (ref *NamespaceService) GetNameSpaceInfo(ctx context.Context, nsId int) (ns
 
 		if err == nil {
 			if nsInfo.id == nsId {
-				return
+				return nsInfo, resp, err
 			}
 			err = errors.New("nod valid id returns")
 		}
@@ -104,26 +81,71 @@ func (ref *NamespaceService) GetNameSpaceInfo(ctx context.Context, nsId int) (ns
 	//	err occurent
 	return nil, nil, err
 }
-func (ref *NamespaceService) GetAccountNameSpaceInfo(ctx context.Context, nsId int, pageSize int, addresses Addresses) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+func (ref *NamespaceService) GetNamespaces(ctx context.Context, nsIds []int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
-	body, _ := addresses.MarshalJSON()
-
-	req, err = ref.client.NewRequest("POST", fmt.Sprintf("account/namespace/%d/%d", nsId, pageSize), &body)
+	req, err = ref.client.NewRequest("GET", fmt.Sprintf("/namespace/%d", nsIds), nil)
 
 	if err == nil {
-		nsInfo = &NamespaceInfo{}
+		nsInfo = make(ListNamespaceInfo, 0)
 		resp, err = ref.client.Do(ctx, req, nsInfo)
 
 		if err == nil {
-			if nsInfo.id == nsId {
-				return
+			if nsInfo[0].id == nsIds[0] {
+				return nsInfo, resp, err
 			}
 			err = errors.New("nod valid id returns")
 		}
 	}
 	//	err occurent
-	return
+	return nil, nil, err
+}
+
+// GetNamespacesFromAccount get required params addresses, other skipped if value < 0
+func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address Address, nsId int,
+	pageSize int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
+
+	addresses := make(Addresses, 1)
+	addresses[0] = address
+
+	return ref.GetNamespacesFromAccounts(ctx, addresses, nsId, pageSize)
+}
+
+// GetNamespacesFromAccounts get required params addresses, other skipped if value < 0
+func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses Addresses, nsId int,
+	pageSize int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
+
+	body, _ := addresses.MarshalJSON()
+
+	url, comma := "", "?"
+
+	if nsId >= 0 {
+		url = comma + strconv.Itoa(nsId)
+		comma = "&"
+	}
+
+	if pageSize >= 0 {
+		url = comma + strconv.Itoa(pageSize)
+	}
+
+	url = "account/namespace" + url
+
+	var req *http.Request
+	req, err = ref.client.NewRequest("POST", url, &body)
+
+	if err == nil {
+
+		resp, err = ref.client.Do(ctx, req, nsInfo)
+
+		if err == nil {
+			if len(nsInfo) > 0 {
+				return nsInfo, resp, err
+			}
+			err = errors.New("nod result returns")
+		}
+	}
+	//	err occurent
+	return nsInfo, resp, err
 }
 func generateNamespaceId(namespaceName string) int64 { /* public static  */
 
@@ -147,7 +169,7 @@ func generateId(name string, parentId int64) int64 { /* public static  */
 func generateNamespacePath(name string) []int64 { /* public static  */
 
 	//[]string parts = name.split(Pattern.quote("."))
-	//[]int64 /* List */ path = new Array[]int64 /* List */()
+	//[]int64 path = new Array[]int64()
 	//if (parts.length == 0) {
 	//	panic(IllegalIdentifierException{"invalid namespace name"})
 	//}

@@ -51,7 +51,7 @@ type Client struct {
 	config *Config
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 	// Services for communicating to the Catapult REST APIs
-	Blockchain *BlockchainService
+	Blockchain  *BlockchainService
 	Transaction *TransactionService
 }
 
