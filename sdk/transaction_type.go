@@ -1,28 +1,28 @@
 package sdk
 
-import "github.com/kataras/iris/core/errors"
+import "errors"
 
 type TransactionType int
 
 // TransactionType enums
 const (
-	AGGREGATE_COMPLETE TransactionType = 0x4141
-	AGGREGATE_BONDED TransactionType = 0x4241
-	MOSAIC_DEFINITION TransactionType = 0x414d
-	MOSAIC_SUPPLY_CHANGE TransactionType = 0x424d
+	AGGREGATE_COMPLETE      TransactionType = 0x4141
+	AGGREGATE_BONDED        TransactionType = 0x4241
+	MOSAIC_DEFINITION       TransactionType = 0x414d
+	MOSAIC_SUPPLY_CHANGE    TransactionType = 0x424d
 	MODIFY_MULTISIG_ACCOUNT TransactionType = 0x4155
-	REGISTER_NAMESPACE TransactionType = 0x414e
-	TRANSFER TransactionType = 0x4154
-	LOCK TransactionType = 0x414C
-	SECRET_LOCK TransactionType = 0x424C
-	SECRET_PROOF TransactionType = 0x434C
+	REGISTER_NAMESPACE      TransactionType = 0x414e
+	TRANSFER                TransactionType = 0x4154
+	LOCK                    TransactionType = 0x414C
+	SECRET_LOCK             TransactionType = 0x424C
+	SECRET_PROOF            TransactionType = 0x434C
 )
 
 // TransactionType error
 var transactionTypeError = errors.New("wrong raw TransactionType int")
 
 // Get TransactionType from raw value
-func TransactionTypeFromRaw(value int) (TransactionType, error){
+func TransactionTypeFromRaw(value int) (TransactionType, error) {
 	switch value {
 	case 16724:
 		return TRANSFER, nil
@@ -48,4 +48,3 @@ func TransactionTypeFromRaw(value int) (TransactionType, error){
 		return 0, transactionTypeError
 	}
 }
-
