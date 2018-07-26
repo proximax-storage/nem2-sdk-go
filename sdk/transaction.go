@@ -61,6 +61,11 @@ func (txs *TransactionService) AnnounceAggregateBonded(ctx context.Context, tx S
 	return txs.announceTransaction(ctx, tx, fmt.Sprintf("%s/partial", mainRoute))
 }
 
+// Announce a cosignature transaction to the network
+func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Context, c CosignatureSignedTransaction) (string, *http.Response, error) {
+	return txs.announceTransaction(ctx, c, fmt.Sprintf("%s/cosignature", mainRoute))
+}
+
 // Returns transaction status for a given transaction id or hash
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, *http.Response, error) {
 	req, err := txs.client.NewRequest("GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil)
@@ -102,7 +107,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, ids [
 	return s, resp, nil
 }
 
-func (txs *TransactionService) announceTransaction(ctx context.Context, tx SignedTransaction, path string) (string, *http.Response, error) {
+func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, *http.Response, error) { //TODO That interface use is awful, but it helps with reducing similar code
 	jsonTx, err := json.Marshal(tx)
 	if err != nil {
 		return "", nil, err

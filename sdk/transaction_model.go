@@ -43,6 +43,12 @@ type SignedTransaction struct {
 	TransactionType TransactionType `json:"transactionType"`
 }
 
+type CosignatureSignedTransaction struct {
+	ParentHash string
+	Signature string
+	Signer string
+}
+
 type TransactionIds struct {
 	Ids []string `json:"transactionIds, hashes"`
 }
