@@ -88,7 +88,7 @@ func NewNamespaceInfo(active bool, id int, metaId string, typeSpace NamespaceTyp
 func (ref *NamespaceService) GetNameSpaceInfo(ctx context.Context, nsId int) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
-	req, err = ref.client.NewRequest("GET", fmt.Sprintf("namespace/%d", nsId), nil)
+	req, err = ref.client.NewRequest("GET", fmt.Sprintf("/namespace/%d", nsId), nil)
 
 	if err == nil {
 		nsInfo = &NamespaceInfo{}
@@ -104,10 +104,10 @@ func (ref *NamespaceService) GetNameSpaceInfo(ctx context.Context, nsId int) (ns
 	//	err occurent
 	return nil, nil, err
 }
-func (ref *NamespaceService) GetAccountNameSpaceInfo(ctx context.Context, nsId int, pageSize int, address Address) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+func (ref *NamespaceService) GetAccountNameSpaceInfo(ctx context.Context, nsId int, pageSize int, addresses Addresses) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
-	body, nil := address.MarshalJSON()
+	body, _ := addresses.MarshalJSON()
 
 	req, err = ref.client.NewRequest("POST", fmt.Sprintf("account/namespace/%d/%d", nsId, pageSize), &body)
 
