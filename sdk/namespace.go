@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type NamespaceService service
@@ -16,19 +17,18 @@ func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceServic
 	return ref
 }
 
+type uint64DTO [2]uint64
 type NamespaceId struct {
-	id       int64
+	id       uint64DTO
 	fullName string
 } /* NamespaceId */
-func NewNamespaceId(id int64, namespaceName string) (ref *NamespaceId, err error) {
+func NewNamespaceId(id uint64DTO, namespaceName string) *NamespaceId {
+
 	if namespaceName == "" {
-		return nil, errors.New("nameSpace is empty")
+		return &NamespaceId{id, ""}
 	}
-	if id < 0 {
-		id = generateNamespaceId(namespaceName)
-	}
-	ref = &NamespaceId{id, namespaceName}
-	return
+
+	return &NamespaceId{generateNamespaceId(namespaceName), namespaceName}
 }
 
 type NamespaceType int
@@ -37,11 +37,11 @@ const (
 	RootNamespace NamespaceType = iota
 	SubNamespace
 ) /* NamespaceType */
-// NamespaceInfo contains the state information of a namespace.
+// NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
 	active bool
 
-	id int
+	index int
 
 	metaId string
 
@@ -49,52 +49,116 @@ type NamespaceInfo struct {
 
 	depth int
 
-	levels []NamespaceId
+	levels []*NamespaceId
 
-	parentId NamespaceId
+	parentId *NamespaceId
 
 	owner PublicAccount
 
-	startHeight int64
+	startHeight uint64DTO
 
-	endHeight int64
+	endHeight uint64DTO
 } /* NamespaceInfo */
+type NamespaceMosaicMetaDTO struct {
+	Active bool
+	Index  int
+	Id     string
+} /* NamespaceMosaicMetaDTO */
+type NamespaceDTO struct {
+	Type int
+
+	Depth int
+
+	Level0 uint64DTO /*DTO*/
+
+	Level1 uint64DTO /*DTO*/
+
+	Level2 uint64DTO /*DTO*/
+
+	ParentId uint64DTO /*DTO*/
+
+	Owner string
+
+	OwnerAddress string
+
+	StartHeight uint64DTO /*DTO*/
+
+	EndHeight uint64DTO /*DTO*/
+
+} /* NamespaceDTO */
+type NamespaceInfoDTO struct {
+	Meta      NamespaceMosaicMetaDTO
+	Namespace NamespaceDTO
+}
+
+func (ref *NamespaceInfoDTO) extractLevels() []*NamespaceId {
+
+	levels := make([]*NamespaceId, 3)
+	var err error
+
+	nsId := NewNamespaceId(ref.Namespace.Level0, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+
+	nsId = NewNamespaceId(ref.Namespace.Level1, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+
+	nsId = NewNamespaceId(ref.Namespace.Level2, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+	return levels
+}
 
 type ListNamespaceInfo []*NamespaceInfo
 
-func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId int) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+const pathNamespace = "/namespace/"
+
+func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
-	req, err = ref.client.NewRequest("GET", fmt.Sprintf("/namespace/%d", nsId), nil)
+	req, err = ref.client.NewRequest("GET", pathNamespace+nsId, nil)
 
 	if err == nil {
-		nsInfo = &NamespaceInfo{}
-		resp, err = ref.client.Do(ctx, req, nsInfo)
+		nsInfoDTO := &NamespaceInfoDTO{}
+		resp, err = ref.client.Do(ctx, req, nsInfoDTO)
+
+		fmt.Printf("%#v", nsInfoDTO)
+		nsInfo = &NamespaceInfo{nsInfoDTO.Meta.Active,
+			nsInfoDTO.Meta.Index,
+			nsInfoDTO.Meta.Id,
+			NamespaceType(nsInfoDTO.Namespace.Type),
+			nsInfoDTO.Namespace.Depth,
+			nsInfoDTO.extractLevels(),
+			NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+			PublicAccount{createFromPublicKey(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type)), nsInfoDTO.Namespace.Owner},
+			nsInfoDTO.Namespace.StartHeight,
+			nsInfoDTO.Namespace.EndHeight}
 
 		if err == nil {
-			if nsInfo.id == nsId {
-				return nsInfo, resp, err
-			}
-			err = errors.New("nod valid id returns")
+			return nsInfo, resp, err
 		}
 	}
 	//	err occurent
 	return nil, nil, err
 }
-func (ref *NamespaceService) GetNamespaces(ctx context.Context, nsIds []int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
+func (ref *NamespaceService) GetNamespaces(ctx context.Context, nsIds []string) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
 	var req *http.Request
 
-	req, err = ref.client.NewRequest("GET", fmt.Sprintf("/namespace/%d", nsIds), nil)
+	req, err = ref.client.NewRequest("GET", pathNamespace+strings.Join(nsIds, ","), nil)
 
 	if err == nil {
 		nsInfo = make(ListNamespaceInfo, 0)
 		resp, err = ref.client.Do(ctx, req, nsInfo)
 
 		if err == nil {
-			if nsInfo[0].id == nsIds[0] {
-				return nsInfo, resp, err
-			}
-			err = errors.New("nod valid id returns")
+			//if nsInfo[0].index == nsIds[0] {
+			return nsInfo, resp, err
+			//}
+			err = errors.New("nod valid index returns")
 		}
 	}
 	//	err occurent
@@ -102,20 +166,27 @@ func (ref *NamespaceService) GetNamespaces(ctx context.Context, nsIds []int) (ns
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
-func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address Address, nsId int,
+func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId int,
 	pageSize int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
 
-	addresses := make(Addresses, 1)
-	addresses[0] = address
+	addresses := &Addresses{}
+	addresses.AddAddress(address)
 
 	return ref.GetNamespacesFromAccounts(ctx, addresses, nsId, pageSize)
 }
 
+const pathNamespacesFromAccount = "/account/namespaces"
+
+type ns struct {
+	addresses Addresses
+}
+
 // GetNamespacesFromAccounts get required params addresses, other skipped if value < 0
-func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses Addresses, nsId int,
+func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId int,
 	pageSize int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
 
-	body, _ := addresses.MarshalJSON()
+	//body, err := json.Marshal(addresses)
+	body := []byte(`{"addresses": ["SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY","SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"]}`)
 
 	url, comma := "", "?"
 
@@ -128,14 +199,16 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 		url = comma + strconv.Itoa(pageSize)
 	}
 
-	url = "account/namespace" + url
+	url = pathNamespacesFromAccount + url
 
 	var req *http.Request
-	req, err = ref.client.NewRequest("POST", url, &body)
+	req, err = ref.client.NewRequest("POST", pathNamespacesFromAccount, &body)
 
 	if err == nil {
 
-		resp, err = ref.client.Do(ctx, req, nsInfo)
+		var ns ns
+		resp, err = ref.client.Do(ctx, req, &ns)
+		return nsInfo, resp, err
 
 		if err == nil {
 			if len(nsInfo) > 0 {
@@ -147,10 +220,9 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 	//	err occurent
 	return nsInfo, resp, err
 }
-func generateNamespaceId(namespaceName string) int64 { /* public static  */
+func generateNamespaceId(namespaceName string) uint64DTO { /* public static  */
 
-	namespacePath := generateNamespacePath(namespaceName)
-	return namespacePath[len(namespacePath)-1]
+	return generateNamespacePath(namespaceName)
 }
 func generateId(name string, parentId int64) int64 { /* public static  */
 
@@ -166,12 +238,12 @@ func generateId(name string, parentId int64) int64 { /* public static  */
 	//[]byte last = ArrayUtils.addAll(high, low)
 	return -1 //NewBigInteger(last)
 }
-func generateNamespacePath(name string) []int64 { /* public static  */
+func generateNamespacePath(name string) uint64DTO { /* public static  */
 
 	//[]string parts = name.split(Pattern.quote("."))
 	//[]int64 path = new Array[]int64()
 	//if (parts.length == 0) {
-	//	panic(IllegalIdentifierException{"invalid namespace name"})
+	//	panic(IllegalIdentifierException{"invalid Namespace name"})
 	//}
 	//else if (parts.length > 3) {
 	//	panic(IllegalIdentifierException{"too many parts"})
@@ -180,12 +252,12 @@ func generateNamespacePath(name string) []int64 { /* public static  */
 	//int64 namespaceId = int64.valueOf(0)
 	//for (int i = 0; i < parts.length; i++) {
 	//	if (!parts[i].matches("^[a-z0-9][a-z0-9-_]*$")) {
-	//		panic(IllegalIdentifierException{"invalid namespace name"})
+	//		panic(IllegalIdentifierException{"invalid Namespace name"})
 	//	}
 	//
 	//	namespaceId = generateId(parts[i], namespaceId)
 	//	path.add(namespaceId)
 	//}
 
-	return []int64{0, 1}
+	return uint64DTO{0, 1}
 }

@@ -23,7 +23,7 @@ type ChainScore struct {
 // Block Info
 type BlockInfo struct {
 	Block     *Block     `json:"block"`
-	BlockMeta *BlockMeta `json:"meta"`
+	BlockMeta *BlockMeta `json:"Meta"`
 }
 
 // Block
