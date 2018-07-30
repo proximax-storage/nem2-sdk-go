@@ -6,7 +6,6 @@ package sdk
 
 import (
 	"bytes"
-	"encoding/json"
 	"testing"
 )
 
@@ -27,8 +26,6 @@ func TestAddresses_MarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	addresses.MarshalJSON()
 
 	if !bytes.Equal(b, b1) {
 		t.Error("not equal")

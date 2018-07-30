@@ -1,12 +1,12 @@
 package sdk
 
 import (
-	"context"
-	"net/http"
-	"fmt"
 	"bytes"
-	"sync"
+	"context"
 	jsonLib "encoding/json"
+	"fmt"
+	"net/http"
+	"sync"
 )
 
 type TransactionService service
@@ -17,7 +17,7 @@ var mainRoute = "transaction" // TODO We should consider about connecting servic
 func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, *http.Response, error) {
 	var b bytes.Buffer
 
-	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s", mainRoute, id), nil, &b)
+	resp, err := txs.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainRoute, id), nil, &b)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,7 +37,7 @@ func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string
 		ids,
 	}
 
-	resp, err := txs.client.NewRequest(ctx,"POST", mainRoute, txIds, &b)
+	resp, err := txs.client.DoNewRequest(ctx, "POST", mainRoute, txIds, &b)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -68,7 +68,7 @@ func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Co
 // Returns transaction status for a given transaction id or hash
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, *http.Response, error) {
 	ts := &TransactionStatus{}
-	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil, ts)
+	resp, err := txs.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil, ts)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -83,7 +83,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 	}
 
 	s := make([]*TransactionStatus, len(hashes))
-	resp, err := txs.client.NewRequest(ctx,"POST", fmt.Sprintf("%s/statuses", mainRoute), txIds, &s)
+	resp, err := txs.client.DoNewRequest(ctx, "POST", fmt.Sprintf("%s/statuses", mainRoute), txIds, &s)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -93,7 +93,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 
 func (txs *TransactionService) announceTransaction(ctx context.Context, tx Transaction, path string) (string, *http.Response, error) {
 	var m string
-	resp, err := txs.client.NewRequest(ctx, "PUT", path, tx, m)
+	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, m)
 	if err != nil {
 		return "", nil, err
 	}
@@ -101,7 +101,7 @@ func (txs *TransactionService) announceTransaction(ctx context.Context, tx Trans
 	return m, resp, nil
 }
 
-func (txs *TransactionService) mapTransactions(b *bytes.Buffer) ([]Transaction, error){
+func (txs *TransactionService) mapTransactions(b *bytes.Buffer) ([]Transaction, error) {
 	var wg sync.WaitGroup
 	var err error
 

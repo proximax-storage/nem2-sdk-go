@@ -3,11 +3,11 @@ package sdk
 
 import (
 	"bytes"
+	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
-	"github.com/json-iterator/go"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -76,20 +76,18 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	return c
 }
 
-// Creates a NewRequest
-func (s *Client) NewRequest(ctx context.Context, method string, path string, reqV interface{}, resV interface{}) (*http.Response, error) {
-	req, err := s.CreateRequest(method, path, reqV)
+// DoNewRequest creates new request, Do it & return result in V
+func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
+	req, err := s.NewRequest(method, path, body)
 
-	if err != nil {
-		return  nil, err
+	if err == nil {
+		resp, err := s.Do(ctx, req, v)
+		if err == nil {
+			return resp, nil
+		}
 	}
 
-	resp, err := s.Do(ctx, req, resV)
-	if err != nil {
-		return resp, err
-	}
-
-	return resp, err
+	return nil, err
 }
 
 // Do sends an API Request and returns a parsed response
@@ -129,7 +127,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
-func (c *Client) CreateRequest(method, urlStr string, body interface{}) (*http.Request, error) {
+func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 
 	u, err := c.config.BaseURL.Parse(urlStr)
 	if err != nil {

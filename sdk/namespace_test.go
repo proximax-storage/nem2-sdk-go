@@ -1,7 +1,7 @@
 package sdk
 
 import (
-	"encoding/json"
+	"bytes"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -13,7 +13,7 @@ var testAddresses = Addresses{
 	},
 }
 
-func setup() (*Config, error) {
+func setupCFG() (*Config, error) {
 	return LoadTestnetConfig("http://catapult.internal.proximax.io:3000")
 }
 
@@ -59,7 +59,7 @@ func TestNewNamespaceInfoDTO(t *testing.T) {
 }
 func TestNamespaceService_GetNamespace(t *testing.T) {
 
-	conf, err := setup()
+	conf, err := setupCFG()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,13 +108,40 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 }
 
 var testNamespaceIDs = NamespaceIds{
-	list: []*NamespaceId{
+	List: []*NamespaceId{
 		{fullName: "84b3552d375ffa4b"},
 	},
 }
 
+func TestNamespaceIds_MarshalJSON(t *testing.T) {
+	b, err := json.Marshal(testNamespaceIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b1, err := testNamespaceIDs.MarshalJSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(b, b1) {
+		t.Error("not equal")
+	}
+	t.Log("standart", string(b))
+	t.Log("self-made", string(b1))
+
+	ad := &Addresses{}
+	err = json.Unmarshal(b1, ad)
+
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(ad)
+	}
+
+}
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
-	conf, err := setup()
+	conf, err := setupCFG()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,22 +152,26 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	nsInfo, resp, err := serv.GetNamespaceNames(ctx, &testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
-	} else if resp.Status != "200" {
+	} else if resp.StatusCode != 200 {
 		t.Error(resp.Status)
 		t.Logf("%#v %#v", resp, resp.Body)
+	} else if len(nsInfo) == 0 {
+		t.Logf("%#v %#v", resp, resp.Body)
+	} else if (nsInfo[0].namespaceId == nil) || (nsInfo[0].namespaceId.id == nil) {
+		t.Logf("%#v", nsInfo)
 	} else {
 		if id := nsInfo[0].namespaceId.id; !((id[0].Int64() == 929036875) && (id[0].Int64() == 2226345261)) {
-			t.Error("failed namespoaceName id Convertion")
+			t.Error("failed namespoceName id Convertion")
 		}
 		if nsInfo[0].name != "nem" {
-			t.Error("failed namespoaceName name Convertion")
+			t.Error("failed namespoceName name Convertion")
 		}
 	}
 
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
-	conf, err := setup()
+	conf, err := setupCFG()
 	if err != nil {
 		t.Fatal(err)
 	}
