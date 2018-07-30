@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"bytes"
+	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -107,13 +108,18 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 	t.Logf("%s", nsInfo)
 }
 
-var testNamespaceIDs = NamespaceIds{
+var testNamespaceIDs = &NamespaceIds{
 	List: []*NamespaceId{
 		{fullName: "84b3552d375ffa4b"},
 	},
 }
 
+func init() {
+	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
+
+}
 func TestNamespaceIds_MarshalJSON(t *testing.T) {
+
 	b, err := json.Marshal(testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
@@ -149,7 +155,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	serv := NewNamespaceService(nil, conf)
 
 	ctx := context.TODO()
-	nsInfo, resp, err := serv.GetNamespaceNames(ctx, &testNamespaceIDs)
+	nsInfo, resp, err := serv.GetNamespaceNames(ctx, testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
 	} else if resp.StatusCode != 200 {
@@ -158,7 +164,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	} else if len(nsInfo) == 0 {
 		t.Logf("%#v %#v", resp, resp.Body)
 	} else if (nsInfo[0].namespaceId == nil) || (nsInfo[0].namespaceId.id == nil) {
-		t.Logf("%#v", nsInfo)
+		t.Logf("%#v", nsInfo[0])
 	} else {
 		if id := nsInfo[0].namespaceId.id; !((id[0].Int64() == 929036875) && (id[0].Int64() == 2226345261)) {
 			t.Error("failed namespoceName id Convertion")
