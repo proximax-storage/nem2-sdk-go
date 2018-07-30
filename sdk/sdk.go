@@ -3,12 +3,14 @@ package sdk
 
 import (
 	"bytes"
-	"encoding/json"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
+	"github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	Testnet = byte(0x98)
@@ -74,6 +76,22 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	return c
 }
 
+// Creates a NewRequest
+func (s *Client) NewRequest(ctx context.Context, method string, path string, reqV interface{}, resV interface{}) (*http.Response, error) {
+	req, err := s.CreateRequest(method, path, reqV)
+
+	if err != nil {
+		return  nil, err
+	}
+
+	resp, err := s.Do(ctx, req, resV)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, err
+}
+
 // Do sends an API Request and returns a parsed response
 func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
 
@@ -111,8 +129,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
-// Creates a NewRequest
-func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
+func (c *Client) CreateRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 
 	u, err := c.config.BaseURL.Parse(urlStr)
 	if err != nil {
