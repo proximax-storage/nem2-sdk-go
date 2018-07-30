@@ -4,7 +4,9 @@ import (
 	"context"
 	"net/http"
 	"fmt"
-	"encoding/json"
+	"bytes"
+	"sync"
+	jsonLib "encoding/json"
 )
 
 type TransactionService service
@@ -12,13 +14,15 @@ type TransactionService service
 var mainRoute = "transaction" // TODO We should consider about connecting service with it's route somehow
 
 // Returns transaction information for a given transaction id or hash
-func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (*Transaction, *http.Response, error) {
-	req, err := txs.client.NewRequest("GET", fmt.Sprintf("%s/%s", mainRoute, id), nil)
+func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, *http.Response, error) {
+	var b bytes.Buffer
+
+	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s", mainRoute, id), nil, &b)
 	if err != nil {
 		return nil, nil, err
 	}
-	tx := &Transaction{}
-	resp, err := txs.client.Do(ctx, req, tx)
+
+	tx, err := txs.mapTransaction(&b)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -27,28 +31,23 @@ func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (*
 }
 
 // Returns transaction information for a given set of transaction id or hash
-func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string) ([]*Transaction, *http.Response, error) {
+func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string) ([]Transaction, *http.Response, error) {
+	var b bytes.Buffer
 	txIds := &TransactionIds{
 		ids,
 	}
 
-	idsJson, err := json.Marshal(txIds)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := txs.client.NewRequest("POST", mainRoute, string(idsJson))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	i := make([]*Transaction, len(ids))
-	resp, err := txs.client.Do(ctx, req, i)
+	resp, err := txs.client.NewRequest(ctx,"POST", mainRoute, txIds, &b)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return i, resp, nil
+	tx, err := txs.mapTransactions(&b)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return tx, resp, nil
 }
 
 // Announce a transaction to the network
@@ -68,13 +67,8 @@ func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Co
 
 // Returns transaction status for a given transaction id or hash
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, *http.Response, error) {
-	req, err := txs.client.NewRequest("GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	ts := &TransactionStatus{}
-	resp, err := txs.client.Do(ctx, req, ts)
+	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil, ts)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -82,24 +76,14 @@ func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id stri
 	return ts, resp, nil
 }
 
-// Returns transaction information for a given set of transaction id or hash
-func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, ids []string) ([]*TransactionStatus, *http.Response, error) {
-	txIds := &TransactionIds{
-		ids,
+// Returns transaction information for a given set of transaction hash
+func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashes []string) ([]*TransactionStatus, *http.Response, error) {
+	txIds := &TransactionHashes{
+		hashes,
 	}
 
-	idsJson, err := json.Marshal(txIds)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := txs.client.NewRequest("POST", fmt.Sprintf("%s/statuses", mainRoute), string(idsJson))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	s := make([]*TransactionStatus, len(ids))
-	resp, err := txs.client.Do(ctx, req, s)
+	s := make([]*TransactionStatus, len(hashes))
+	resp, err := txs.client.NewRequest(ctx,"POST", fmt.Sprintf("%s/statuses", mainRoute), txIds, &s)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -107,22 +91,290 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, ids [
 	return s, resp, nil
 }
 
-func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, *http.Response, error) { //TODO That interface use is awful, but it helps with reducing similar code
-	jsonTx, err := json.Marshal(tx)
+func (txs *TransactionService) announceTransaction(ctx context.Context, tx Transaction, path string) (string, *http.Response, error) {
+	var m string
+	resp, err := txs.client.NewRequest(ctx, "PUT", path, tx, m)
 	if err != nil {
 		return "", nil, err
 	}
 
-	req, err := txs.client.NewRequest("PUT", path, string(jsonTx))
+	return m, resp, nil
+}
+
+func (txs *TransactionService) mapTransactions(b *bytes.Buffer) ([]Transaction, error){
+	var wg sync.WaitGroup
+	var err error
+
+	m := []jsonLib.RawMessage{}
+
+	json.Unmarshal(b.Bytes(), &m)
+
+	tx := make([]Transaction, len(m))
+	for i, t := range m {
+		wg.Add(1)
+		go func(i int, t jsonLib.RawMessage) {
+			defer wg.Done()
+			json.Marshal(t)
+			tx[i], err = txs.mapTransaction(bytes.NewBuffer([]byte(t)))
+		}(i, t)
+	}
+	wg.Wait()
+
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	var message string
-	resp, err := txs.client.Do(ctx, req, message)
+	return tx, nil
+}
+
+func (txs *TransactionService) mapTransaction(b *bytes.Buffer) (Transaction, error) {
+	rawT := struct {
+		Transaction struct {
+			Type uint32
+		}
+	}{}
+	err := json.Unmarshal(b.Bytes(), &rawT)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	return message, resp, nil
+	t, err := TransactionTypeFromRaw(rawT.Transaction.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case AGGREGATE_BONDED:
+		mapAggregateTransaction(b, AGGREGATE_BONDED)
+	case AGGREGATE_COMPLETE:
+		mapAggregateTransaction(b, AGGREGATE_COMPLETE)
+	case MOSAIC_DEFINITION:
+		rawTx := struct {
+			Tx struct {
+				MosaicDefinitionTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.MosaicDefinitionTransaction
+
+		aTx, err := mapAbstractTransaction(b, MOSAIC_DEFINITION)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case MOSAIC_SUPPLY_CHANGE:
+		rawTx := struct {
+			Tx struct {
+				MosaicSupplyChangeTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.MosaicSupplyChangeTransaction
+
+		aTx, err := mapAbstractTransaction(b, MOSAIC_SUPPLY_CHANGE)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case MODIFY_MULTISIG_ACCOUNT:
+		rawTx := struct {
+			Tx struct {
+				ModifyMultisigAccountTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.ModifyMultisigAccountTransaction
+
+		aTx, err := mapAbstractTransaction(b, MODIFY_MULTISIG_ACCOUNT)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case REGISTER_NAMESPACE:
+		rawTx := struct {
+			Tx struct {
+				RegisterNamespaceTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.RegisterNamespaceTransaction
+
+		aTx, err := mapAbstractTransaction(b, REGISTER_NAMESPACE)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case TRANSFER:
+		rawTx := struct {
+			Tx struct {
+				TransferTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.TransferTransaction
+
+		aTx, err := mapAbstractTransaction(b, TRANSFER)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case LOCK:
+		rawTx := struct {
+			Tx struct {
+				LockFundsTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.LockFundsTransaction
+
+		aTx, err := mapAbstractTransaction(b, LOCK)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case SECRET_LOCK:
+		rawTx := struct {
+			Tx struct {
+				SecretLockTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.SecretLockTransaction
+
+		aTx, err := mapAbstractTransaction(b, SECRET_LOCK)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case SECRET_PROOF:
+		rawTx := struct {
+			Tx struct {
+				SecretProofTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.SecretProofTransaction
+
+		aTx, err := mapAbstractTransaction(b, SECRET_PROOF)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	}
+
+	return nil, nil
+}
+
+func mapAbstractTransaction(b *bytes.Buffer, t TransactionType) (*AbstractTransaction, error) {
+	rawTx := struct {
+		Tx struct {
+			AbstractTransaction
+		} `json:"transaction"`
+		TransactionInfo `json:"meta"`
+	}{}
+
+	err := json.Unmarshal(b.Bytes(), &rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	aTx := rawTx.Tx.AbstractTransaction
+	aTx.Type = t
+	aTx.TransactionInfo = rawTx.TransactionInfo
+
+	//nt, err := extractNetworkType(aTx.Version)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//aTx.NetworkType = nt
+	return &aTx, nil
+}
+
+func mapAggregateTransaction(b *bytes.Buffer, t TransactionType) (*AggregateTransaction, error) {
+	rawTx := struct {
+		Tx struct {
+			AggregateTransaction
+		} `json:"transaction"`
+	}{}
+
+	err := json.Unmarshal(b.Bytes(), &rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := rawTx.Tx.AggregateTransaction
+
+	aTx, err := mapAbstractTransaction(b, t)
+	if err != nil {
+		return nil, err
+	}
+
+	tx.AbstractTransaction = *aTx
+
+	return &tx, nil
 }

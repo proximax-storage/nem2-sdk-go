@@ -10,15 +10,10 @@ type BlockchainService service
 
 // Get the Chain Height
 func (b *BlockchainService) GetChainHeight(ctx context.Context) (*ChainHeight, *http.Response, error) {
-	req, err := b.client.NewRequest("GET", "chain/height", nil)
+	bh := &ChainHeight{}
+	resp, err := b.client.NewRequest(ctx,"GET", "chain/height", nil, bh)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	bh := &ChainHeight{}
-	resp, err := b.client.Do(ctx, req, bh)
-	if err != nil {
-		return nil, resp, err
 	}
 
 	return bh, resp, nil
@@ -26,15 +21,10 @@ func (b *BlockchainService) GetChainHeight(ctx context.Context) (*ChainHeight, *
 
 // Get the Chain Score
 func (b *BlockchainService) GetChainScore(ctx context.Context) (*ChainScore, *http.Response, error) {
-	req, err := b.client.NewRequest("GET", "chain/score", nil)
+	cs := &ChainScore{}
+	resp, err := b.client.NewRequest(ctx,"GET", "chain/score", nil, cs)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	cs := &ChainScore{}
-	resp, err := b.client.Do(ctx, req, cs)
-	if err != nil {
-		return nil, resp, err
 	}
 
 	return cs, resp, nil
@@ -43,16 +33,11 @@ func (b *BlockchainService) GetChainScore(ctx context.Context) (*ChainScore, *ht
 // Get block height
 func (b *BlockchainService) GetBlockHeight(ctx context.Context, height int) (*BlockInfo, *http.Response, error) {
 	u := fmt.Sprintf("block/%d", height)
+	binfo := &BlockInfo{}
 
-	req, err := b.client.NewRequest("GET", u, nil)
+	resp, err := b.client.NewRequest(ctx,"GET", u, nil, binfo)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	binfo := &BlockInfo{}
-	resp, err := b.client.Do(ctx, req, binfo)
-	if err != nil {
-		return nil, resp, err
 	}
 
 	return binfo, resp, nil

@@ -54,7 +54,7 @@ const (
 )
 
 // Network error
-var networkTypeError = errors.New("wrong raw NetworkType int")
+var networkTypeError = errors.New("wrong raw NetworkType value")
 
 // Get NetworkType by raw value
 func NetworkTypeFromRaw(value int) (NetworkType, error){
