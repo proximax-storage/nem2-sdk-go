@@ -1,7 +1,10 @@
 package sdk
 
 import (
+	"encoding/base32"
 	"errors"
+	"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/sha3"
 	"strconv"
 	"sync"
 )
@@ -11,16 +14,51 @@ type Address struct {
 	NetworkType NetworkType
 }
 
-func createFromPublicKey(publicKey string, networkType NetworkType) Address {
-	return Address{generateEncoded(uint8(networkType), publicKey),
-		networkType,
+func createFromPublicKey(publicKey string, networkType NetworkType) (*Address, error) {
+	add, err := generateEncoded(byte(uint8(networkType)), publicKey)
+	if err != nil {
+		return nil, err
 	}
+	return &Address{add,
+		networkType,
+	}, nil
 
 }
-func generateEncoded(version uint8, publicKey string) string {
+
+const NUM_CHECKSUM_BYTES = 4
+
+func generateEncoded(version byte, publicKey string) (string, error) {
 
 	// step 1: sha3 hash of the public key
-	return ""
+
+	sha3PublicKeyHash := sha3.New256()
+	_, err := sha3PublicKeyHash.Write([]byte(publicKey))
+	if err == nil {
+
+		// step 2: ripemd160 hash of (1)
+		ripemd160StepOneHash := ripemd160.New()
+		_, err = ripemd160StepOneHash.Write(sha3PublicKeyHash.Sum(nil))
+		if err == nil {
+
+			// step 3: add version byte in front of (2)
+			versionPrefixedRipemd160Hash := ripemd160StepOneHash.Sum([]byte{version})
+
+			// step 4: get the checksum of (3)
+			sha3StepThreeHash := sha3.New256()
+			_, err = sha3StepThreeHash.Write(versionPrefixedRipemd160Hash)
+			if err == nil {
+
+				stepThreeChecksum := sha3StepThreeHash.Sum(nil)
+
+				// step 5: concatenate (3) and (4)
+				concatStepThreeAndStepSix := append(versionPrefixedRipemd160Hash, stepThreeChecksum[:NUM_CHECKSUM_BYTES]...)
+
+				// step 6: base32 encode (5)
+				return base32.HexEncoding.EncodeToString(concatStepThreeAndStepSix), nil
+			}
+		}
+	}
+	return "", err
 }
 
 //TODO: this marshal return one string - change in future
@@ -50,7 +88,7 @@ func (ref *Addresses) GetAddress(i int) (*Address, error) {
 	return nil, errors.New("index out of range - " + strconv.Itoa(i))
 
 }
-func (ref *Addresses) Marshal1JSON() (buf []byte, err error) {
+func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 	buf = []byte(`{"addresses":[`)
 	for i, address := range ref.list {
 		b, _ := address.MarshalJSON()
@@ -68,14 +106,18 @@ func (ref *Addresses) UnmarshalJSON(buf []byte) error {
 }
 
 type PublicAccount struct {
-	Address   Address
+	Address   *Address
 	PublicKey string
 }
 
-func NewPublicAccount(publicKey string, networkType NetworkType) *PublicAccount { /* public  */
+func NewPublicAccount(publicKey string, networkType NetworkType) (*PublicAccount, error) {
+	add, err := createFromPublicKey(publicKey, networkType)
+	if err != nil {
+		return nil, err
+	}
 	ref := &PublicAccount{
-		createFromPublicKey(publicKey, networkType),
+		add,
 		publicKey,
 	}
-	return ref
+	return ref, nil
 }

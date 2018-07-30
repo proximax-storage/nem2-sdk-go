@@ -23,12 +23,12 @@ func TestAddresses_MarshalJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b1, err := addresses.Marshal1JSON()
+	b1, err := addresses.MarshalJSON()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	addresses.Marshal1JSON()
+	addresses.MarshalJSON()
 
 	if !bytes.Equal(b, b1) {
 		t.Error("not equal")

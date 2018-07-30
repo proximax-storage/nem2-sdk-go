@@ -23,7 +23,7 @@ Cache-Control: no-cache
 ###
 
 #get namespace Info from Account -return empty array - what??
-POST http://catapult.internal.proximax.io:3000/account/namespaces?id=5B55E02EACCB7B00015DB6EB&pagesize=32
+POST http://catapult.internal.proximax.io:3000/account
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
