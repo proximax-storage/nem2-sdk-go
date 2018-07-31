@@ -46,7 +46,7 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 
 	}
 	//	err occurent
-	return nil, nil, err
+	return nil, resp, err
 }
 
 const pathNamespacenames = "/namespace/names"
@@ -118,7 +118,6 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 			}
 			nsList.list = append(nsList.list, nsInfo)
 		}
-		return nsList, resp, err
 
 		if err == nil {
 			return nsList, resp, err
@@ -126,7 +125,7 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 	}
 
 	//	err occurent
-	return nsList, nil, err
+	return nsList, resp, err
 }
 
 func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
