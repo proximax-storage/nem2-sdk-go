@@ -3,12 +3,14 @@ package sdk
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	Testnet = byte(0x98)
@@ -51,7 +53,8 @@ type Client struct {
 	config *Config
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 	// Services for communicating to the Catapult REST APIs
-	Blockchain *BlockchainService
+	Blockchain  *BlockchainService
+	Transaction *TransactionService
 }
 
 type service struct {
@@ -68,8 +71,22 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	c := &Client{client: httpClient, config: conf}
 	c.common.client = c
 	c.Blockchain = (*BlockchainService)(&c.common)
+	c.Transaction = (*TransactionService)(&c.common)
 
 	return c
+
+// DoNewRequest creates new request, Do it & return result in V
+func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
+	req, err := s.NewRequest(method, path, body)
+
+	if err == nil {
+		resp, err := s.Do(ctx, req, v)
+		if err == nil {
+			return resp, nil
+		}
+	}
+
+	return nil, err
 }
 
 // Do sends an API Request and returns a parsed response
@@ -109,7 +126,6 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
-// Creates a NewRequest
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 
 	u, err := c.config.BaseURL.Parse(urlStr)
