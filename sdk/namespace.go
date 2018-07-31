@@ -51,15 +51,30 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 
 const pathNamespacenames = "/namespace/names"
 
-func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList NamespaceNames, resp *http.Response, err error) {
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &nsList)
+type NamespaceNameDTO struct {
+	namespaceId *uint64DTO
+	name        string
+	parentId    *uint64DTO
+} /* NamespaceNameDTO */
+type arrNamespaceNameDTO []*NamespaceNameDTO
+
+func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
+	res := make([]*NamespaceNameDTO, 0)
+	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
 
 	if err == nil {
+		for _, val := range res {
+			nsList = append(nsList, &NamespaceName{
+				NewNamespaceId(val.namespaceId, ""),
+				val.name,
+				NewNamespaceId(val.parentId, "")})
+		}
 		return nsList, resp, err
+
 	}
 
 	//	err occurent
-	return nil, nil, err
+	return nil, resp, err
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
