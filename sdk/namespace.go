@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+type NamespaceService service
+
+func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
+	ref := &NamespaceService{client: NewClient(httpClient, conf)}
+
+	return ref
+}
+
 type NamespaceDTO struct {
 	Type         int
 	Depth        int
@@ -43,23 +51,15 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 
 const pathNamespacenames = "/namespace/names"
 
-func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
-	res := make([]*NamespaceNameDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
+func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList NamespaceNames, resp *http.Response, err error) {
+	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &nsList)
 
 	if err == nil {
-		for _, val := range res {
-			nsList = append(nsList, &NamespaceName{
-				NewNamespaceId(val.namespaceId, ""),
-				val.name,
-				NewNamespaceId(val.parentId, "")})
-		}
 		return nsList, resp, err
-
 	}
 
 	//	err occurent
-	return nsList, nil, err
+	return nil, nil, err
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
@@ -112,4 +112,24 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 
 	//	err occurent
 	return nsList, nil, err
+}
+
+func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
+	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
+	if err != nil {
+		return nil, err
+	}
+
+	return &NamespaceInfo{
+		nsInfoDTO.Meta.Active,
+		nsInfoDTO.Meta.Index,
+		nsInfoDTO.Meta.Id,
+		NamespaceType(nsInfoDTO.Namespace.Type),
+		nsInfoDTO.Namespace.Depth,
+		nsInfoDTO.extractLevels(),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+		pubAcc,
+		nsInfoDTO.Namespace.StartHeight,
+		nsInfoDTO.Namespace.EndHeight,
+	}, nil
 }

@@ -9,19 +9,11 @@ import (
 	"fmt"
 	"github.com/json-iterator/go"
 	"golang.org/x/crypto/sha3"
-	"net/http"
+	"math/big"
 	"regexp"
 	"strings"
 	"unsafe"
 )
-
-type NamespaceService service
-
-func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
-	ref := &NamespaceService{client: NewClient(httpClient, conf)}
-
-	return ref
-}
 
 type NamespaceId struct {
 	id       *uint64DTO
@@ -59,6 +51,27 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 func (ref *NamespaceIds) IsEmpty(ptr unsafe.Pointer) bool {
 	return len((*NamespaceIds)(ptr).List) == 0
 }
+func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+
+	if (*NamespaceIds)(ptr) == nil {
+		ptr = (unsafe.Pointer)(&NamespaceIds{})
+	}
+	if iter.ReadNil() {
+		*((*unsafe.Pointer)(ptr)) = nil
+	} else {
+		if iter.WhatIsNext() == jsoniter.ArrayValue {
+			iter.Skip()
+			newIter := iter.Pool().BorrowIterator([]byte("{}"))
+			defer iter.Pool().ReturnIterator(newIter)
+			v := newIter.Read()
+			list := make([]*NamespaceId, 0)
+			for _, val := range v.([]*NamespaceId) {
+				list = append(list, val)
+			}
+			(*NamespaceIds)(ptr).List = list
+		}
+	}
+}
 func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
 	if err == nil {
@@ -72,11 +85,60 @@ type NamespaceName struct {
 	name        string
 	parentId    *NamespaceId /* Optional NamespaceId my be nil */
 } /* NamespaceName */
-type NamespaceNameDTO struct {
-	namespaceId *uint64DTO
-	name        string
-	parentId    *uint64DTO
-} /* NamespaceNameDTO */
+type NamespaceNames []*NamespaceName
+
+func NamespaceNamesDecode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+
+	if (*NamespaceNames)(ptr) == nil {
+		ptr = (unsafe.Pointer)(&NamespaceNames{})
+	}
+	if iter.ReadNil() {
+		*((*unsafe.Pointer)(ptr)) = nil
+	} else {
+		if iter.WhatIsNext() == jsoniter.ArrayValue {
+			//iter.Skip()
+			//newIter := iter.Pool().BorrowIterator([]byte("{}"))
+			//defer iter.Pool().ReturnIterator(newIter)
+			arr := iter.Read()
+			if arr, ok := arr.([]interface{}); ok {
+				list := make(NamespaceNames, len(arr))
+				for i, v := range arr {
+					list[i] = &NamespaceName{}
+					if vv, ok := v.(map[string]interface{}); ok {
+						for key, val := range vv {
+							switch key {
+							case "name":
+								list[i].name = val.(string)
+							case "namespaceId":
+								if val, ok := val.([]interface{}); ok {
+									low := big.NewInt(int64(val[0].(float64)))
+									high := big.NewInt(int64(val[1].(float64)))
+									list[i].namespaceId = NewNamespaceId(&uint64DTO{low, high}, "")
+								} else {
+									fmt.Printf("%#v %{1}T", val)
+								}
+							case "parentId":
+								if val, ok := val.([]interface{}); ok {
+									low := big.NewInt(int64(val[0].(float64)))
+									high := big.NewInt(int64(val[1].(float64)))
+									list[i].namespaceId = NewNamespaceId(&uint64DTO{low, high}, "")
+								} else {
+									fmt.Printf("%#v %{1}T", val)
+								}
+							}
+						}
+					} else {
+						fmt.Printf("%#v %{1}T", v)
+					}
+				}
+				(*(*NamespaceNames)(ptr)) = list
+			}
+		} else {
+			fmt.Printf("%#v", iter.WhatIsNext())
+		}
+	}
+}
+
 type NamespaceType int
 
 const (
@@ -96,25 +158,6 @@ type NamespaceInfo struct {
 	startHeight *uint64DTO
 	endHeight   *uint64DTO
 } /* NamespaceInfo */
-func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
-	if err != nil {
-		return nil, err
-	}
-
-	return &NamespaceInfo{
-		nsInfoDTO.Meta.Active,
-		nsInfoDTO.Meta.Index,
-		nsInfoDTO.Meta.Id,
-		NamespaceType(nsInfoDTO.Namespace.Type),
-		nsInfoDTO.Namespace.Depth,
-		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
-		pubAcc,
-		nsInfoDTO.Namespace.StartHeight,
-		nsInfoDTO.Namespace.EndHeight,
-	}, nil
-}
 
 const templNamespaceInfo = `"active": %v,
     "index": %d,
@@ -208,4 +251,7 @@ func generateId(name string, parentId *uint64DTO) (*uint64DTO, error) {
 	}
 
 	return nil, err
+}
+func init() {
+	jsoniter.RegisterTypeDecoderFunc("sdk.NamespaceNames", NamespaceNamesDecode)
 }

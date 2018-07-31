@@ -3,10 +3,13 @@ package sdk
 import (
 	"encoding/base32"
 	"errors"
+	"fmt"
+	"github.com/json-iterator/go"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 	"strconv"
 	"sync"
+	"unsafe"
 )
 
 type Address struct {
@@ -104,6 +107,53 @@ func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 func (ref *Addresses) UnmarshalJSON(buf []byte) error {
 	return nil
 }
+func AddressesIsEmpty(ptr unsafe.Pointer) bool {
+	return len((*Addresses)(ptr).list) == 0
+}
+
+func AddressesEncode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	buf, err := (*Addresses)(ptr).MarshalJSON()
+	if err == nil {
+		stream.Write(buf)
+	}
+
+}
+
+func AddressesDecode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+
+	if iter.ReadNil() {
+		*((*unsafe.Pointer)(ptr)) = nil
+	} else {
+		if iter.WhatIsNext() != jsoniter.ArrayValue {
+			//newIter := iter.Pool().BorrowIterator([]byte("{}"))
+			//defer iter.Pool().ReturnIterator(newIter)
+			v := iter.Read()
+			if vv, ok := v.(map[string]interface{}); ok {
+				for key, val := range vv {
+					switch key {
+					case "addresses":
+						if arr, ok := val.([]interface{}); ok {
+							list := make([]*Address, len(arr))
+							for i, val := range arr {
+								list[i] = &Address{val.(string), 0}
+							}
+							(*(*Addresses)(ptr)).list = list
+						} else {
+							fmt.Printf("%#v %{1}T", val)
+						}
+					}
+				}
+			} else {
+				fmt.Printf("%#v %{1}T", v)
+			}
+
+		} else {
+			v := iter.Read()
+			fmt.Printf("%#v %v", v, iter.WhatIsNext())
+			iter.Skip()
+		}
+	}
+}
 
 type PublicAccount struct {
 	Address   *Address
@@ -120,4 +170,9 @@ func NewPublicAccount(publicKey string, networkType NetworkType) (*PublicAccount
 		publicKey,
 	}
 	return ref, nil
+}
+
+func init() {
+	jsoniter.RegisterTypeEncoderFunc("sdk.Addresses", AddressesEncode, AddressesIsEmpty)
+	jsoniter.RegisterTypeDecoderFunc("sdk.Addresses", AddressesDecode)
 }

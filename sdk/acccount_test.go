@@ -6,6 +6,7 @@ package sdk
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 )
 
@@ -28,17 +29,27 @@ func TestAddresses_MarshalJSON(t *testing.T) {
 	}
 
 	if !bytes.Equal(b, b1) {
-		t.Error("not equal")
+		t.Error("not equal standart & self-made marshaling")
 	}
 	t.Log("standart", string(b))
 	t.Log("self-made", string(b1))
 
-	ad := &Addresses{}
-	err = json.Unmarshal(b1, ad)
+	var ad, ad1 Addresses
+	err = json.Unmarshal(b1, &ad)
 
 	if err != nil {
 		t.Error(err)
 	} else {
-		t.Log(ad)
+		t.Log("standart", ad)
+	}
+	err = json.Unmarshal(b, &ad1)
+
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log("self-made", ad1)
+	}
+	if !reflect.DeepEqual(ad, ad1) {
+		t.Error("not equal unmarshaling")
 	}
 }
