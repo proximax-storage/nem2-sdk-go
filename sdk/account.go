@@ -10,7 +10,7 @@ import (
 )
 
 type Address struct {
-	Address     string `json:"addres"`
+	Address     string `json:"address"`
 	NetworkType NetworkType
 }
 
