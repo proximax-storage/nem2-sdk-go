@@ -13,7 +13,7 @@ import (
 func TestAddresses_MarshalJSON(t *testing.T) {
 
 	addresses := Addresses{
-		list: []*Address{
+		Addresses: []*Address{
 			&Address{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
 			&Address{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
 		},
@@ -34,7 +34,7 @@ func TestAddresses_MarshalJSON(t *testing.T) {
 	t.Log("standart", string(b))
 	t.Log("self-made", string(b1))
 
-	var ad, ad1 Addresses
+	var ad Addresses
 	err = json.Unmarshal(b1, &ad)
 
 	if err != nil {
@@ -42,14 +42,7 @@ func TestAddresses_MarshalJSON(t *testing.T) {
 	} else {
 		t.Log("standart", ad)
 	}
-	err = json.Unmarshal(b, &ad1)
-
-	if err != nil {
-		t.Error(err)
-	} else {
-		t.Log("self-made", ad1)
-	}
-	if !reflect.DeepEqual(ad, ad1) {
+	if !reflect.DeepEqual(ad, addresses) {
 		t.Error("not equal unmarshaling")
 	}
 }

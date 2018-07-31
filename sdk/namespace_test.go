@@ -8,7 +8,7 @@ import (
 )
 
 var testAddresses = Addresses{
-	list: []*Address{
+	Addresses: []*Address{
 		&Address{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
 		&Address{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
 	},
