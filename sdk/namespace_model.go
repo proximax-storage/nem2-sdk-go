@@ -7,10 +7,12 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"github.com/json-iterator/go"
 	"golang.org/x/crypto/sha3"
 	"net/http"
 	"regexp"
 	"strings"
+	"unsafe"
 )
 
 type NamespaceService service
@@ -53,6 +55,16 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 
 	buf = append(buf, ']', '}')
 	return
+}
+func (ref *NamespaceIds) IsEmpty(ptr unsafe.Pointer) bool {
+	return len((*NamespaceIds)(ptr).List) == 0
+}
+func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
+	if err == nil {
+		stream.Write(buf)
+	}
+
 }
 
 type NamespaceName struct {
