@@ -1,12 +1,12 @@
 package sdk
 
 import (
-	"context"
-	"net/http"
-	"fmt"
 	"bytes"
-	"sync"
+	"context"
 	jsonLib "encoding/json"
+	"fmt"
+	"net/http"
+	"sync"
 )
 
 type TransactionService service
@@ -17,7 +17,7 @@ var mainRoute = "transaction" // TODO We should consider about connecting servic
 func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, *http.Response, error) {
 	var b bytes.Buffer
 
-	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s", mainRoute, id), nil, &b)
+	resp, err := txs.client.NewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainRoute, id), nil, &b)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,7 +37,7 @@ func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string
 		ids,
 	}
 
-	resp, err := txs.client.NewRequest(ctx,"POST", mainRoute, txIds, &b)
+	resp, err := txs.client.NewRequest(ctx, "POST", mainRoute, txIds, &b)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -51,24 +51,24 @@ func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string
 }
 
 // Announce a transaction to the network
-func (txs *TransactionService) Announce(ctx context.Context, tx SignedTransaction) (string, *http.Response, error) {
+func (txs *TransactionService) Announce(ctx context.Context, tx *SignedTransaction) (string, *http.Response, error) {
 	return txs.announceTransaction(ctx, tx, mainRoute)
 }
 
 // Announce a partial transaction to the network
-func (txs *TransactionService) AnnounceAggregateBonded(ctx context.Context, tx SignedTransaction) (string, *http.Response, error) {
+func (txs *TransactionService) AnnounceAggregateBonded(ctx context.Context, tx *SignedTransaction) (string, *http.Response, error) {
 	return txs.announceTransaction(ctx, tx, fmt.Sprintf("%s/partial", mainRoute))
 }
 
 // Announce a cosignature transaction to the network
-func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Context, c CosignatureSignedTransaction) (string, *http.Response, error) {
+func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Context, c *CosignatureSignedTransaction) (string, *http.Response, error) {
 	return txs.announceTransaction(ctx, c, fmt.Sprintf("%s/cosignature", mainRoute))
 }
 
 // Returns transaction status for a given transaction id or hash
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, *http.Response, error) {
 	ts := &TransactionStatus{}
-	resp, err := txs.client.NewRequest(ctx,"GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil, ts)
+	resp, err := txs.client.NewRequest(ctx, "GET", fmt.Sprintf("%s/%s/status", mainRoute, id), nil, ts)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -83,7 +83,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 	}
 
 	s := make([]*TransactionStatus, len(hashes))
-	resp, err := txs.client.NewRequest(ctx,"POST", fmt.Sprintf("%s/statuses", mainRoute), txIds, &s)
+	resp, err := txs.client.NewRequest(ctx, "POST", fmt.Sprintf("%s/statuses", mainRoute), txIds, &s)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -91,7 +91,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 	return s, resp, nil
 }
 
-func (txs *TransactionService) announceTransaction(ctx context.Context, tx Transaction, path string) (string, *http.Response, error) {
+func (txs *TransactionService) announceTransaction(ctx context.Context, tx Signed, path string) (string, *http.Response, error) {
 	var m string
 	resp, err := txs.client.NewRequest(ctx, "PUT", path, tx, m)
 	if err != nil {
@@ -101,7 +101,7 @@ func (txs *TransactionService) announceTransaction(ctx context.Context, tx Trans
 	return m, resp, nil
 }
 
-func (txs *TransactionService) mapTransactions(b *bytes.Buffer) ([]Transaction, error){
+func (txs *TransactionService) mapTransactions(b *bytes.Buffer) ([]Transaction, error) {
 	var wg sync.WaitGroup
 	var err error
 
@@ -346,12 +346,15 @@ func mapAbstractTransaction(b *bytes.Buffer, t TransactionType) (*AbstractTransa
 	aTx.Type = t
 	aTx.TransactionInfo = rawTx.TransactionInfo
 
-	//nt, err := extractNetworkType(aTx.Version)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//aTx.NetworkType = nt
+	nt, err := ExtractNetworkType(aTx.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	tv, err := ExtractTransactionVersion(aTx.Version)
+
+	aTx.Version = tv
+	aTx.NetworkType = nt
 	return &aTx, nil
 }
 

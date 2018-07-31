@@ -3,11 +3,11 @@ package sdk
 
 import (
 	"bytes"
+	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
-	"github.com/json-iterator/go"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -53,7 +53,7 @@ type Client struct {
 	config *Config
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 	// Services for communicating to the Catapult REST APIs
-	Blockchain *BlockchainService
+	Blockchain  *BlockchainService
 	Transaction *TransactionService
 }
 
@@ -81,7 +81,7 @@ func (s *Client) NewRequest(ctx context.Context, method string, path string, req
 	req, err := s.CreateRequest(method, path, reqV)
 
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	resp, err := s.Do(ctx, req, resV)
