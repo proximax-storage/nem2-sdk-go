@@ -1,20 +1,18 @@
+# http://docs.nem.ninja/#/Account_routes
 # get namespace name for next test request
-POST http://catapult.internal.proximax.io:3000/namespace/names
+POST http://catapult.internal.proximax.io:3000/account
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
 Cache-Control: no-cache
 
-{
-  "namespaceIds": [
-    "84b3552d375ffa4b"
-  ]
-}
+{"addresses": ["SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY","SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"]}
 
 ####
 
-# get namespace Info
-GET http://catapult.internal.proximax.io:3000/namespace/84b3552d375ffa4b
+# Returns account information for a given address or publicKey
+# NOT accountID !!!
+GET http://catapult.internal.proximax.io:3000/account/b4f12e7c9f6946091e2cb8b6d3a12b50d17ccbbf646386ea27ce2946a7423dcf
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
@@ -23,12 +21,9 @@ Cache-Control: no-cache
 ###
 
 #get namespace Info from Account -return empty array - what??
-POST http://catapult.internal.proximax.io:3000/account
-Content-Type: application/json
+GET http://catapult.internal.proximax.io:3000/account/SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY/namespaces?id=5B55E02EACCB7B00015DB6EB&pagesize=32
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
 Cache-Control: no-cache
-
-{"addresses": ["SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY","SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"]}
 
 ###
