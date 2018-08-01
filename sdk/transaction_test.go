@@ -27,9 +27,9 @@ var transaction = &TransferTransaction{
 		},
 	},
 	Mosaics: []Mosaic{Mosaic{
-		MosaicId: []uint64{
+		MosaicId: MosaicId{
 			3646934825,
-			3576016193,
+			"3576016193",
 		},
 		Amount: []uint64{
 			3863990592,

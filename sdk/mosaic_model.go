@@ -4,9 +4,12 @@ import "fmt"
 
 // Models
 
+// Mosaics
+type Mosaics []Mosaic
+
 // Mosaic
 type Mosaic struct {
-	MosaicId []uint64 `json:"id"`
+	MosaicId MosaicId `json:"id"`
 	Amount   []uint64 `json:"amount"`
 }
 
@@ -19,6 +22,25 @@ func (m *Mosaic) String() string {
 		m.MosaicId,
 		m.Amount,
 	)
+}
+
+// MosaicId
+type MosaicId struct {
+	id       int64
+	fullName string
+}
+
+// MosaicInfo
+type MosaicInfo struct {
+	active      bool
+	index       int
+	metaId      string
+	namespaceId NamespaceId
+	mosaicId    MosaicId
+	supply      int64
+	height      int64
+	owner       PublicAccount
+	properties  MosaicProperties
 }
 
 // MosaicProperties
@@ -54,10 +76,9 @@ const (
 	INCREASE MosaicSupplyType = 1
 )
 
-
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
-}  
+}
 
 type NamespaceMosaicMetaDTO struct {
 	Active bool
