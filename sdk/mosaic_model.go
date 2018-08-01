@@ -1,14 +1,24 @@
 package sdk
 
-// Models
+import "fmt"
 
-// Mosaics
-type Mosaics []Mosaic
+// Models
 
 // Mosaic
 type Mosaic struct {
 	MosaicId []uint64 `json:"id"`
 	Amount   []uint64 `json:"amount"`
+}
+
+func (m *Mosaic) String() string {
+	return fmt.Sprintf(
+		`
+			"MosaicId": %d,
+			"Amount": %d 
+		`,
+		m.MosaicId,
+		m.Amount,
+	)
 }
 
 // MosaicProperties
@@ -20,12 +30,34 @@ type MosaicProperties struct {
 	Duration      uint
 }
 
+func (mp *MosaicProperties) String() string {
+	return fmt.Sprintf(
+		`
+			"SupplyMutable": %t,
+			"Transferable": %t,
+			"LevyMutable": %t,
+			"Divisibility": %d,
+			"Duration": %d
+		`,
+		mp.SupplyMutable,
+		mp.Transferable,
+		mp.LevyMutable,
+		mp.Divisibility,
+		mp.Duration,
+	)
+}
+
 type MosaicSupplyType uint
 
 const (
 	DECREASE MosaicSupplyType = 0
 	INCREASE MosaicSupplyType = 1
 )
+
+
+func (tx MosaicSupplyType) String() string {
+	return fmt.Sprintf("%d", tx)
+}  
 
 type NamespaceMosaicMetaDTO struct {
 	Active bool

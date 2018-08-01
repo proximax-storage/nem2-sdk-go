@@ -75,7 +75,7 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 
 	return c
 }
-
+	
 // DoNewRequest creates new request, Do it & return result in V
 func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
 	req, err := s.NewRequest(method, path, body)

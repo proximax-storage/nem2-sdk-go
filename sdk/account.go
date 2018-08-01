@@ -134,3 +134,4 @@ func NewPublicAccount(publicKey string, networkType NetworkType) (*PublicAccount
 func init() {
 	jsoniter.RegisterTypeEncoderFunc("sdk.Addresses", AddressesEncode, AddressesIsEmpty)
 }
+
