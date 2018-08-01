@@ -9,13 +9,13 @@ import (
 // Models
 // Chain Height
 type ChainHeight struct {
-	Height []uint64 `json:"height"`
+	Height []int64 `json:"height"`
 }
 
 // Chain Score
 type ChainScore struct {
-	ScoreHigh []uint64 `json:"scoreHigh"`
-	ScoreLow  []uint64 `json:"scoreLow"`
+	ScoreHigh []int64 `json:"scoreHigh"`
+	ScoreLow  []int64 `json:"scoreLow"`
 }
 
 // Block Info
@@ -26,23 +26,24 @@ type BlockInfo struct {
 
 // Block
 type Block struct {
-	Signature             *string  `json:"signature"`
-	Signer                *string  `json:"signer"`
-	Version               *uint64  `json:"version"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-	Type                  *uint64  `json:"type"`    // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-	Height                []uint64 `json:"version"`
-	Timestamp             []uint64 `json:"timestamp"`
-	Difficulty            []uint64 `json:"difficulty"`
-	PreviousBlockHash     *string  `json:"previousBlockHash"`
-	BlockTransactionsHash *string  `json:"blockTransactionsHash"`
+	Signature             *string `json:"signature"`
+	Signer                *string `json:"signer"`
+	Version               *int64  `json:"version"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	Type                  *int64  `json:"type"`    // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	Height                []int64 `json:"height"`
+	Timestamp             []int64 `json:"timestamp"`
+	Difficulty            []int64 `json:"difficulty"`
+	PreviousBlockHash     *string `json:"previousBlockHash"`
+	BlockTransactionsHash *string `json:"blockTransactionsHash"`
 }
 
 // Block Meta
 type BlockMeta struct {
 	Hash            *string  `json:"hash"`
 	GenerationHash  *string  `json:"generationHash"`
-	TotalFee        []uint64 `json:"totalFee"`
-	NumTransactions *uint64  `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	TotalFee        []int64  `json:"totalFee"`
+	NumTransactions *int64   `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	MerkleTree      []string `json:"merkleTree"`
 }
 
 type NetworkType uint8
