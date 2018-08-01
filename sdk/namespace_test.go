@@ -8,7 +8,7 @@ import (
 )
 
 var testAddresses = Addresses{
-	list: []*Address{
+	Addresses: []*Address{
 		&Address{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
 		&Address{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
 	},
@@ -113,9 +113,12 @@ var testNamespaceIDs = &NamespaceIds{
 		{fullName: "84b3552d375ffa4b"},
 	},
 }
+var ad = &NamespaceIds{}
 
 func init() {
 	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
 
 }
 func TestNamespaceIds_MarshalJSON(t *testing.T) {
@@ -136,8 +139,14 @@ func TestNamespaceIds_MarshalJSON(t *testing.T) {
 	t.Log("standart", string(b))
 	t.Log("self-made", string(b1))
 
-	ad := &Addresses{}
 	err = json.Unmarshal(b1, ad)
+
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(ad)
+	}
+	err = json.Unmarshal(b, ad)
 
 	if err != nil {
 		t.Error(err)
@@ -161,16 +170,18 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	} else if resp.StatusCode != 200 {
 		t.Error(resp.Status)
 		t.Logf("%#v %#v", resp, resp.Body)
-	} else if len(nsInfo) == 0 {
+	} else if (nsInfo == nil) || (len(nsInfo) == 0) {
 		t.Logf("%#v %#v", resp, resp.Body)
-	} else if (nsInfo[0].namespaceId == nil) || (nsInfo[0].namespaceId.id == nil) {
-		t.Logf("%#v", nsInfo[0])
+	} else if arr0 := (nsInfo)[0]; (arr0.namespaceId == nil) || (arr0.namespaceId.id == nil) {
+		t.Logf("%#v", arr0)
 	} else {
-		if id := nsInfo[0].namespaceId.id; !((id[0].Int64() == 929036875) && (id[0].Int64() == 2226345261)) {
-			t.Error("failed namespoceName id Convertion")
+		if id := arr0.namespaceId.id; !((id[0].Int64() == 929036875) && (id[1].Int64() == 2226345261)) {
+			t.Error("failed namespaceName id Convertion")
+			t.Logf("%#v", id[0].Int64(), id[1].Int64())
 		}
-		if nsInfo[0].name != "nem" {
-			t.Error("failed namespoceName name Convertion")
+		if arr0.name != "nem" {
+			t.Error("failed namespaceName name Convertion")
+			t.Logf("%#v", arr0.name)
 		}
 	}
 

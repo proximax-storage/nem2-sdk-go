@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+type NamespaceService service
+
+func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
+	ref := &NamespaceService{client: NewClient(httpClient, conf)}
+
+	return ref
+}
+
 type NamespaceDTO struct {
 	Type         int
 	Depth        int
@@ -38,10 +46,17 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 
 	}
 	//	err occurent
-	return nil, nil, err
+	return nil, resp, err
 }
 
 const pathNamespacenames = "/namespace/names"
+
+type NamespaceNameDTO struct {
+	namespaceId *uint64DTO
+	name        string
+	parentId    *uint64DTO
+} /* NamespaceNameDTO */
+type arrNamespaceNameDTO []*NamespaceNameDTO
 
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
 	res := make([]*NamespaceNameDTO, 0)
@@ -59,7 +74,7 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *Names
 	}
 
 	//	err occurent
-	return nsList, nil, err
+	return nil, resp, err
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
@@ -103,7 +118,6 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 			}
 			nsList.list = append(nsList.list, nsInfo)
 		}
-		return nsList, resp, err
 
 		if err == nil {
 			return nsList, resp, err
@@ -111,5 +125,25 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 	}
 
 	//	err occurent
-	return nsList, nil, err
+	return nsList, resp, err
+}
+
+func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
+	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
+	if err != nil {
+		return nil, err
+	}
+
+	return &NamespaceInfo{
+		nsInfoDTO.Meta.Active,
+		nsInfoDTO.Meta.Index,
+		nsInfoDTO.Meta.Id,
+		NamespaceType(nsInfoDTO.Namespace.Type),
+		nsInfoDTO.Namespace.Depth,
+		nsInfoDTO.extractLevels(),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+		pubAcc,
+		nsInfoDTO.Namespace.StartHeight,
+		nsInfoDTO.Namespace.EndHeight,
+	}, nil
 }

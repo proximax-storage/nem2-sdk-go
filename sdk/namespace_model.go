@@ -9,19 +9,10 @@ import (
 	"fmt"
 	"github.com/json-iterator/go"
 	"golang.org/x/crypto/sha3"
-	"net/http"
 	"regexp"
 	"strings"
 	"unsafe"
 )
-
-type NamespaceService service
-
-func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
-	ref := &NamespaceService{client: NewClient(httpClient, conf)}
-
-	return ref
-}
 
 type NamespaceId struct {
 	id       *uint64DTO
@@ -59,6 +50,27 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 func (ref *NamespaceIds) IsEmpty(ptr unsafe.Pointer) bool {
 	return len((*NamespaceIds)(ptr).List) == 0
 }
+func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+
+	if (*NamespaceIds)(ptr) == nil {
+		ptr = (unsafe.Pointer)(&NamespaceIds{})
+	}
+	if iter.ReadNil() {
+		*((*unsafe.Pointer)(ptr)) = nil
+	} else {
+		if iter.WhatIsNext() == jsoniter.ArrayValue {
+			iter.Skip()
+			newIter := iter.Pool().BorrowIterator([]byte("{}"))
+			defer iter.Pool().ReturnIterator(newIter)
+			v := newIter.Read()
+			list := make([]*NamespaceId, 0)
+			for _, val := range v.([]*NamespaceId) {
+				list = append(list, val)
+			}
+			(*NamespaceIds)(ptr).List = list
+		}
+	}
+}
 func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
 	if err == nil {
@@ -72,11 +84,7 @@ type NamespaceName struct {
 	name        string
 	parentId    *NamespaceId /* Optional NamespaceId my be nil */
 } /* NamespaceName */
-type NamespaceNameDTO struct {
-	namespaceId *uint64DTO
-	name        string
-	parentId    *uint64DTO
-} /* NamespaceNameDTO */
+
 type NamespaceType int
 
 const (
@@ -96,25 +104,6 @@ type NamespaceInfo struct {
 	startHeight *uint64DTO
 	endHeight   *uint64DTO
 } /* NamespaceInfo */
-func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
-	if err != nil {
-		return nil, err
-	}
-
-	return &NamespaceInfo{
-		nsInfoDTO.Meta.Active,
-		nsInfoDTO.Meta.Index,
-		nsInfoDTO.Meta.Id,
-		NamespaceType(nsInfoDTO.Namespace.Type),
-		nsInfoDTO.Namespace.Depth,
-		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
-		pubAcc,
-		nsInfoDTO.Namespace.StartHeight,
-		nsInfoDTO.Namespace.EndHeight,
-	}, nil
-}
 
 const templNamespaceInfo = `"active": %v,
     "index": %d,
