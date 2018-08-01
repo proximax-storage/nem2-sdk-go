@@ -1,7 +1,3 @@
-// Copyright 2017 Author: Ruslan Bikchentaev. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sdk
 
 import (
@@ -14,10 +10,14 @@ import (
 	"unsafe"
 )
 
+// NamespaceId id structure describes namespace id
 type NamespaceId struct {
-	id       *uint64DTO
-	fullName string
-} /* NamespaceId */
+	Id       *uint64DTO
+	FullName string
+}
+
+// NewNamespaceId create NamespaceId from namespace string name if he present
+// other create NamespaceId from biginteger id
 func NewNamespaceId(id *uint64DTO, namespaceName string) *NamespaceId {
 
 	if namespaceName == "" {
@@ -31,6 +31,12 @@ func NewNamespaceId(id *uint64DTO, namespaceName string) *NamespaceId {
 	return &NamespaceId{id, namespaceName}
 }
 
+// Equals compares namespaceIds for equality
+func (ref *NamespaceId) Equals(nsId NamespaceId) bool {
+	return (ref.Id == nsId.Id) && (ref.FullName == nsId.FullName)
+}
+
+// NamespaceIds is a list of NamespaceId
 type NamespaceIds struct {
 	List []*NamespaceId
 }
@@ -41,7 +47,7 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 		if i > 0 {
 			buf = append(buf, ',')
 		}
-		buf = append(buf, []byte(`"`+nsId.fullName+`"`)...)
+		buf = append(buf, []byte(`"`+nsId.FullName+`"`)...)
 	}
 
 	buf = append(buf, ']', '}')
@@ -79,33 +85,36 @@ func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 
 }
 
+// NamespaceName name info structure describes basic information of a namespace and name.
 type NamespaceName struct {
-	namespaceId *NamespaceId
-	name        string
-	parentId    *NamespaceId /* Optional NamespaceId my be nil */
-} /* NamespaceName */
+	NamespaceId *NamespaceId
+	Name        string
+	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
+}
 
+// NamespaceType containing namespace supply type.
 type NamespaceType int
 
 const (
 	RootNamespace NamespaceType = iota
 	SubNamespace
-) /* NamespaceType */
+)
+
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
-	active      bool
-	index       int
-	metaId      string
-	typeSpace   NamespaceType
-	depth       int
-	levels      []*NamespaceId
-	parentId    *NamespaceId
-	owner       *PublicAccount
-	startHeight *uint64DTO
-	endHeight   *uint64DTO
-} /* NamespaceInfo */
+	Active      bool
+	Index       int
+	MetaId      string
+	TypeSpace   NamespaceType
+	Depth       int
+	Levels      []*NamespaceId
+	ParentId    *NamespaceId
+	Owner       *PublicAccount
+	StartHeight *uint64DTO
+	EndHeight   *uint64DTO
+}
 
-const templNamespaceInfo = `"active": %v,
+const tplNamespaceInfo = `"active": %v,
     "index": %d,
     "id": "%s",
 	"type": %d,
@@ -128,25 +137,27 @@ const templNamespaceInfo = `"active": %v,
 `
 
 func (ref *NamespaceInfo) String() string {
-	return fmt.Sprintf(templNamespaceInfo,
-		ref.active,
-		ref.index,
-		ref.metaId,
-		ref.typeSpace,
-		ref.depth,
-		ref.levels,
-		ref.parentId,
-		ref.owner,
-		ref.owner.Address.Address,
-		ref.startHeight,
-		ref.endHeight,
+	return fmt.Sprintf(tplNamespaceInfo,
+		ref.Active,
+		ref.Index,
+		ref.MetaId,
+		ref.TypeSpace,
+		ref.Depth,
+		ref.Levels,
+		ref.ParentId,
+		ref.Owner,
+		ref.Owner.Address.Address,
+		ref.StartHeight,
+		ref.EndHeight,
 	)
 }
 
+// ListNamespaceInfo is a list NamespaceInfo
 type ListNamespaceInfo struct {
 	list []*NamespaceInfo
 }
 
+// generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
 
 	list, err := generateNamespacePath(namespaceName)
@@ -157,14 +168,16 @@ func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
 	return list[len(list)-1], nil
 }
 
+// regValidNamespace check namespace on valid symbols
 var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
+// generateNamespacePath create list NamespaceId from string
 func generateNamespacePath(name string) ([]*uint64DTO, error) {
 
 	parts := strings.Split(name, ".")
 	path := make([]*uint64DTO, 0)
 	if len(parts) == 0 {
-		return nil, errors.New("invalid Namespace name")
+		return nil, errors.New("invalid Namespace Name")
 	}
 
 	if len(parts) > 3 {
@@ -174,7 +187,7 @@ func generateNamespacePath(name string) ([]*uint64DTO, error) {
 	namespaceId := NewRootUint64DTO()
 	for i, part := range parts {
 		if !regValidNamespace.MatchString(part) {
-			return nil, errors.New("invalid Namespace name")
+			return nil, errors.New("invalid Namespace Name")
 		}
 
 		var err error

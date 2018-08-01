@@ -50,7 +50,7 @@ const validResp = `{
 }`
 
 func TestNewNamespaceInfoDTO(t *testing.T) {
-	nsDTO := &NamespaceInfoDTO{}
+	nsDTO := &namespaceInfoDTO{}
 	err := json.Unmarshal([]byte(validResp), &nsDTO)
 	if err != nil {
 		t.Error(err)
@@ -75,33 +75,33 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 		t.Error(resp.Status)
 		t.Logf("%#v", resp)
 	} else {
-		if !nsInfo.active {
+		if !nsInfo.Active {
 			t.Error("failed Active data Convertion")
 
 		}
-		if !(nsInfo.index == 0) {
+		if !(nsInfo.Index == 0) {
 			t.Error("failed Index data Convertion")
 
 		}
-		if !(nsInfo.metaId == "5B55E02EACCB7B00015DB6EB") {
+		if !(nsInfo.MetaId == "5B55E02EACCB7B00015DB6EB") {
 			t.Error("failed Id data Convertion")
 		}
-		if !(nsInfo.typeSpace == RootNamespace) {
+		if !(nsInfo.TypeSpace == RootNamespace) {
 			t.Error("failed Type data Convertion")
 		}
-		if !(nsInfo.depth == 1) {
+		if !(nsInfo.Depth == 1) {
 			t.Error("failed Depth data Convertion")
 		}
-		if !(nsInfo.owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
+		if !(nsInfo.Owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
 			t.Error("failed Owner data Convertion")
 		}
-		if nsId := nsInfo.parentId.id; !(nsId[0].Int64() == 0 && nsId[1].Int64() == 0) {
+		if nsId := nsInfo.ParentId.Id; !(nsId[0].Int64() == 0 && nsId[1].Int64() == 0) {
 			t.Error("failed ParentId data Convertion")
 		}
-		if sH := nsInfo.startHeight; !(sH[0].Int64() == 1 && sH[1].Int64() == 0) {
+		if sH := nsInfo.StartHeight; !(sH[0].Int64() == 1 && sH[1].Int64() == 0) {
 			t.Error("failed ParentId data Convertion")
 		}
-		if eH := nsInfo.endHeight; !(eH[0].Int64() == 4294967295 && eH[1].Int64() == 4294967295) {
+		if eH := nsInfo.EndHeight; !(eH[0].Int64() == 4294967295 && eH[1].Int64() == 4294967295) {
 			t.Error("failed ParentId data Convertion")
 		}
 	}
@@ -110,7 +110,7 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 
 var testNamespaceIDs = &NamespaceIds{
 	List: []*NamespaceId{
-		{fullName: "84b3552d375ffa4b"},
+		{FullName: "84b3552d375ffa4b"},
 	},
 }
 var ad = &NamespaceIds{}
@@ -172,18 +172,19 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 		t.Logf("%#v %#v", resp, resp.Body)
 	} else if (nsInfo == nil) || (len(nsInfo) == 0) {
 		t.Logf("%#v %#v", resp, resp.Body)
-	} else if arr0 := (nsInfo)[0]; (arr0.namespaceId == nil) || (arr0.namespaceId.id == nil) {
+	} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
 		t.Logf("%#v", arr0)
 	} else {
-		if id := arr0.namespaceId.id; !((id[0].Int64() == 929036875) && (id[1].Int64() == 2226345261)) {
+		if id := arr0.NamespaceId.Id; !((id[0].Int64() == 929036875) && (id[1].Int64() == 2226345261)) {
 			t.Error("failed namespaceName id Convertion")
 			t.Logf("%#v", id[0].Int64(), id[1].Int64())
 		}
-		if arr0.name != "nem" {
-			t.Error("failed namespaceName name Convertion")
-			t.Logf("%#v", arr0.name)
+		if arr0.Name != "nem" {
+			t.Error("failed namespaceName Name Convertion")
+			t.Logf("%#v", arr0.Name)
 		}
 	}
+	t.Logf("%#v", nsInfo)
 
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
@@ -217,4 +218,5 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 		}
 
 	}
+	t.Logf("%#v", nsInfo)
 }
