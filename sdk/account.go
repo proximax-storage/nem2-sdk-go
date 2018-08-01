@@ -3,15 +3,17 @@ package sdk
 import (
 	"encoding/base32"
 	"errors"
+	"github.com/json-iterator/go"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 	"strconv"
 	"sync"
+	"unsafe"
 )
 
 type Address struct {
 	Address     string `json:"address"`
-	NetworkType NetworkType
+	networkType NetworkType
 }
 
 func createFromPublicKey(publicKey string, networkType NetworkType) (*Address, error) {
@@ -67,22 +69,22 @@ func (ref *Address) MarshalJSON() (buf []byte, err error) {
 }
 
 type Addresses struct {
-	list []*Address
-	lock sync.RWMutex
+	Addresses []*Address
+	lock      sync.RWMutex
 }
 
 func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
 
-	ref.list = append(ref.list, address)
+	ref.Addresses = append(ref.Addresses, address)
 }
 func (ref *Addresses) GetAddress(i int) (*Address, error) {
 
-	if (i >= 0) && (i < len(ref.list)) {
+	if (i >= 0) && (i < len(ref.Addresses)) {
 		ref.lock.RLock()
 		defer ref.lock.RUnlock()
-		return ref.list[i], nil
+		return ref.Addresses[i], nil
 	}
 
 	return nil, errors.New("index out of range - " + strconv.Itoa(i))
@@ -90,7 +92,7 @@ func (ref *Addresses) GetAddress(i int) (*Address, error) {
 }
 func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 	buf = []byte(`{"addresses":[`)
-	for i, address := range ref.list {
+	for i, address := range ref.Addresses {
 		b, _ := address.MarshalJSON()
 		if i > 0 {
 			buf = append(buf, ',')
@@ -101,8 +103,15 @@ func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 	buf = append(buf, ']', '}')
 	return
 }
-func (ref *Addresses) UnmarshalJSON(buf []byte) error {
-	return nil
+func AddressesIsEmpty(ptr unsafe.Pointer) bool {
+	return len((*Addresses)(ptr).Addresses) == 0
+}
+func AddressesEncode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	buf, err := (*Addresses)(ptr).MarshalJSON()
+	if err == nil {
+		stream.Write(buf)
+	}
+
 }
 
 type PublicAccount struct {
@@ -121,3 +130,8 @@ func NewPublicAccount(publicKey string, networkType NetworkType) (*PublicAccount
 	}
 	return ref, nil
 }
+
+func init() {
+	jsoniter.RegisterTypeEncoderFunc("sdk.Addresses", AddressesEncode, AddressesIsEmpty)
+}
+
