@@ -1,19 +1,25 @@
 package sdk
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+)
 
 // Models
 
 // Mosaic
 type Mosaic struct {
-	MosaicId []uint64 `json:"id"`
-	Amount   []uint64 `json:"amount"`
+	MosaicId MosaicId   `json:"id"`
+	Amount   *uint64DTO `json:"amount"`
 }
 
 func (m *Mosaic) String() string {
 	return fmt.Sprintf(
 		`
-			"MosaicId": %d,
+			"MosaicId": %v,
 			"Amount": %d 
 		`,
 		m.MosaicId,
@@ -21,15 +27,102 @@ func (m *Mosaic) String() string {
 	)
 }
 
-// MosaicProperties
+// Mosaics
+type Mosaics []Mosaic
+
+func (ref Mosaics) String() string {
+	s := "["
+	for i, mosaic := range ref {
+		if i > 0 {
+			s += ", "
+		}
+		s += mosaic.String()
+	}
+	return s + "]"
+}
+
+// MosaicId
+type MosaicId struct {
+	id       *uint64DTO
+	fullName string
+}
+
+func NewMosaicFromID(id *uint64DTO) *MosaicId {
+	return &MosaicId{id, ""}
+}
+func NewMosaicId(name string) (*MosaicId, error) {
+	if (name == "") || strings.Contains(name, " {") {
+		return nil, errors.New(name + " is not valid")
+	}
+	parts := strings.Split(name, ":")
+	if len(parts) != 2 {
+		return nil, errors.New(name + " is not valid")
+
+	}
+	id, err := generateMosaicId(parts[0], parts[1])
+	if networkTypeError != nil {
+		return nil, err
+	}
+	return &MosaicId{id, name}, nil
+}
+
+var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+
+func generateMosaicId(namespaceName string, mosaicName string) (*uint64DTO, error) {
+
+	if mosaicName == "" {
+		return nil, errors.New(mosaicName + " having zero length")
+	}
+
+	namespacePath, err := generateNamespacePath(namespaceName)
+	if err != nil {
+		return nil, err
+	}
+	namespaceId := namespacePath[len(namespacePath)-1]
+	if !regValidMosaicName.MatchString(mosaicName) {
+		return nil, errors.New(mosaicName + "invalid mosaic name")
+	}
+
+	return generateId(mosaicName, namespaceId)
+}
+
+// MosaicIds is a list MosaicId
+type MosaicIds struct {
+	MosaicIds []string `json:"mosaicIds"`
+}
+
+// MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
+type MosaicInfo struct {
+	Active      bool
+	Index       int
+	MetaId      string
+	NamespaceId *NamespaceId
+	MosaicId    *MosaicId
+	Supply      *uint64DTO
+	Height      *uint64DTO
+	Owner       *PublicAccount
+	Properties  *MosaicProperties
+}
+
+// MosaicProperties  structure describes mosaic properties.
 type MosaicProperties struct {
 	SupplyMutable bool
 	Transferable  bool
 	LevyMutable   bool
-	Divisibility  int
-	Duration      uint
+	Divisibility  int64
+	Duration      time.Duration
 }
 
+func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration time.Duration) *MosaicProperties {
+	ref := &MosaicProperties{
+		supplyMutable,
+		transferable,
+		levyMutable,
+		divisibility,
+		duration,
+	}
+	return ref
+}
 func (mp *MosaicProperties) String() string {
 	return fmt.Sprintf(
 		`
@@ -47,19 +140,16 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
+//MosaicSupplyType mosaic supply type :
+// Decrease the supply - DECREASE.
+//Increase the supply - INCREASE.
 type MosaicSupplyType uint
 
 const (
-	DECREASE MosaicSupplyType = 0
-	INCREASE MosaicSupplyType = 1
+	DECREASE MosaicSupplyType = iota
+	INCREASE
 )
 
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
 }
-
-type NamespaceMosaicMetaDTO struct {
-	Active bool
-	Index  int
-	Id     string
-} /* NamespaceMosaicMetaDTO */
