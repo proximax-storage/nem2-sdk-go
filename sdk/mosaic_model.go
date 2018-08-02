@@ -10,24 +10,35 @@ import (
 
 // Models
 
-// Mosaics
-type Mosaics []Mosaic
-
 // Mosaic
 type Mosaic struct {
-	MosaicId MosaicId `json:"id"`
-	Amount   []uint64 `json:"amount"`
+	MosaicId MosaicId   `json:"id"`
+	Amount   *uint64DTO `json:"amount"`
 }
 
 func (m *Mosaic) String() string {
 	return fmt.Sprintf(
 		`
-			"MosaicId": %d,
+			"MosaicId": %v,
 			"Amount": %d 
 		`,
 		m.MosaicId,
 		m.Amount,
 	)
+}
+
+// Mosaics
+type Mosaics []Mosaic
+
+func (ref Mosaics) String() string {
+	s := "["
+	for i, mosaic := range ref {
+		if i > 0 {
+			s += ", "
+		}
+		s += mosaic.String()
+	}
+	return s + "]"
 }
 
 // MosaicId
@@ -75,24 +86,25 @@ func generateMosaicId(namespaceName string, mosaicName string) (*uint64DTO, erro
 	return generateId(mosaicName, namespaceId)
 }
 
+// MosaicIds is a list MosaicId
 type MosaicIds struct {
 	MosaicIds []string `json:"mosaicIds"`
 }
 
-// MosaicInfo
+// MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
 type MosaicInfo struct {
-	active      bool
-	index       int
-	metaId      string
-	namespaceId *NamespaceId
-	mosaicId    *MosaicId
-	supply      *uint64DTO
-	height      *uint64DTO
-	owner       *PublicAccount
-	properties  *MosaicProperties
+	Active      bool
+	Index       int
+	MetaId      string
+	NamespaceId *NamespaceId
+	MosaicId    *MosaicId
+	Supply      *uint64DTO
+	Height      *uint64DTO
+	Owner       *PublicAccount
+	Properties  *MosaicProperties
 }
 
-// MosaicProperties
+// MosaicProperties  structure describes mosaic properties.
 type MosaicProperties struct {
 	SupplyMutable bool
 	Transferable  bool
@@ -128,11 +140,14 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
+//MosaicSupplyType mosaic supply type :
+// Decrease the supply - DECREASE.
+//Increase the supply - INCREASE.
 type MosaicSupplyType uint
 
 const (
-	DECREASE MosaicSupplyType = 0
-	INCREASE MosaicSupplyType = 1
+	DECREASE MosaicSupplyType = iota
+	INCREASE
 )
 
 func (tx MosaicSupplyType) String() string {

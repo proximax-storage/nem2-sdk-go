@@ -160,12 +160,37 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 	)
 }
 
+// tpl struct for encoding server responce
+type MosaicDTO struct {
+	MosaicId []uint64 `json:"id"`
+	Amount   []uint64 `json:"amount"`
+}
+type MosaicsDTO []MosaicDTO
+
+func (ref MosaicsDTO) String() string {
+	s := "["
+	for i, m := range ref {
+		if i > 0 {
+			s += ", "
+		}
+		s += fmt.Sprintf(
+			`
+			"MosaicId": %v,
+			"Amount": %d 
+		`,
+			m.MosaicId,
+			m.Amount,
+		)
+	}
+	return s + "]"
+}
+
 // TransferTransaction
 type TransferTransaction struct {
 	AbstractTransaction
 	Message `json:"message"`
-	Mosaics []Mosaic `json:"mosaics"`
-	Address string   `json:"recipient"`
+	Mosaics []MosaicDTO `json:"mosaics"`
+	Address string      `json:"recipient"`
 }
 
 func (tx *TransferTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -176,7 +201,7 @@ func (tx *TransferTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaics": %d,
+			"Mosaics": %s,
 			"Address": %s,
 			"Message": %s,
 		`,

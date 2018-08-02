@@ -177,7 +177,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	} else {
 		if id := arr0.NamespaceId.Id; !((id[0].Int64() == 929036875) && (id[1].Int64() == 2226345261)) {
 			t.Error("failed namespaceName id Convertion")
-			t.Logf("%#v", id[0].Int64(), id[1].Int64())
+			t.Logf("%#v %#v", id[0].Int64(), id[1].Int64())
 		}
 		if arr0.Name != "nem" {
 			t.Error("failed namespaceName Name Convertion")

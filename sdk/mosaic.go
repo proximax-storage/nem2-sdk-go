@@ -1,7 +1,7 @@
 package sdk
 
 import (
-	"fmt"
+	"errors"
 	"golang.org/x/net/context"
 	"net/http"
 	"time"
@@ -37,14 +37,14 @@ type mosaicInfoDTO struct {
 
 func (ref *mosaicInfoDTO) extractMosaicProperties() *MosaicProperties {
 
-	flags := []byte("00" + ref.Mosaic.Properties[0][0].String())
-	bitMapFlags := flags[:len(flags)-3]
+	flags := []byte("00" + ref.Mosaic.Properties[0].String())
+	bitMapFlags := flags[len(flags)-3:]
 
 	return NewMosaicProperties(bitMapFlags[2] == '1',
 		bitMapFlags[1] == '1',
 		bitMapFlags[0] == '1',
 		ref.Mosaic.Properties[1][0].Int64(),
-		time.Duration(ref.Mosaic.Properties[2][0].Int64()))
+		time.Duration(ref.Mosaic.Properties[2].ExtractIntArray()))
 
 }
 func (ref *mosaicInfoDTO) getMosaicInfo() (*MosaicInfo, error) {
@@ -52,7 +52,9 @@ func (ref *mosaicInfoDTO) getMosaicInfo() (*MosaicInfo, error) {
 	publicAcc, err := NewPublicAccount(ref.Mosaic.Owner, NetworkType(1))
 	if err != nil {
 		return nil, err
-
+	}
+	if len(ref.Mosaic.Properties) < 3 {
+		return nil, errors.New("Mosaic Properties is not valid")
 	}
 	return &MosaicInfo{
 		ref.Meta.Active,
@@ -75,26 +77,29 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId string) (nsInf
 	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+mosaicId, nil, nsInfoDTO)
 
 	if err == nil {
-		fmt.Println(nsInfoDTO)
-		//nsInfo, err = NamespaceInfoFromDTO(nsInfoDTO)
-		//if err == nil {
-		return nsInfo, resp, err
-		//}
+		nsInfo, err = nsInfoDTO.getMosaicInfo()
+		if err == nil {
+			return nsInfo, resp, nil
+		}
 	}
 	//	err occurent
 	return nil, resp, err
 }
-func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicId MosaicIds) (nsInfo *MosaicInfo, resp *http.Response, err error) {
+func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicId MosaicIds) (nsInfo []*MosaicInfo, resp *http.Response, err error) {
 
-	nsInfoDTO := make([]mosaicInfoDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaic, &mosaicId, &nsInfoDTO)
+	nsInfosDTO := make([]mosaicInfoDTO, 0)
+	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaic, &mosaicId, &nsInfosDTO)
 
 	if err == nil {
-		fmt.Println(nsInfoDTO)
-		//nsInfo, err = NamespaceInfoFromDTO(nsInfoDTO)
-		//if err == nil {
+		nsInfo = make([]*MosaicInfo, len(nsInfosDTO))
+		for i, nsInfoDTO := range nsInfosDTO {
+			nsInfo[i], err = nsInfoDTO.getMosaicInfo()
+			if err != nil {
+				return nil, resp, err
+			}
+
+		}
 		return nsInfo, resp, err
-		//}
 	}
 	//	err occurent
 	return nil, resp, err

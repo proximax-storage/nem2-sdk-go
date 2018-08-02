@@ -12,7 +12,7 @@ Cache-Control: no-cache
 
 # Returns account information for a given address or publicKey
 # NOT accountID !!!
-GET http://catapult.internal.proximax.io:3000/account/b4f12e7c9f6946091e2cb8b6d3a12b50d17ccbbf646386ea27ce2946a7423dcf
+GET http://catapult.internal.proximax.io:3000/account/SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
