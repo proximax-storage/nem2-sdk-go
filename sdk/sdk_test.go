@@ -20,7 +20,7 @@ func setup() (*Client, string) {
 }
 
 // Create a mock server
-func setupMockServer() (client *Client, mux *http.ServeMux, serverURL string, teardown func()) {
+func setupMockServer() (client *Client, mux *http.ServeMux, serverURL string, teardown func(), err error) {
 	// individual tests will provide API mock responses
 	mux = http.NewServeMux()
 
@@ -28,12 +28,12 @@ func setupMockServer() (client *Client, mux *http.ServeMux, serverURL string, te
 
 	conf, err := LoadTestnetConfig(server.URL)
 	if err != nil {
-		panic(err)
+		return nil, nil, "", nil, err
 	}
 
 	client = NewClient(nil, conf)
 
-	return client, mux, server.URL, server.Close
+	return client, mux, server.URL, server.Close, nil
 }
 
 // Bool is a helper routine that allocates a new bool value
@@ -47,6 +47,10 @@ func Int(v int) *int { return &v }
 // Int64 is a helper routine that allocates a new int64 value
 // to store v and returns a pointer to it.
 func Int64(v int64) *int64 { return &v }
+
+// Uint64 is a helper routine that allocates a new int64 value
+// to store v and returns a pointer to it.
+func Uint64(v uint64) *uint64 { return &v }
 
 // String is a helper routine that allocates a new string value
 // to store v and returns a pointer to it.
