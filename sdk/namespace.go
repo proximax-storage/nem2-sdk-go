@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
@@ -100,17 +101,42 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *Names
 	return nil, resp, err
 }
 
+const pathNamespacesFromAccount = "/account/%s/namespaces"
+
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
 func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId string,
-	pageSize int) (nsInfo ListNamespaceInfo, resp *http.Response, err error) {
+	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
 
-	addresses := &Addresses{}
-	addresses.AddAddress(address)
+	url, comma := "", "?"
 
-	return ref.GetNamespacesFromAccounts(ctx, addresses, nsId, pageSize)
+	if nsId > "" {
+		url = comma + "id=" + nsId
+		comma = "&"
+	}
+
+	if pageSize > 0 {
+		url += comma + "pageSize=" + strconv.Itoa(pageSize)
+	}
+
+	url = fmt.Sprintf(pathNamespacesFromAccount, address.Address) + url
+
+	res := make([]*namespaceInfoDTO, 0)
+	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, &res)
+
+	if err == nil {
+
+		err = ListNamespaceInfoFromDTO(res, &nsList)
+
+		if err == nil {
+			return nsList, resp, err
+		}
+	}
+
+	//	err occurent
+	return nsList, resp, err
 }
 
-const pathNamespacesFromAccount = "/account/namespaces"
+const pathNamespacesFromAccounts = "/account/namespaces"
 
 // GetNamespacesFromAccounts get required params addresses, other skipped if value is empty
 func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,
@@ -127,21 +153,14 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 		url += comma + "pageSize=" + strconv.Itoa(pageSize)
 	}
 
-	url = pathNamespacesFromAccount + url
+	url = pathNamespacesFromAccounts + url
 
 	res := make([]*namespaceInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", url, &addresses, &res)
 
 	if err == nil {
 
-		for _, nsInfoDTO := range res {
-			nsInfo, err := NamespaceInfoFromDTO(nsInfoDTO)
-			if err != nil {
-				return nsList, resp, err
-			}
-			nsList.list = append(nsList.list, nsInfo)
-		}
-
+		err = ListNamespaceInfoFromDTO(res, &nsList)
 		if err == nil {
 			return nsList, resp, err
 		}
@@ -149,6 +168,18 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 
 	//	err occurent
 	return nsList, resp, err
+}
+func ListNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo) error {
+
+	for _, nsInfoDTO := range res {
+		nsInfo, err := NamespaceInfoFromDTO(nsInfoDTO)
+		if err != nil {
+			return err
+		}
+		nsList.list = append(nsList.list, nsInfo)
+	}
+
+	return nil
 }
 
 //NamespaceInfoFromDTO create & return new NamespaceInfo from namespaceInfoDTO
