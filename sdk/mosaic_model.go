@@ -63,24 +63,3 @@ type NamespaceMosaicMetaDTO struct {
 	Index  int
 	Id     string
 } /* NamespaceMosaicMetaDTO */
-func (ref *NamespaceInfoDTO) extractLevels() []*NamespaceId {
-
-	levels := make([]*NamespaceId, 3)
-	var err error
-
-	nsId := NewNamespaceId(ref.Namespace.Level0, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-
-	nsId = NewNamespaceId(ref.Namespace.Level1, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-
-	nsId = NewNamespaceId(ref.Namespace.Level2, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-	return levels
-}

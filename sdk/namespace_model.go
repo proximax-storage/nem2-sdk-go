@@ -84,6 +84,7 @@ const (
 	RootNamespace NamespaceType = iota
 	SubNamespace
 ) /* NamespaceType */
+
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
 	active      bool
@@ -94,9 +95,10 @@ type NamespaceInfo struct {
 	levels      []*NamespaceId
 	parentId    *NamespaceId
 	owner       *PublicAccount
-	startHeight *uint64DTO
-	endHeight   *uint64DTO
+	startHeight *big.Int
+	endHeight   *big.Int
 } /* NamespaceInfo */
+
 func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
 	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
 	if err != nil {
@@ -110,10 +112,10 @@ func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
 		NamespaceType(nsInfoDTO.Namespace.Type),
 		nsInfoDTO.Namespace.Depth,
 		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId.toStruct(), ""),
 		pubAcc,
-		nsInfoDTO.Namespace.StartHeight,
-		nsInfoDTO.Namespace.EndHeight,
+		nsInfoDTO.Namespace.StartHeight.toStruct(),
+		nsInfoDTO.Namespace.EndHeight.toStruct(),
 	}, nil
 }
 
