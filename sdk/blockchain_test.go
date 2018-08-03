@@ -1,17 +1,17 @@
 package sdk
 
 import (
-	"testing"
-	"net/http"
-	"fmt"
 	"context"
+	"fmt"
+	"net/http"
 	"reflect"
+	"testing"
 )
 
-func TestBlockchainService_GetChainHeight(t *testing.T) {
+func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
 	client, mux, _, teardown, err := setupMockServer()
 	if err != nil {
-		t.Errorf("Blockchain.GetChainHeight error setting up mock server: %v", err)
+		t.Errorf("Blockchain.GetBlockchainHeight error setting up mock server: %v", err)
 	}
 	defer teardown()
 
@@ -20,21 +20,45 @@ func TestBlockchainService_GetChainHeight(t *testing.T) {
 		fmt.Fprint(w, `{"height":[11235,0]}`)
 	})
 
-	got, _, err := client.Blockchain.GetChainHeight(context.Background())
+	got, _, err := client.Blockchain.GetBlockchainHeight(context.Background())
 	if err != nil {
-		t.Errorf("Blockchain.GetChainHeight returned error: %v", err)
+		t.Errorf("Blockchain.GetBlockchainHeight returned error: %v", err)
 	}
 
 	want := &ChainHeight{Height: []uint64{11235, 0}}
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Blockchain.GetChainHeight returned %+v, want %+v", got, want)
+		t.Errorf("Blockchain.GetBlockchainHeight returned %+v, want %+v", got, want)
 	}
 }
 
-func TestBlockchainService_GetChainScore(t *testing.T) {
+func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
 	client, mux, _, teardown, err := setupMockServer()
 	if err != nil {
-		t.Errorf("Blockchain.GetChainScore error setting up mock server: %v", err)
+		t.Errorf("Blockchain.GetBlockchainStorage error setting up mock server: %v", err)
+	}
+
+	defer teardown()
+
+	mux.HandleFunc("/diagnostic/storage", func(w http.ResponseWriter, r *http.Request) {
+		// Mock JSON response
+		fmt.Fprint(w, `{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`)
+	})
+
+	got, _, err := client.Blockchain.GetBlockchainStorage(context.Background())
+	if err != nil {
+		t.Errorf("Blockchain.GetBlockchainStorage returned error: %v", err)
+	}
+
+	want := &BlockchainStorageInfo{NumBlocks: Int(62094), NumTransactions: Int(56), NumAccounts: Int(25)}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("Blockchain.GetBlockchainStorage returned %+v, want %+v", got, want)
+	}
+}
+
+func TestBlockchainService_GetBlockchainScore(t *testing.T) {
+	client, mux, _, teardown, err := setupMockServer()
+	if err != nil {
+		t.Errorf("Blockchain.GetBlockchainScore error setting up mock server: %v", err)
 	}
 
 	defer teardown()
@@ -44,9 +68,9 @@ func TestBlockchainService_GetChainScore(t *testing.T) {
 		fmt.Fprint(w, `{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`)
 	})
 
-	got, _, err := client.Blockchain.GetChainScore(context.Background())
+	got, _, err := client.Blockchain.GetBlockchainScore(context.Background())
 	if err != nil {
-		t.Errorf("Blockchain.GetChainScore returned error: %v", err)
+		t.Errorf("Blockchain.GetBlockchainScore returned error: %v", err)
 	}
 
 	want := &ChainScore{ScoreHigh: []uint64{0, 0}, ScoreLow: []uint64{3999308498, 121398739}}
@@ -55,10 +79,10 @@ func TestBlockchainService_GetChainScore(t *testing.T) {
 	}
 }
 
-func TestBlockchainService_GetBlockHeight(t *testing.T) {
+func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 	client, mux, _, teardown, err := setupMockServer()
 	if err != nil {
-		t.Errorf("Blockchain.GetBlockHeight error setting up mock server: %v", err)
+		t.Errorf("Blockchain.GetBlockByHeight error setting up mock server: %v", err)
 	}
 
 	defer teardown()
@@ -69,16 +93,41 @@ func TestBlockchainService_GetBlockHeight(t *testing.T) {
 		w.Write(blockInfoJSON)
 	})
 
-	got, _, err := client.Blockchain.GetBlockHeight(context.Background(), 1)
+	got, _, err := client.Blockchain.GetBlockByHeight(context.Background(), 1)
 	if err != nil {
-		t.Errorf("Blockchain.GetBlockHeight returned error: %v", err)
+		t.Errorf("Blockchain.GetBlockByHeight returned error: %v", err)
 	}
 
 	if want := wantBlockInfo; !reflect.DeepEqual(got, want) {
-		t.Errorf("Blockchain.GetBlockHeight returned %+v, want %+v", got, want)
+		t.Errorf("Blockchain.GetBlockByHeight returned %+v, want %+v", got, want)
 	}
 }
 
+func TestBlockchainService_GetBlockTransactions(t *testing.T) {
+	client, mux, _, teardown, err := setupMockServer()
+	if err != nil {
+		t.Errorf("Blockchain.GetBlockTransactions error setting up mock server: %v", err)
+	}
+
+	defer teardown()
+
+	mux.HandleFunc("/block/1/transactions", func(w http.ResponseWriter, r *http.Request) {
+		// Mock JSON response
+		w.WriteHeader(http.StatusOK)
+		w.Write(blockTransactionsJSON)
+	})
+
+	got, _, err := client.Blockchain.GetBlockTransactions(context.Background(), 1)
+	if err != nil {
+		t.Errorf("Blockchain.GetBlockTransactions returned error: %v", err)
+	}
+
+	if want := wantBlockTransactions; !reflect.DeepEqual(got, want) {
+		t.Errorf("Blockchain.GetBlockTransactions returned %+v, want %+v", got, want)
+	}
+}
+
+// Mock response for TestBlockchainService_GetBlockHeight
 var blockInfoJSON = []byte(`{
 	"meta": {
 		"hash": "83FB2550BDB72B6F507BDBDE90C265D4A324DF9F1EFEFD9F7BD0FDF6391C30D8",
@@ -123,6 +172,7 @@ var blockInfoJSON = []byte(`{
 	}
 }`)
 
+// Expected value for TestBlockchainService_GetBlockHeight
 var wantBlockInfo = &BlockInfo{
 	&Block{
 		Signature:             String("0BEAE2B3DCDEC268B43797C7A855EC03FDEE0B4687EC14F250D0EA3588ADDD0B42EBB77E14157EAB168B41457CA28395C1EBAB354B0A20CCB5FC73CFA65A3107"),
@@ -152,5 +202,69 @@ var wantBlockInfo = &BlockInfo{
 			"l5YwqzEediC+pPT93Xp1Ywvwb+G6Ut37sM+uYk6D3+Q=",
 			"sBMlE6t3tOc8hXmKzLDJfH6oOoqyvP7xlOsOPMsvsAY=",
 		},
+	},
+}
+
+// Mock response for TestBlockchainService_GetBlockTransactions
+var blockTransactionsJSON = []byte(`[
+	{
+		"meta": {
+			"height": [
+				1,
+				0
+			],
+			"hash": "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+			"merkleComponentHash": "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+			"index": 0,
+			"id": "5B55E02EACCB7B00015DB6D2"
+		},
+		"transaction": {
+			"signature": "AE1558A33F4F595AD5DCEAE4EC11606E815A781E75E3EEC7E9F8BB46BDAF16670C8C36C6815F74FD83487178DDAB8FCE4B4B633875A1549D4FB068ABC5B22A0C",
+			"signer": "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
+			"version": 36866,
+			"type": 16718,
+			"fee": [
+				0,
+				0
+			],
+			"deadline": [
+				1,
+				0
+			],
+			"namespaceType": 0,
+			"duration": [
+				0,
+				0
+			],
+			"namespaceId": [
+				929036875,
+				2226345261
+			],
+			"name": "nem"
+		}
+	}
+]`)
+
+// Expected value for TestBlockchainService_GetBlockHeight
+var wantBlockTransactions = []Transaction{
+	&RegisterNamespaceTransaction{
+		AbstractTransaction: AbstractTransaction{
+			Type:        REGISTER_NAMESPACE,
+			Version:     uint64(2),
+			NetworkType: MIJIN_TEST,
+			Signature:   "AE1558A33F4F595AD5DCEAE4EC11606E815A781E75E3EEC7E9F8BB46BDAF16670C8C36C6815F74FD83487178DDAB8FCE4B4B633875A1549D4FB068ABC5B22A0C",
+			Signer:      "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
+			Fee:         []uint64{0, 0},
+			Deadline:    []uint64{1, 0},
+			TransactionInfo: TransactionInfo{
+				Height:              []uint64{1, 0},
+				Hash:                "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+				MerkleComponentHash: "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+				Index:               0,
+				Id:                  "5B55E02EACCB7B00015DB6D2",
+			},
+		},
+		NamspaceName: "nem",
+		Duration:     []uint64{0, 0},
 	},
 }
