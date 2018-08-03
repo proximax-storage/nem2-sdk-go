@@ -8,19 +8,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
+	"github.com/google/go-querystring/query"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-const (
-	Testnet = byte(0x98)
-	Mainnet = byte(0x68)
-)
-
 // Provides service configuration
 type Config struct {
 	BaseURL *url.URL
-	Network byte
+	NetworkType
 }
 
 // Mainnet config default
@@ -30,7 +27,7 @@ func LoadMainnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, Network: Mainnet}
+	c := &Config{BaseURL: u, NetworkType: MAIN_NET}
 
 	return c, nil
 }
@@ -42,7 +39,7 @@ func LoadTestnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, Network: Testnet}
+	c := &Config{BaseURL: u, NetworkType: TEST_NET}
 
 	return c, nil
 }
@@ -156,4 +153,24 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	}
 
 	return req, nil
+}
+
+func addOptions(s string, opt interface{}) (string, error) {
+	v := reflect.ValueOf(opt)
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return s, nil
+	}
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return s, err
+	}
+
+	qs, err := query.Values(opt)
+	if err != nil {
+		return s, err
+	}
+
+	u.RawQuery = qs.Encode()
+	return u.String(), nil
 }
