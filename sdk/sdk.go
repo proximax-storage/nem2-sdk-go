@@ -54,6 +54,7 @@ type Client struct {
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 	// Services for communicating to the Catapult REST APIs
 	Blockchain  *BlockchainService
+	Namespace   *NamespaceService
 	Transaction *TransactionService
 }
 
@@ -71,11 +72,12 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	c := &Client{client: httpClient, config: conf}
 	c.common.client = c
 	c.Blockchain = (*BlockchainService)(&c.common)
+	c.Namespace = (*NamespaceService)(&c.common)
 	c.Transaction = (*TransactionService)(&c.common)
 
 	return c
 }
-	
+
 // DoNewRequest creates new request, Do it & return result in V
 func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
 	req, err := s.NewRequest(method, path, body)
