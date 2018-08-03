@@ -1,9 +1,12 @@
 package sdk
 
 import (
+	"bytes"
+	jsonLib "encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 // Models
@@ -554,4 +557,285 @@ func ExtractTransactionVersion(version uint64) (uint64, error) {
 		return 0, err
 	}
 	return res, nil
+}
+
+func MapTransactions(b *bytes.Buffer) ([]Transaction, error) {
+	var wg sync.WaitGroup
+	var err error
+
+	m := []jsonLib.RawMessage{}
+
+	json.Unmarshal(b.Bytes(), &m)
+
+	tx := make([]Transaction, len(m))
+	for i, t := range m {
+		wg.Add(1)
+		go func(i int, t jsonLib.RawMessage) {
+			defer wg.Done()
+			json.Marshal(t)
+			tx[i], err = MapTransaction(bytes.NewBuffer([]byte(t)))
+		}(i, t)
+	}
+	wg.Wait()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tx, nil
+}
+
+func MapTransaction(b *bytes.Buffer) (Transaction, error) {
+	rawT := struct {
+		Transaction struct {
+			Type uint32
+		}
+	}{}
+	err := json.Unmarshal(b.Bytes(), &rawT)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := TransactionTypeFromRaw(rawT.Transaction.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case AGGREGATE_BONDED:
+		mapAggregateTransaction(b, AGGREGATE_BONDED)
+	case AGGREGATE_COMPLETE:
+		mapAggregateTransaction(b, AGGREGATE_COMPLETE)
+	case MOSAIC_DEFINITION:
+		rawTx := struct {
+			Tx struct {
+				MosaicDefinitionTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.MosaicDefinitionTransaction
+
+		aTx, err := mapAbstractTransaction(b, MOSAIC_DEFINITION)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case MOSAIC_SUPPLY_CHANGE:
+		rawTx := struct {
+			Tx struct {
+				MosaicSupplyChangeTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.MosaicSupplyChangeTransaction
+
+		aTx, err := mapAbstractTransaction(b, MOSAIC_SUPPLY_CHANGE)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case MODIFY_MULTISIG_ACCOUNT:
+		rawTx := struct {
+			Tx struct {
+				ModifyMultisigAccountTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.ModifyMultisigAccountTransaction
+
+		aTx, err := mapAbstractTransaction(b, MODIFY_MULTISIG_ACCOUNT)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case REGISTER_NAMESPACE:
+		rawTx := struct {
+			Tx struct {
+				RegisterNamespaceTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.RegisterNamespaceTransaction
+
+		aTx, err := mapAbstractTransaction(b, REGISTER_NAMESPACE)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case TRANSFER:
+		rawTx := struct {
+			Tx struct {
+				TransferTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.TransferTransaction
+
+		aTx, err := mapAbstractTransaction(b, TRANSFER)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case LOCK:
+		rawTx := struct {
+			Tx struct {
+				LockFundsTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.LockFundsTransaction
+
+		aTx, err := mapAbstractTransaction(b, LOCK)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case SECRET_LOCK:
+		rawTx := struct {
+			Tx struct {
+				SecretLockTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.SecretLockTransaction
+
+		aTx, err := mapAbstractTransaction(b, SECRET_LOCK)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	case SECRET_PROOF:
+		rawTx := struct {
+			Tx struct {
+				SecretProofTransaction
+			} `json:"transaction"`
+		}{}
+
+		err := json.Unmarshal(b.Bytes(), &rawTx)
+		if err != nil {
+			return nil, err
+		}
+
+		tx := rawTx.Tx.SecretProofTransaction
+
+		aTx, err := mapAbstractTransaction(b, SECRET_PROOF)
+		if err != nil {
+			return nil, err
+		}
+
+		tx.AbstractTransaction = *aTx
+
+		return &tx, nil
+	}
+
+	return nil, nil
+}
+
+func mapAbstractTransaction(b *bytes.Buffer, t TransactionType) (*AbstractTransaction, error) {
+	rawTx := struct {
+		Tx struct {
+			AbstractTransaction
+		} `json:"transaction"`
+		TransactionInfo `json:"meta"`
+	}{}
+
+	err := json.Unmarshal(b.Bytes(), &rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	aTx := rawTx.Tx.AbstractTransaction
+	aTx.Type = t
+	aTx.TransactionInfo = rawTx.TransactionInfo
+
+	nt, err := ExtractNetworkType(aTx.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	tv, err := ExtractTransactionVersion(aTx.Version)
+
+	aTx.Version = tv
+	aTx.NetworkType = nt
+	return &aTx, nil
+}
+
+func mapAggregateTransaction(b *bytes.Buffer, t TransactionType) (*AggregateTransaction, error) {
+	rawTx := struct {
+		Tx struct {
+			AggregateTransaction
+		} `json:"transaction"`
+	}{}
+
+	err := json.Unmarshal(b.Bytes(), &rawTx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := rawTx.Tx.AggregateTransaction
+
+	aTx, err := mapAbstractTransaction(b, t)
+	if err != nil {
+		return nil, err
+	}
+
+	tx.AbstractTransaction = *aTx
+
+	return &tx, nil
 }
