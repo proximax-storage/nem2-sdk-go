@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"unsafe"
+	"math/big"
 )
 
 type NamespaceService service
@@ -24,10 +25,10 @@ func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceServic
 }
 
 type NamespaceId struct {
-	id       *uint64DTO
+	id       *big.Int
 	fullName string
 } /* NamespaceId */
-func NewNamespaceId(id *uint64DTO, namespaceName string) *NamespaceId {
+func NewNamespaceId(id *big.Int, namespaceName string) *NamespaceId {
 
 	if namespaceName == "" {
 		return &NamespaceId{id, ""}
@@ -158,7 +159,7 @@ type ListNamespaceInfo struct {
 	list []*NamespaceInfo
 }
 
-func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
+func generateNamespaceId(namespaceName string) (*big.Int, error) {
 
 	list, err := generateNamespacePath(namespaceName)
 	if err != nil {
@@ -170,10 +171,10 @@ func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
 
 var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
-func generateNamespacePath(name string) ([]*uint64DTO, error) {
+func generateNamespacePath(name string) ([]*big.Int, error) {
 
 	parts := strings.Split(name, ".")
-	path := make([]*uint64DTO, 0)
+	path := make([]*big.Int, 0)
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace name")
 	}
@@ -182,7 +183,7 @@ func generateNamespacePath(name string) ([]*uint64DTO, error) {
 		return nil, errors.New("too many parts")
 	}
 
-	namespaceId := NewRootUint64DTO()
+	namespaceId := big.NewInt(0)
 	for i, part := range parts {
 		if !regValidNamespace.MatchString(part) {
 			return nil, errors.New("invalid Namespace name")
@@ -198,14 +199,14 @@ func generateNamespacePath(name string) ([]*uint64DTO, error) {
 
 	return path, nil
 }
-func generateId(name string, parentId *uint64DTO) (*uint64DTO, error) {
 
+func generateId(name string, parentId *big.Int) (*big.Int, error) {
+	var int big.Int
 	result := sha3.New256()
-	_, err := result.Write(append(parentId[1].Bytes(), parentId[0].Bytes()...))
+	_, err := result.Write(parentId.Bytes())
 	if err == nil {
 		t := result.Sum([]byte(name))
-		return NewUint64DTO(t[:4], t[4:8]), nil
+		return int.SetBytes(append(t[:4], t[4:8]...)), nil
 	}
-
 	return nil, err
 }

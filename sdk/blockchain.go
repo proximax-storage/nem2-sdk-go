@@ -11,8 +11,8 @@ type BlockchainService service
 // Get the Chain Height
 func (b *BlockchainService) GetChainHeight(ctx context.Context) (*ChainHeight, *http.Response, error) {
 	bh := &ChainHeight{}
-  
-	resp, err := b.client.DoNewRequest(ctx, "GET", "chain/height", nil, bh)=
+
+	resp, err := b.client.DoNewRequest(ctx, "GET", "chain/height", nil, bh)
 	if err != nil {
 		return nil, nil, err
 	}

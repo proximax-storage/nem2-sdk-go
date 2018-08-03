@@ -54,10 +54,9 @@ const (
 	INCREASE MosaicSupplyType = 1
 )
 
-
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
-}  
+}
 
 type NamespaceMosaicMetaDTO struct {
 	Active bool

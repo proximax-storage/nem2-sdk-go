@@ -1,123 +1,116 @@
 package sdk
 
-import (
-	"encoding/base32"
-	"errors"
-	"golang.org/x/crypto/ripemd160"
-	"golang.org/x/crypto/sha3"
-	"strconv"
-	"sync"
+import ("fmt"
+"context"
+	"net/http"
+	"bytes"
 )
 
-type Address struct {
-	Address     string `json:"address"`
-	NetworkType NetworkType
-}
+type AccountService service
 
-func createFromPublicKey(publicKey string, networkType NetworkType) (*Address, error) {
-	add, err := generateEncoded(byte(uint8(networkType)), publicKey)
+var mainAccountRoute = "account"
+
+func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, *http.Response, error) {
+	dto := &accountInfoDTO{}
+
+	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainTransactionRoute, address.Address),nil, dto)
 	if err != nil {
-		return nil, err
-	}
-	return &Address{add,
-		networkType,
-	}, nil
-
-}
-
-const NUM_CHECKSUM_BYTES = 4
-
-func generateEncoded(version byte, publicKey string) (string, error) {
-
-	// step 1: sha3 hash of the public key
-
-	sha3PublicKeyHash := sha3.New256()
-	_, err := sha3PublicKeyHash.Write([]byte(publicKey))
-	if err == nil {
-
-		// step 2: ripemd160 hash of (1)
-		ripemd160StepOneHash := ripemd160.New()
-		_, err = ripemd160StepOneHash.Write(sha3PublicKeyHash.Sum(nil))
-		if err == nil {
-
-			// step 3: add version byte in front of (2)
-			versionPrefixedRipemd160Hash := ripemd160StepOneHash.Sum([]byte{version})
-
-			// step 4: get the checksum of (3)
-			sha3StepThreeHash := sha3.New256()
-			_, err = sha3StepThreeHash.Write(versionPrefixedRipemd160Hash)
-			if err == nil {
-
-				stepThreeChecksum := sha3StepThreeHash.Sum(nil)
-
-				// step 5: concatenate (3) and (4)
-				concatStepThreeAndStepSix := append(versionPrefixedRipemd160Hash, stepThreeChecksum[:NUM_CHECKSUM_BYTES]...)
-
-				// step 6: base32 encode (5)
-				return base32.HexEncoding.EncodeToString(concatStepThreeAndStepSix), nil
-			}
-		}
-	}
-	return "", err
-}
-
-//TODO: this marshal return one string - change in future
-func (ref *Address) MarshalJSON() (buf []byte, err error) {
-	return append([]byte(`"`+ref.Address), '"'), nil
-}
-
-type Addresses struct {
-	list []*Address
-	lock sync.RWMutex
-}
-
-func (ref *Addresses) AddAddress(address *Address) {
-	ref.lock.Lock()
-	defer ref.lock.Unlock()
-
-	ref.list = append(ref.list, address)
-}
-func (ref *Addresses) GetAddress(i int) (*Address, error) {
-
-	if (i >= 0) && (i < len(ref.list)) {
-		ref.lock.RLock()
-		defer ref.lock.RUnlock()
-		return ref.list[i], nil
+		return nil, nil, err
 	}
 
-	return nil, errors.New("index out of range - " + strconv.Itoa(i))
-
-}
-func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
-	buf = []byte(`{"addresses":[`)
-	for i, address := range ref.list {
-		b, _ := address.MarshalJSON()
-		if i > 0 {
-			buf = append(buf, ',')
-		}
-		buf = append(buf, b...)
-	}
-
-	buf = append(buf, ']', '}')
-	return
-}
-func (ref *Addresses) UnmarshalJSON(buf []byte) error {
-	return nil
+	return dto.toStruct(), resp, nil
 }
 
-type PublicAccount struct {
-	Address   *Address
-	PublicKey string
-}
+func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses *Addresses) ([]*AccountInfo, *http.Response, error) {
+	var dtos []*accountInfoDTO
+	var infos []*AccountInfo
 
-func NewPublicAccount(publicKey string, networkType NetworkType) (*PublicAccount, error) {
-	add, err := createFromPublicKey(publicKey, networkType)
+	resp, err := a.client.DoNewRequest(ctx, "POST", mainTransactionRoute, addresses, dtos)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	ref := &PublicAccount{
-		add,
-		publicKey,
+
+	for i, dto := range dtos {
+		infos[i] = dto.toStruct()
 	}
-	return ref, nil
+
+	return infos, resp, nil
+}
+
+func (a *AccountService) GetMultisigAccountInfo(ctx context.Context, address *Address) (*MultisigAccountInfo, *http.Response, error) {
+	dto := &multisigAccountInfoDTO{}
+	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/multisig", mainTransactionRoute, address.Address), nil, dto)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info, err := dto.toStruct(a.client.config.NetworkType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return info, resp, nil
+}
+
+func (a *AccountService) GetMultisigAccountGraphInfo(ctx context.Context, address *Address) (*MultisigAccountGraphInfo, *http.Response, error) {
+	dto := &multisigAccountGraphInfoDTOS{}
+	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/multisig/graph", mainTransactionRoute, address.Address), nil, dto)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info, err := dto.toStruct(a.client.config.NetworkType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return info, resp, nil
+}
+
+func (a *AccountService) Transactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+	return a.findTransactions(ctx, account, opt, "/transactions")
+}
+
+func (a *AccountService) IncomingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+	return a.findTransactions(ctx, account, opt, "/transactions/incoming")
+}
+
+func (a *AccountService) OutgoingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+	return a.findTransactions(ctx, account, opt, "/transactions/outgoing")
+}
+
+func (a *AccountService) UnconfirmedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+	return a.findTransactions(ctx, account, opt, "/transactions/unconfirmed")
+}
+
+func (a *AccountService) AggregateBondedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]*AggregateTransaction, *http.Response, error) {
+	var atxs []*AggregateTransaction
+	txs, resp, err :=a.findTransactions(ctx, account, opt, "/transactions/aggregateBondedTransactions")
+
+	for i, tx := range txs {
+		atxs[i] = tx.(*AggregateTransaction)
+	}
+
+	return atxs, resp, err
+}
+
+func (a *AccountService) findTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption, path string) ([]Transaction, *http.Response, error) {
+	var b bytes.Buffer
+
+	u, err := addOptions(fmt.Sprintf("%s/%s/%s", mainTransactionRoute, account.PublicKey, path), opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resp, err := a.client.DoNewRequest(ctx, "GET", u, nil, &b)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	txs, err := MapTransactions(&b)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return txs, resp, nil
 }
