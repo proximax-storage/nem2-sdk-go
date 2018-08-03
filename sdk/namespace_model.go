@@ -1,3 +1,7 @@
+// Copyright 2017 Author: Ruslan Bikchentaev. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package sdk
 
 import (
@@ -8,17 +12,14 @@ import (
 	"regexp"
 	"strings"
 	"unsafe"
+	"math/big"
 )
 
-// NamespaceId id structure describes namespace id
 type NamespaceId struct {
-	Id       *uint64DTO
-	FullName string
-}
-
-// NewNamespaceId create NamespaceId from namespace string name if he present
-// other create NamespaceId from biginteger id
-func NewNamespaceId(id *uint64DTO, namespaceName string) *NamespaceId {
+	id       *big.Int
+	fullName string
+} /* NamespaceId */
+func NewNamespaceId(id *big.Int, namespaceName string) *NamespaceId {
 
 	if namespaceName == "" {
 		return &NamespaceId{id, ""}
@@ -87,12 +88,15 @@ func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 
 // NamespaceName name info structure describes basic information of a namespace and name.
 type NamespaceName struct {
-	NamespaceId *NamespaceId
-	Name        string
-	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
-}
-
-// NamespaceType containing namespace supply type.
+	namespaceId *NamespaceId
+	name        string
+	parentId    *NamespaceId /* Optional NamespaceId my be nil */
+} /* NamespaceName */
+type NamespaceNameDTO struct {
+	namespaceId *uint64DTO
+	name        string
+	parentId    *uint64DTO
+} /* NamespaceNameDTO */
 type NamespaceType int
 
 const (
@@ -102,16 +106,35 @@ const (
 
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
-	Active      bool
-	Index       int
-	MetaId      string
-	TypeSpace   NamespaceType
-	Depth       int
-	Levels      []*NamespaceId
-	ParentId    *NamespaceId
-	Owner       *PublicAccount
-	StartHeight *uint64DTO
-	EndHeight   *uint64DTO
+	active      bool
+	index       int
+	metaId      string
+	typeSpace   NamespaceType
+	depth       int
+	levels      []*NamespaceId
+	parentId    *NamespaceId
+	owner       *PublicAccount
+	startHeight *uint64DTO
+	endHeight   *uint64DTO
+} /* NamespaceInfo */
+func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
+	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
+	if err != nil {
+		return nil, err
+	}
+
+	return &NamespaceInfo{
+		nsInfoDTO.Meta.Active,
+		nsInfoDTO.Meta.Index,
+		nsInfoDTO.Meta.Id,
+		NamespaceType(nsInfoDTO.Namespace.Type),
+		nsInfoDTO.Namespace.Depth,
+		nsInfoDTO.extractLevels(),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+		pubAcc,
+		nsInfoDTO.Namespace.StartHeight,
+		nsInfoDTO.Namespace.EndHeight,
+	}, nil
 }
 
 const tplNamespaceInfo = `"active": %v,
@@ -158,7 +181,7 @@ type ListNamespaceInfo struct {
 }
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
-func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
+func generateNamespaceId(namespaceName string) (*big.Int, error) {
 
 	list, err := generateNamespacePath(namespaceName)
 	if err != nil {
@@ -172,10 +195,10 @@ func generateNamespaceId(namespaceName string) (*uint64DTO, error) {
 var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
 // generateNamespacePath create list NamespaceId from string
-func generateNamespacePath(name string) ([]*uint64DTO, error) {
+func generateNamespacePath(name string) ([]*big.Int, error) {
 
 	parts := strings.Split(name, ".")
-	path := make([]*uint64DTO, 0)
+	path := make([]*big.Int, 0)
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace Name")
 	}
@@ -184,10 +207,10 @@ func generateNamespacePath(name string) ([]*uint64DTO, error) {
 		return nil, errors.New("too many parts")
 	}
 
-	namespaceId := NewRootUint64DTO()
+	namespaceId := big.NewInt(0)
 	for i, part := range parts {
 		if !regValidNamespace.MatchString(part) {
-			return nil, errors.New("invalid Namespace Name")
+			return nil, errors.New("invalid Namespace name")
 		}
 
 		var err error
@@ -200,13 +223,14 @@ func generateNamespacePath(name string) ([]*uint64DTO, error) {
 
 	return path, nil
 }
-func generateId(name string, parentId *uint64DTO) (*uint64DTO, error) {
 
+func generateId(name string, parentId *big.Int) (*big.Int, error) {
+	var int big.Int
 	result := sha3.New256()
-	_, err := result.Write(append(parentId[1].Bytes(), parentId[0].Bytes()...))
+	_, err := result.Write(parentId.Bytes())
 	if err == nil {
 		t := result.Sum([]byte(name))
-		return NewUint64DTO(t[:4], t[4:8]), nil
+		return int.SetBytes(append(t[:4], t[4:8]...)), nil
 	}
 
 	return nil, err

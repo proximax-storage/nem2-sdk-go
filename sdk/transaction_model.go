@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"math/big"
+	"bytes"
 )
 
 // Models
@@ -16,14 +18,14 @@ type Transaction interface {
 
 // AbstractTransaction
 type AbstractTransaction struct {
-	NetworkType     `json:"networkType"`
-	TransactionInfo `json:"transactionInfo"`
-	Type            TransactionType `json:"type"`
-	Version         uint64          `json:"version"`
-	Fee             []uint64        `json:"fee"`
-	Deadline        []uint64        `json:"deadline"`
-	Signature       string          `json:"signature"`
-	Signer          string          `json:"signer"`
+	NetworkType
+	*TransactionInfo
+	Type             TransactionType
+	Version          uint64
+	Fee              *big.Int
+	Deadline         *big.Int
+	Signature        string
+	Signer           string
 }
 
 func (tx *AbstractTransaction) String() string {
@@ -49,15 +51,53 @@ func (tx *AbstractTransaction) String() string {
 	)
 }
 
+type abstractTransactionDTO struct {
+	NetworkType      `json:"networkType"`
+	Type             uint32 `json:"type"`
+	Version          uint64          `json:"version"`
+	Fee              uint64DTO        `json:"fee"`
+	Deadline         uint64DTO        `json:"deadline"`
+	Signature        string          `json:"signature"`
+	Signer           string          `json:"signer"`
+}
+
+func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*AbstractTransaction, error) {
+	t, err := TransactionTypeFromRaw(dto.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	nt, err := ExtractNetworkType(dto.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	tv, err := ExtractTransactionVersion(dto.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AbstractTransaction{
+		nt,
+		tInfo,
+		t,
+		tv,
+		dto.Fee.toStruct(),
+		dto.Deadline.toStruct(),
+		dto.Signature,
+		dto.Signer,
+	}, nil
+}
+
 // Transaction Info
 type TransactionInfo struct {
-	Height              []uint64 `json:"height"`
-	Index               uint32   `json:"index"`
-	Id                  string   `json:"id"`
-	Hash                string   `json:"hash"`
-	MerkleComponentHash string   `json:"merkleComponentHash"`
-	AggregateHash       string   `json:"aggregate_hash,omitempty"`
-	AggregateId         string   `json:"aggregate_id,omitempty"`
+	Height              *big.Int
+	Index               uint32
+	Id                  string
+	Hash                string
+	MerkleComponentHash string
+	AggregateHash       string
+	AggregateId         string
 }
 
 func (ti *TransactionInfo) String() string {
@@ -81,11 +121,33 @@ func (ti *TransactionInfo) String() string {
 	)
 }
 
+type transactionInfoDTO struct {
+	Height              uint64DTO `json:"height"`
+	Index               uint32    `json:"index"`
+	Id                  string    `json:"id"`
+	Hash                string    `json:"hash"`
+	MerkleComponentHash string    `json:"merkleComponentHash"`
+	AggregateHash       string    `json:"aggregate_hash,omitempty"`
+	AggregateId         string    `json:"aggregate_id,omitempty"`
+}
+
+func (dto *transactionInfoDTO) toStruct() *TransactionInfo {
+	return &TransactionInfo{
+		dto.Height.toStruct(),
+		dto.Index,
+		dto.Id,
+		dto.Hash,
+		dto.MerkleComponentHash,
+		dto.AggregateHash,
+		dto.AggregateId,
+	}
+}
+
 // AggregateTransaction
 type AggregateTransaction struct {
 	AbstractTransaction
-	InnerTransactions []Transaction                     `json:"transactions"`
-	Cosignatures      []AggregateTransactionCosignature `json:"cosignatures"`
+	InnerTransactions []Transaction
+	Cosignatures      []*AggregateTransactionCosignature
 }
 
 func (tx *AggregateTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -105,13 +167,45 @@ func (tx *AggregateTransaction) String() string {
 	)
 }
 
+type aggregateTransactionDTO struct {
+	Tx struct {
+		ADto              abstractTransactionDTO
+		Cosignatures      []*AggregateTransactionCosignature `json:"cosignatures"`
+		InnerTransactions []map[string]interface{}           `json:"transactions"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO  `json:"meta"`
+}
+
+func (dto *aggregateTransactionDTO) toStruct() (*AggregateTransaction, error) {
+	txsj, err := json.Marshal(dto.Tx.InnerTransactions)
+	if err != nil {
+		return nil, err
+	}
+
+	txs, err := MapTransactions(bytes.NewBuffer(txsj))
+	if err != nil {
+		return nil, err
+	}
+
+	atx, err := dto.Tx.ADto.toStruct(dto.TDto.toStruct())
+	if err != nil {
+		return nil, err
+	}
+
+	return &AggregateTransaction{
+		*atx,
+		txs,
+		dto.Tx.Cosignatures,
+	}, nil
+}
+
 // MosaicDefinitionTransaction
 type MosaicDefinitionTransaction struct {
 	AbstractTransaction
-	//NamespaceId
-	MosaicProperties
-	MosaicId   []uint64 `json:"mosaicId"`
-	MosaicName string   `json:"name"`
+	*MosaicProperties
+	*NamespaceId
+	MosaicId   *big.Int
+	MosaicName string
 }
 
 func (tx *MosaicDefinitionTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -133,12 +227,27 @@ func (tx *MosaicDefinitionTransaction) String() string {
 	)
 }
 
+type mosaicDefinitionTransactionDTO struct {
+	Tx struct {
+		ADto       abstractTransactionDTO
+		Properties string    `json:"properties"`
+		ParentId   uint64DTO `json:"parentId"`
+		MosaicId   uint64DTO  `json:"mosaicId"`
+		MosaicName string    `json:"name"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransaction, error) {
+	return &MosaicDefinitionTransaction{}, nil
+}
+
 // MosaicSupplyChangeTransaction
 type MosaicSupplyChangeTransaction struct {
 	AbstractTransaction
-	MosaicSupplyType `json:"direction"`
-	MosaicId         []uint64 `json:"mosaicId"`
-	Delta            uint64   `json:"delta"`
+	MosaicSupplyType
+	MosaicId         *big.Int
+	Delta            *big.Int
 }
 
 func (tx *MosaicSupplyChangeTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -160,37 +269,26 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 	)
 }
 
-// tpl struct for encoding server responce
-type MosaicDTO struct {
-	MosaicId []uint64 `json:"id"`
-	Amount   []uint64 `json:"amount"`
+type mosaicSupplyChangeTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		MosaicSupplyType   `json:"direction"`
+		MosaicId uint64DTO `json:"mosaicId"`
+		Delta    uint64DTO `json:"delta"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
 }
-type MosaicsDTO []MosaicDTO
 
-func (ref MosaicsDTO) String() string {
-	s := "["
-	for i, m := range ref {
-		if i > 0 {
-			s += ", "
-		}
-		s += fmt.Sprintf(
-			`
-			"MosaicId": %d,
-			"Amount": %d 
-		`,
-			m.MosaicId,
-			m.Amount,
-		)
-	}
-	return s + "]"
+func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTransaction, error) {
+	return &MosaicSupplyChangeTransaction{}, nil
 }
 
 // TransferTransaction
 type TransferTransaction struct {
 	AbstractTransaction
-	Message `json:"message"`
-	Mosaics MosaicsDTO `json:"mosaics"`
-	Address string     `json:"recipient"`
+	Message
+	Mosaics []*Mosaic
+	Address string
 }
 
 func (tx *TransferTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -201,7 +299,7 @@ func (tx *TransferTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaics": %s,
+			"Mosaics": %d,
 			"Address": %s,
 			"Message": %s,
 		`,
@@ -212,12 +310,26 @@ func (tx *TransferTransaction) String() string {
 	)
 }
 
+type transferTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		Message `json:"message"`
+		Mosaics []*Mosaic `json:"mosaics"`
+		Address string    `json:"recipient"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
+ return &TransferTransaction{}, nil
+}
+
 // ModifyMultisigAccountTransaction
 type ModifyMultisigAccountTransaction struct {
 	AbstractTransaction
-	MinApprovalDelta int32                             `json:"minApprovalDelta"`
-	MinRemovalDelta  int32                             `json:"minRemovalDelta"`
-	Modifications    []MultisigCosignatoryModification `json:"modifications"`
+	MinApprovalDelta int32
+	MinRemovalDelta  int32
+	Modifications    []*MultisigCosignatoryModification
 }
 
 func (tx *ModifyMultisigAccountTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -239,14 +351,28 @@ func (tx *ModifyMultisigAccountTransaction) String() string {
 	)
 }
 
+type modifyMultisigAccountTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		MinApprovalDelta int32                              `json:"minApprovalDelta"`
+		MinRemovalDelta  int32                              `json:"minRemovalDelta"`
+		Modifications    []*MultisigCosignatoryModification `json:"modifications"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *modifyMultisigAccountTransactionDTO) toStruct() (*ModifyMultisigAccountTransaction, error) {
+	return &ModifyMultisigAccountTransaction{}, nil
+}
+
 // RegisterNamespaceTransaction
 type RegisterNamespaceTransaction struct {
 	AbstractTransaction
-	//NamespaceId
+	NamespaceId
 	NamspaceName string   `json:"name"`
-	Duration     []uint64 `json:"duration"`
-	//ParentId NamespaceId
-	//NamespaceType
+	Duration     *big.Int `json:"duration"`
+	ParentId     NamespaceId
+	NamespaceType
 }
 
 func (tx *RegisterNamespaceTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -264,6 +390,23 @@ func (tx *RegisterNamespaceTransaction) String() string {
 		tx.NamspaceName,
 		tx.Duration,
 	)
+}
+
+type registerNamespaceTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		NamespaceId
+		NamespaceType
+		NamspaceName string   `json:"name"`
+		Duration     uint64DTO `json:"duration"`
+		ParentId     NamespaceId
+
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *registerNamespaceTransactionDTO) toStruct() (*RegisterNamespaceTransaction, error) {
+	return &RegisterNamespaceTransaction{}, nil
 }
 
 // LockFundsTransaction
@@ -293,12 +436,27 @@ func (tx *LockFundsTransaction) String() string {
 	)
 }
 
+type lockFundsTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		Mosaic   `json:"mosaic"`
+		Duration uint64 `json:"duration"`
+		Hash     string `json:"hash"`
+
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
+	return &LockFundsTransaction{}, nil
+}
+
 // SecretLockTransaction
 type SecretLockTransaction struct {
 	AbstractTransaction
-	Mosaic    `json:"mosaic"`
+	*Mosaic   `json:"mosaic"`
 	HashType  `json:"hashAlgorithm"`
-	Duration  []uint64 `json:"duration"`
+	Duration  *big.Int `json:"duration"`
 	Secret    string   `json:"secret"`
 	Recipient string   `json:"recipient"`
 }
@@ -324,6 +482,22 @@ func (tx *SecretLockTransaction) String() string {
 		tx.Secret,
 		tx.Recipient,
 	)
+}
+
+type secretLockTransactionDTO struct {
+	Tx struct {
+		ADto     abstractTransactionDTO
+		*Mosaic   `json:"mosaic"`
+		HashType  `json:"hashAlgorithm"`
+		Duration  uint64DTO `json:"duration"`
+		Secret    string   `json:"secret"`
+		Recipient string   `json:"recipient"`
+	} `json:"transaction"`
+	TDto transactionInfoDTO `json:"meta"`
+}
+
+func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) {
+	return &SecretLockTransaction{}, nil
 }
 
 // SecretProofTransaction
@@ -353,8 +527,19 @@ func (tx *SecretProofTransaction) String() string {
 	)
 }
 
+type secretProofTransactionDTO struct {
+	AbstractTransaction
+	HashType `json:"hashAlgorithm"`
+	Secret   string `json:"secret"`
+	Proof    string `json:"proof"`
+}
+
+func (dto *secretProofTransactionDTO) toStruct() (*SecretLockTransaction, error) {
+	return &SecretLockTransaction{}, nil
+}
+
 type CosignatureTransaction struct {
-	TransactionToCosign AggregateTransaction
+	TransactionToCosign *AggregateTransaction
 }
 
 func (tx *CosignatureTransaction) SignWith(account PublicAccount) (Signed, error) {
@@ -402,8 +587,8 @@ func (agt *AggregateTransactionCosignature) String() string {
 
 // MultisigCosignatoryModification
 type MultisigCosignatoryModification struct {
-	Type          MultisigCosignatoryModificationType `json:"type"`
-	PublicAccount string                              `json:"cosignatoryPublicKey"`
+	Type          MultisigCosignatoryModificationType
+	PublicAccount
 }
 
 func (m *MultisigCosignatoryModification) String() string {
@@ -417,13 +602,22 @@ func (m *MultisigCosignatoryModification) String() string {
 	)
 }
 
+type multisigCosignatoryModificationDTO struct {
+	Type          MultisigCosignatoryModificationType `json:"type"`
+	PublicAccount string                              `json:"cosignatoryPublicKey"`
+}
+
+func (dto *multisigCosignatoryModificationDTO) toStruct() (*MultisigCosignatoryModification, error) {
+	return &MultisigCosignatoryModification{}, nil
+}
+
 // TransactionStatus
 type TransactionStatus struct {
 	Group    string   `json:"group"`
 	Status   string   `json:"status"`
 	Hash     string   `json:"hash"`
-	Deadline []uint64 `json:"deadline"`
-	Height   []uint64 `json:"height"`
+	Deadline *big.Int `json:"deadline"`
+	Height   *big.Int `json:"height"`
 }
 
 func (ts *TransactionStatus) String() string {
@@ -443,13 +637,25 @@ func (ts *TransactionStatus) String() string {
 	)
 }
 
+type transactionStatusDTO struct {
+	Group    string   `json:"group"`
+	Status   string   `json:"status"`
+	Hash     string   `json:"hash"`
+	Deadline uint64DTO `json:"deadline"`
+	Height   uint64DTO `json:"height"`
+}
+
+func (dto *transactionStatusDTO) toStruct() (*TransactionStatus, error) {
+	return &TransactionStatus{}, nil
+}
+
 // TransactionIds
-type TransactionIds struct {
+type TransactionIdsDTO struct {
 	Ids []string `json:"transactionIds"`
 }
 
 // TransactionHashes
-type TransactionHashes struct {
+type TransactionHashesDTO struct {
 	Hashes []string `json:"hashes"`
 }
 

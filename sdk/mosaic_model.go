@@ -124,20 +124,10 @@ type MosaicProperties struct {
 	SupplyMutable bool
 	Transferable  bool
 	LevyMutable   bool
-	Divisibility  int64
-	Duration      time.Duration
+	Divisibility  int
+	Duration      uint
 }
 
-func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration time.Duration) *MosaicProperties {
-	ref := &MosaicProperties{
-		supplyMutable,
-		transferable,
-		levyMutable,
-		divisibility,
-		duration,
-	}
-	return ref
-}
 func (mp *MosaicProperties) String() string {
 	return fmt.Sprintf(
 		`
@@ -155,23 +145,41 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
-//MosaicSupplyType mosaic supply type :
-// Decrease the supply - DECREASE.
-//Increase the supply - INCREASE.
 type MosaicSupplyType uint
 
 const (
-	DECREASE MosaicSupplyType = iota
-	INCREASE
+	DECREASE MosaicSupplyType = 0
+	INCREASE MosaicSupplyType = 1
 )
+
 
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
-}
+}  
 
-type MosaicName struct { /* public  */
+type NamespaceMosaicMetaDTO struct {
+	Active bool
+	Index  int
+	Id     string
+} /* NamespaceMosaicMetaDTO */
+func (ref *NamespaceInfoDTO) extractLevels() []*NamespaceId {
 
-	MosaicId *MosaicId    // private final
-	Name     string       // private final
-	ParentId *NamespaceId // private final
+	levels := make([]*NamespaceId, 3)
+	var err error
+
+	nsId := NewNamespaceId(ref.Namespace.Level0, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+
+	nsId = NewNamespaceId(ref.Namespace.Level1, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+
+	nsId = NewNamespaceId(ref.Namespace.Level2, "")
+	if err == nil {
+		levels = append(levels, nsId)
+	}
+	return levels
 }
