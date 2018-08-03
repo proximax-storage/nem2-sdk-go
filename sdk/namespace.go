@@ -93,14 +93,14 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 	return nsInfo, resp, err
 }
 
-const pathNamespacenames = "/namespace/names"
-
 // namespaceNameDTO temporary struct for reading responce & fill NamespaceName
 type namespaceNameDTO struct {
 	NamespaceId *uint64DTO
 	Name        string
 	ParentId    *uint64DTO
 }
+
+const pathNamespacenames = "/namespace/names"
 
 // GetNamespaceNames
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {

@@ -26,15 +26,9 @@ var transaction = &TransferTransaction{
 			Id:                  "5B55E02EACCB7B00015DB6E1",
 		},
 	},
-	Mosaics: []Mosaic{Mosaic{
-		MosaicId: []uint64{
-			3646934825,
-			3576016193,
-		},
-		Amount: []uint64{
-			3863990592,
-			95248,
-		},
+	Mosaics: MosaicsDTO{{
+		MosaicId: []uint64{3646934825, 3576016193},
+		Amount:   []uint64{3863990592, 95248},
 	}},
 	Address: "903AE571BCD5C85B746F48B4506C8B322AB8B186F48D3B0BC5",
 }
@@ -53,11 +47,12 @@ func TestTransactionService_GetTransaction_TransferTransaction(t *testing.T) {
 	tx, _, err := client.Transaction.GetTransaction(context.Background(), transactionId)
 	if err != nil {
 		t.Errorf("Transaction.GetTransaction returned error: %s", err)
-	}
+	} else {
 
-	want := transaction
-	if !reflect.DeepEqual(tx, want) {
-		t.Errorf("Transaction.GetTransaction returned %s, want %s", tx, want)
+		want := transaction
+		if !reflect.DeepEqual(tx, want) {
+			t.Errorf("Transaction.GetTransaction returned %s, want %s", tx, want)
+		}
 	}
 }
 

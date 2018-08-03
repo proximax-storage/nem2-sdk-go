@@ -20,6 +20,7 @@ var (
 )
 
 const pageSize = 32
+const mosaicNamespace = "84b3552d375ffa4b"
 
 var (
 	meta = `"meta": {
@@ -53,7 +54,48 @@ var (
 			  }
 			}`
 	tplInfoArr = "[" + tplInfo + "]"
-	routers    = map[string]string{
+	tplMosaic  = `{
+  "meta": {
+    "active": true,
+    "index": 0,
+    "id": "5B55E02EACCB7B00015DB6EC"
+  },
+  "mosaic": {
+    "namespaceId": [
+      929036875,
+      2226345261
+    ],
+    "mosaicId": [
+      3646934825,
+      3576016193
+    ],
+    "supply": [
+      3403414400,
+      2095475
+    ],
+    "height": [
+      1,
+      0
+    ],
+    "owner": "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
+    "properties": [
+      [
+        2,
+        0
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "levy": {}
+  }
+}`
+	routers = map[string]string{
 		pathNamespace: tplInfo,
 		pathNamespacenames: `[
 			  {
@@ -66,6 +108,22 @@ var (
 			]`,
 		pathNamespacesFromAccounts:                                  tplInfoArr,
 		fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address): tplInfoArr,
+		pathMosaic + testMosaicID:                                   tplMosaic,
+		pathMosaic:                                                  "[" + tplMosaic + "]",
+		pathMosaicNames: `[
+  {
+    "mosaicId": [
+      3646934825,
+      3576016193
+    ],
+    "name": "xem",
+    "parentId": [
+      929036875,
+      2226345261
+    ]
+  }
+]`,
+		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace): "[" + tplMosaic + "]",
 	}
 )
 
@@ -193,7 +251,7 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 			isValid = isValid && validateNamespaceInfo(nsInfo, t)
 		}
 		if isValid {
-			t.Logf("%s", nsInfoArr)
+			t.Logf("%v", nsInfoArr)
 		}
 	}
 }
@@ -225,7 +283,7 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 			isValid = isValid && validateNamespaceInfo(nsInfo, t)
 		}
 		if isValid {
-			t.Logf("%s", nsInfoArr)
+			t.Logf("%v", nsInfoArr)
 		}
 	}
 }
