@@ -175,7 +175,7 @@ func (ref MosaicsDTO) String() string {
 		}
 		s += fmt.Sprintf(
 			`
-			"MosaicId": %v,
+			"MosaicId": %d,
 			"Amount": %d 
 		`,
 			m.MosaicId,
@@ -189,8 +189,8 @@ func (ref MosaicsDTO) String() string {
 type TransferTransaction struct {
 	AbstractTransaction
 	Message `json:"message"`
-	Mosaics []MosaicDTO `json:"mosaics"`
-	Address string      `json:"recipient"`
+	Mosaics MosaicsDTO `json:"mosaics"`
+	Address string     `json:"recipient"`
 }
 
 func (tx *TransferTransaction) SignWith(account PublicAccount) (Signed, error) {

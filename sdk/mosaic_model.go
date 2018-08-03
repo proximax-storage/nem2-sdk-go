@@ -43,14 +43,15 @@ func (ref Mosaics) String() string {
 
 // MosaicId
 type MosaicId struct {
-	id       *uint64DTO
-	fullName string
+	Id       *uint64DTO
+	FullName string
 }
 
-func NewMosaicFromID(id *uint64DTO) *MosaicId {
-	return &MosaicId{id, ""}
-}
-func NewMosaicId(name string) (*MosaicId, error) {
+func NewMosaicId(id *uint64DTO, name string) (*MosaicId, error) {
+	if id != nil {
+		return &MosaicId{id, ""}, nil
+	}
+
 	if (name == "") || strings.Contains(name, " {") {
 		return nil, errors.New(name + " is not valid")
 	}
@@ -103,6 +104,20 @@ type MosaicInfo struct {
 	Owner       *PublicAccount
 	Properties  *MosaicProperties
 }
+type MosaicsInfo []*MosaicInfo
+
+func (ref MosaicsInfo) String() string {
+	s := "["
+	for i, mscInfo := range ref {
+		if i > 0 {
+			s += ", "
+		}
+		s += fmt.Sprintf("%#v", mscInfo)
+
+	}
+
+	return s
+}
 
 // MosaicProperties  structure describes mosaic properties.
 type MosaicProperties struct {
@@ -152,4 +167,11 @@ const (
 
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
+}
+
+type MosaicName struct { /* public  */
+
+	MosaicId *MosaicId    // private final
+	Name     string       // private final
+	ParentId *NamespaceId // private final
 }
