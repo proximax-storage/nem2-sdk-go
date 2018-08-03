@@ -32,3 +32,12 @@ Cache-Control: no-cache
 {"addresses": ["SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY","SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"]}
 
 ###
+#get Get namespaces an account owns
+GET http://catapult.internal.proximax.io:3000/account/SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE/namespaces?id=5B55E02EACCB7B00015DB6EB&pagesize=32
+Content-Type: application/json
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
+Cache-Control: no-cache
+
+
+###
