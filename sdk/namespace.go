@@ -36,6 +36,27 @@ type namespaceInfoDTO struct {
 	Namespace namespaceDTO
 }
 
+//setNamespaceInfo create & return new NamespaceInfo from namespaceInfoDTO
+func (ref *namespaceInfoDTO) setNamespaceInfo() (*NamespaceInfo, error) {
+	pubAcc, err := NewPublicAccount(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
+	if err != nil {
+		return nil, err
+	}
+
+	return &NamespaceInfo{
+		ref.Meta.Active,
+		ref.Meta.Index,
+		ref.Meta.Id,
+		NamespaceType(ref.Namespace.Type),
+		ref.Namespace.Depth,
+		ref.extractLevels(),
+		NewNamespaceId(ref.Namespace.ParentId, ""),
+		pubAcc,
+		ref.Namespace.StartHeight,
+		ref.Namespace.EndHeight,
+	}, nil
+}
+
 func (ref *namespaceInfoDTO) extractLevels() []*NamespaceId {
 
 	levels := make([]*NamespaceId, 0)
@@ -61,15 +82,15 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 	nsInfoDTO := &namespaceInfoDTO{}
 	resp, err = ref.client.DoNewRequest(ctx, "GET", pathNamespace+nsId, nil, nsInfoDTO)
 
-	if err == nil {
-		nsInfo, err = NamespaceInfoFromDTO(nsInfoDTO)
-		if err == nil {
-			return nsInfo, resp, err
-		}
-
+	if err != nil {
+		return nil, resp, err
 	}
-	//	err occurent
-	return nil, resp, err
+	nsInfo, err = nsInfoDTO.setNamespaceInfo()
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return nsInfo, resp, err
 }
 
 const pathNamespacenames = "/namespace/names"
@@ -86,19 +107,17 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *Names
 	res := make([]*namespaceNameDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
 
-	if err == nil {
-		for _, val := range res {
-			nsList = append(nsList, &NamespaceName{
-				NewNamespaceId(val.NamespaceId, ""),
-				val.Name,
-				NewNamespaceId(val.ParentId, "")})
-		}
-		return nsList, resp, err
-
+	if err != nil {
+		return nil, resp, err
 	}
 
-	//	err occurent
-	return nil, resp, err
+	for _, val := range res {
+		nsList = append(nsList, &NamespaceName{
+			NewNamespaceId(val.NamespaceId, ""),
+			val.Name,
+			NewNamespaceId(val.ParentId, "")})
+	}
+	return nsList, resp, err
 }
 
 const pathNamespacesFromAccount = "/account/%s/namespaces"
@@ -123,16 +142,11 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 	res := make([]*namespaceInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, &res)
 
-	if err == nil {
-
-		err = ListNamespaceInfoFromDTO(res, &nsList)
-
-		if err == nil {
-			return nsList, resp, err
-		}
+	if (err != nil) || (ListNamespaceInfoFromDTO(res, &nsList) != nil) {
+		//	err occurent
+		return nsList, resp, err
 	}
 
-	//	err occurent
 	return nsList, resp, err
 }
 
@@ -158,21 +172,17 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 	res := make([]*namespaceInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", url, &addresses, &res)
 
-	if err == nil {
-
-		err = ListNamespaceInfoFromDTO(res, &nsList)
-		if err == nil {
-			return nsList, resp, err
-		}
+	if (err != nil) || (ListNamespaceInfoFromDTO(res, &nsList) != nil) {
+		//	err occurent
+		return nsList, resp, err
 	}
 
-	//	err occurent
 	return nsList, resp, err
 }
 func ListNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo) error {
 
 	for _, nsInfoDTO := range res {
-		nsInfo, err := NamespaceInfoFromDTO(nsInfoDTO)
+		nsInfo, err := nsInfoDTO.setNamespaceInfo()
 		if err != nil {
 			return err
 		}
@@ -180,25 +190,4 @@ func ListNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo
 	}
 
 	return nil
-}
-
-//NamespaceInfoFromDTO create & return new NamespaceInfo from namespaceInfoDTO
-func NamespaceInfoFromDTO(nsInfoDTO *namespaceInfoDTO) (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
-	if err != nil {
-		return nil, err
-	}
-
-	return &NamespaceInfo{
-		nsInfoDTO.Meta.Active,
-		nsInfoDTO.Meta.Index,
-		nsInfoDTO.Meta.Id,
-		NamespaceType(nsInfoDTO.Namespace.Type),
-		nsInfoDTO.Namespace.Depth,
-		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
-		pubAcc,
-		nsInfoDTO.Namespace.StartHeight,
-		nsInfoDTO.Namespace.EndHeight,
-	}, nil
 }
