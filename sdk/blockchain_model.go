@@ -28,8 +28,8 @@ type BlockInfo struct {
 type Block struct {
 	Signature             *string  `json:"signature"`
 	Signer                *string  `json:"signer"`
-	Version               *uint64  `json:"version"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-	Type                  *uint64  `json:"type"`    // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	Version               *uint64  `json:"version"`
+	Type                  *uint64  `json:"type"`
 	Height                []uint64 `json:"height"`
 	Timestamp             []uint64 `json:"timestamp"`
 	Difficulty            []uint64 `json:"difficulty"`
@@ -42,8 +42,15 @@ type BlockMeta struct {
 	Hash            *string  `json:"hash"`
 	GenerationHash  *string  `json:"generationHash"`
 	TotalFee        []uint64 `json:"totalFee"`
-	NumTransactions *uint64  `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	NumTransactions *uint64  `json:"numTransactions"`
 	MerkleTree      []string `json:"merkleTree"`
+}
+
+// Blockchain Storage
+type BlockchainStorageInfo struct {
+	NumBlocks       *int `json:"numBlocks"`
+	NumTransactions *int `json:"numTransactions"`
+	NumAccounts     *int `json:"numAccounts"`
 }
 
 type NetworkType uint8
