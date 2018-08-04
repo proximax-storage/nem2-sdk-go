@@ -1,11 +1,11 @@
 package sdk
 
 import (
-	"testing"
-	"net/http"
-	"fmt"
 	"context"
+	"fmt"
+	"net/http"
 	"reflect"
+	"testing"
 )
 
 func TestBlockchainService_GetChainHeight(t *testing.T) {

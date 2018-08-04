@@ -26,23 +26,23 @@ type BlockInfo struct {
 
 // Block
 type Block struct {
-	Signature             *string `json:"signature"`
-	Signer                *string `json:"signer"`
+	Signature             *string  `json:"signature"`
+	Signer                *string  `json:"signer"`
 	Version               *uint64  `json:"version"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
 	Type                  *uint64  `json:"type"`    // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
 	Height                []uint64 `json:"height"`
 	Timestamp             []uint64 `json:"timestamp"`
 	Difficulty            []uint64 `json:"difficulty"`
-	PreviousBlockHash     *string `json:"previousBlockHash"`
-	BlockTransactionsHash *string `json:"blockTransactionsHash"`
+	PreviousBlockHash     *string  `json:"previousBlockHash"`
+	BlockTransactionsHash *string  `json:"blockTransactionsHash"`
 }
 
 // Block Meta
 type BlockMeta struct {
 	Hash            *string  `json:"hash"`
 	GenerationHash  *string  `json:"generationHash"`
-	TotalFee        []uint64  `json:"totalFee"`
-	NumTransactions *uint64   `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
+	TotalFee        []uint64 `json:"totalFee"`
+	NumTransactions *uint64  `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
 	MerkleTree      []string `json:"merkleTree"`
 }
 

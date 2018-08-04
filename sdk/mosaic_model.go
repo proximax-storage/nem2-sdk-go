@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 	"time"
@@ -12,8 +13,8 @@ import (
 
 // Mosaic
 type Mosaic struct {
-	MosaicId MosaicId   `json:"id"`
-	Amount   *uint64DTO `json:"amount"`
+	MosaicId *MosaicId
+	Amount   *big.Int
 }
 
 func (m *Mosaic) String() string {
@@ -27,8 +28,21 @@ func (m *Mosaic) String() string {
 	)
 }
 
+type mosaicDTO struct {
+	MosaicId *uint64DTO `json:"id"`
+	Amount   *uint64DTO `json:"amount"`
+}
+
+func (dto *mosaicDTO) toStruct() (*Mosaic, error) {
+	id, err := NewMosaicId(dto.MosaicId.toStruct(), "")
+	if err != nil {
+		return nil, err
+	}
+	return &Mosaic{id, dto.Amount.toStruct()}, nil
+}
+
 // Mosaics
-type Mosaics []Mosaic
+type Mosaics []*Mosaic
 
 func (ref Mosaics) String() string {
 	s := "["
@@ -43,11 +57,11 @@ func (ref Mosaics) String() string {
 
 // MosaicId
 type MosaicId struct {
-	Id       *uint64DTO
+	Id       *big.Int
 	FullName string
 }
 
-func NewMosaicId(id *uint64DTO, name string) (*MosaicId, error) {
+func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 	if id != nil {
 		return &MosaicId{id, ""}, nil
 	}
@@ -69,7 +83,7 @@ func NewMosaicId(id *uint64DTO, name string) (*MosaicId, error) {
 
 var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
-func generateMosaicId(namespaceName string, mosaicName string) (*uint64DTO, error) {
+func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error) {
 
 	if mosaicName == "" {
 		return nil, errors.New(mosaicName + " having zero length")
@@ -124,10 +138,20 @@ type MosaicProperties struct {
 	SupplyMutable bool
 	Transferable  bool
 	LevyMutable   bool
-	Divisibility  int
-	Duration      uint
+	Divisibility  int64
+	Duration      time.Duration
 }
 
+func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration time.Duration) *MosaicProperties {
+	ref := &MosaicProperties{
+		supplyMutable,
+		transferable,
+		levyMutable,
+		divisibility,
+		duration,
+	}
+	return ref
+}
 func (mp *MosaicProperties) String() string {
 	return fmt.Sprintf(
 		`
@@ -145,41 +169,23 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
+//MosaicSupplyType mosaic supply type :
+// Decrease the supply - DECREASE.
+//Increase the supply - INCREASE.
 type MosaicSupplyType uint
 
 const (
-	DECREASE MosaicSupplyType = 0
-	INCREASE MosaicSupplyType = 1
+	DECREASE MosaicSupplyType = iota
+	INCREASE
 )
-
 
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
-}  
+}
 
-type NamespaceMosaicMetaDTO struct {
-	Active bool
-	Index  int
-	Id     string
-} /* NamespaceMosaicMetaDTO */
-func (ref *NamespaceInfoDTO) extractLevels() []*NamespaceId {
+type MosaicName struct { /* public  */
 
-	levels := make([]*NamespaceId, 3)
-	var err error
-
-	nsId := NewNamespaceId(ref.Namespace.Level0, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-
-	nsId = NewNamespaceId(ref.Namespace.Level1, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-
-	nsId = NewNamespaceId(ref.Namespace.Level2, "")
-	if err == nil {
-		levels = append(levels, nsId)
-	}
-	return levels
+	MosaicId *MosaicId    // private final
+	Name     string       // private final
+	ParentId *NamespaceId // private final
 }

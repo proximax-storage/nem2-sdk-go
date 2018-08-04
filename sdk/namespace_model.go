@@ -9,16 +9,27 @@ import (
 	"fmt"
 	"github.com/json-iterator/go"
 	"golang.org/x/crypto/sha3"
+	"math/big"
 	"regexp"
 	"strings"
 	"unsafe"
-	"math/big"
 )
 
 type NamespaceId struct {
-	id       *big.Int
-	fullName string
-} /* NamespaceId */
+	Id       *big.Int
+	FullName string
+}
+
+type namespaceIdDTO struct {
+	Id       uint64DTO
+	FullName string
+}
+
+func (dto *namespaceIdDTO) toStruct() *NamespaceId {
+	return &NamespaceId{dto.Id.toStruct(), dto.FullName}
+}
+
+/* NamespaceId */
 func NewNamespaceId(id *big.Int, namespaceName string) *NamespaceId {
 
 	if namespaceName == "" {
@@ -106,18 +117,18 @@ const (
 
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
-	active      bool
-	index       int
-	metaId      string
-	typeSpace   NamespaceType
-	depth       int
-	levels      []*NamespaceId
-	parentId    *NamespaceId
-	owner       *PublicAccount
-	startHeight *uint64DTO
-	endHeight   *uint64DTO
+	Active      bool
+	Index       int
+	MetaId      string
+	TypeSpace   NamespaceType
+	Depth       int
+	Levels      []*NamespaceId
+	ParentId    *NamespaceId
+	Owner       *PublicAccount
+	StartHeight *big.Int
+	EndHeight   *big.Int
 } /* NamespaceInfo */
-func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
+func NamespaceInfoFromDTO(nsInfoDTO *namespaceInfoDTO) (*NamespaceInfo, error) {
 	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
 	if err != nil {
 		return nil, err
@@ -130,10 +141,10 @@ func NamespaceInfoFromDTO(nsInfoDTO *NamespaceInfoDTO) (*NamespaceInfo, error) {
 		NamespaceType(nsInfoDTO.Namespace.Type),
 		nsInfoDTO.Namespace.Depth,
 		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId, ""),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId.toStruct(), ""),
 		pubAcc,
-		nsInfoDTO.Namespace.StartHeight,
-		nsInfoDTO.Namespace.EndHeight,
+		nsInfoDTO.Namespace.StartHeight.toStruct(),
+		nsInfoDTO.Namespace.EndHeight.toStruct(),
 	}, nil
 }
 

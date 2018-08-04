@@ -1,26 +1,28 @@
 package sdk
 
 import (
-	"github.com/proximax-storage/nem2-sdk-go/crypto"
-	"strings"
-	"strconv"
 	"github.com/kataras/iris/core/errors"
-	"sync"
+	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"math/big"
+	"strconv"
+	"strings"
+	"sync"
+	"encoding/base32"
+	"encoding/hex"
 )
 
 type Account struct {
-	PublicAccount
-	crypto.KeyPair
+	*PublicAccount
+	*crypto.KeyPair
 }
 
 type PublicAccount struct {
-	Address
+	Address *Address
 	PublicKey string
 }
 
 type AccountInfo struct {
-	Address
+	Address Address
 	AddressHeight    *big.Int
 	PublicKey        string
 	PublicKeyHeight  *big.Int
@@ -30,8 +32,8 @@ type AccountInfo struct {
 }
 
 type accountInfoDTO struct {
-	Account struct{
-		Address                    `json:"address"`
+	Account struct {
+		Address          `json:"address"`
 		AddressHeight    uint64DTO `json:"addressHeight"`
 		PublicKey        string    `json:"publicKey"`
 		PublicKeyHeight  uint64DTO `json:"publicKeyHeight"`
@@ -41,7 +43,7 @@ type accountInfoDTO struct {
 	} `json:"account"`
 }
 
-func (d *accountInfoDTO) toStruct() *AccountInfo{
+func (d *accountInfoDTO) toStruct() *AccountInfo {
 	return &AccountInfo{
 		d.Account.Address,
 		d.Account.AddressHeight.toStruct(),
@@ -53,9 +55,8 @@ func (d *accountInfoDTO) toStruct() *AccountInfo{
 	}
 }
 
-
 type Address struct {
-	NetworkType
+	Type NetworkType
 	Address string
 }
 
@@ -166,22 +167,22 @@ func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigA
 }
 
 type MultisigAccountGraphInfo struct {
-	MultisigAccounts map[int32] []*MultisigAccountInfo
+	MultisigAccounts map[int32][]*MultisigAccountInfo
 }
 
 type multisigAccountGraphInfoDTOEntry struct {
-	Level int32                        `json:"level"`
+	Level     int32                    `json:"level"`
 	Multisigs []multisigAccountInfoDTO `json:"multisigEntries"`
 }
 
 type multisigAccountGraphInfoDTOS []multisigAccountGraphInfoDTOEntry
 
 func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*MultisigAccountGraphInfo, error) {
-	var ms map[int32] []*MultisigAccountInfo
+	var ms map[int32][]*MultisigAccountInfo
 	var wg1 sync.WaitGroup
 	var err error
 
-	for _, m := range dto{
+	for _, m := range dto {
 		wg1.Add(1)
 		go func(m multisigAccountGraphInfoDTOEntry) {
 			defer wg1.Done()
@@ -215,7 +216,7 @@ func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, err
 	if err != nil {
 		return nil, err
 	}
-	return &PublicAccount{*ad, pKey}, nil
+	return &PublicAccount{ad, pKey}, nil
 }
 
 func NewAddress(address string, networkType NetworkType) *Address {
@@ -247,14 +248,16 @@ func NewAddressFromPublicKey(pKey string, networkType NetworkType) (*Address, er
 }
 
 func NewAddressFromEncoded(encoded string) (*Address, error) {
-	parsed, err := strconv.ParseInt(encoded, 32, 64)
+	pH, err := hex.DecodeString(encoded)
 	if err != nil {
 		return nil, err
 	}
 
-	ad, err := NewAddressFromRaw(string(parsed))
+	parsed := base32.StdEncoding.EncodeToString(pH)
+	ad, err := NewAddressFromRaw(parsed)
 	if err != nil {
 		return nil, err
 	}
+
 	return ad, nil
 }

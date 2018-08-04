@@ -3,13 +3,13 @@ package sdk
 
 import (
 	"bytes"
+	"github.com/google/go-querystring/query"
 	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
-	"github.com/google/go-querystring/query"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

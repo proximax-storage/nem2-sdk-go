@@ -1,9 +1,10 @@
 package sdk
 
-import ("fmt"
-"context"
-	"net/http"
+import (
 	"bytes"
+	"context"
+	"fmt"
+	"net/http"
 )
 
 type AccountService service
@@ -13,7 +14,7 @@ var mainAccountRoute = "account"
 func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, *http.Response, error) {
 	dto := &accountInfoDTO{}
 
-	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainTransactionRoute, address.Address),nil, dto)
+	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainTransactionRoute, address.Address), nil, dto)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -23,12 +24,13 @@ func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (
 
 func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses *Addresses) ([]*AccountInfo, *http.Response, error) {
 	var dtos []*accountInfoDTO
-	var infos []*AccountInfo
 
 	resp, err := a.client.DoNewRequest(ctx, "POST", mainTransactionRoute, addresses, dtos)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	infos := make([]*AccountInfo, len(dtos))
 
 	for i, dto := range dtos {
 		infos[i] = dto.toStruct()
@@ -84,9 +86,9 @@ func (a *AccountService) UnconfirmedTransactions(ctx context.Context, account *P
 }
 
 func (a *AccountService) AggregateBondedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]*AggregateTransaction, *http.Response, error) {
-	var atxs []*AggregateTransaction
-	txs, resp, err :=a.findTransactions(ctx, account, opt, "/transactions/aggregateBondedTransactions")
+	txs, resp, err := a.findTransactions(ctx, account, opt, "/transactions/aggregateBondedTransactions")
 
+	atxs := make([]*AggregateTransaction, len(txs))
 	for i, tx := range txs {
 		atxs[i] = tx.(*AggregateTransaction)
 	}
