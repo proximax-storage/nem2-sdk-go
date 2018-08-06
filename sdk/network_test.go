@@ -16,7 +16,16 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 		t.Error(resp.Status)
 		t.Logf("%#v", resp)
 	} else if netType != MIJIN_TEST {
-		t.Error("%d", netType)
+		t.Errorf("%d", netType)
+	}
+
+}
+func TestExtractNetworkType(t *testing.T) {
+	i := uint64(36888)
+
+	nt := ExtractNetworkType(i)
+	if nt != MIJIN_TEST {
+		t.Errorf("wrong convert %d (%d - %d)", i, nt, MIJIN_TEST)
 	}
 
 }

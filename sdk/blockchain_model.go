@@ -1,11 +1,5 @@
 package sdk
 
-import (
-	"errors"
-	"fmt"
-	"strconv"
-)
-
 // Models
 // Chain Height
 type ChainHeight struct {
@@ -51,51 +45,4 @@ type BlockchainStorageInfo struct {
 	NumBlocks       *int `json:"numBlocks"`
 	NumTransactions *int `json:"numTransactions"`
 	NumAccounts     *int `json:"numAccounts"`
-}
-
-type NetworkType uint8
-
-// NetworkType enums
-const (
-	MAIN_NET                  NetworkType = 104
-	TEST_NET                  NetworkType = 152
-	MIJIN                     NetworkType = 96
-	MIJIN_TEST                NetworkType = 144
-	NOT_SUPPORTED_NETWORKTYPE NetworkType = 0
-)
-
-func (nt NetworkType) String() string {
-	return fmt.Sprintf("%d", nt)
-}
-
-// Network error
-var networkTypeError = errors.New("wrong raw NetworkType value")
-
-// Get NetworkType by raw value
-func NetworkTypeFromRaw(value uint32) (NetworkType, error) {
-	switch value {
-	case 104:
-		return MAIN_NET, nil
-	case 152:
-		return TEST_NET, nil
-	case 96:
-		return MIJIN, nil
-	case 144:
-		return MIJIN_TEST, nil
-	default:
-		return 0, networkTypeError
-	}
-}
-
-func ExtractNetworkType(version uint64) (NetworkType, error) {
-	res, err := strconv.ParseUint(strconv.FormatUint(version, 16)[:2], 16, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	t, err := NetworkTypeFromRaw(uint32(res))
-	if err != nil {
-		return 0, err
-	}
-	return t, nil
 }
