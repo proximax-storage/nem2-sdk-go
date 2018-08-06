@@ -232,12 +232,12 @@ func generateNamespacePath(name string) ([]*big.Int, error) {
 }
 
 func generateId(name string, parentId *big.Int) (*big.Int, error) {
-	var int big.Int
+	var id big.Int
 	result := sha3.New256()
 	_, err := result.Write(parentId.Bytes())
 	if err == nil {
 		t := result.Sum([]byte(name))
-		return int.SetBytes(t[:8]), nil
+		return id.SetBytes(t[:8]), nil
 	}
 
 	return nil, err
