@@ -2,13 +2,13 @@ package sdk
 
 import (
 	"bytes"
+	jsonLib "encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
-	"time"
 	"sync"
-	jsonLib "encoding/json"
+	"time"
 )
 
 // Models
@@ -39,7 +39,7 @@ func (tx *AbstractTransaction) String() string {
 			"Type": %s,
 			"Version": %d,
 			"Fee": %d,
-			"Deadline": %d,
+			"Deadline": %s,
 			"Signature": %s,
 			"Signer": %s
 		`,
@@ -179,7 +179,7 @@ type aggregateTransactionDTO struct {
 	Tx struct {
 		AbstractTransactionDTO
 		Cosignatures      []*aggregateTransactionCosignatureDTO `json:"cosignatures"`
-		InnerTransactions []map[string]interface{}           `json:"transactions"`
+		InnerTransactions []map[string]interface{}              `json:"transactions"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -233,7 +233,7 @@ func (tx *MosaicDefinitionTransaction) String() string {
 		`
 			"AbstractTransaction": %s,
 			"MosaicProperties": %s,
-			"MosaicId": [ %d ],
+			"MosaicId": [ %s ],
 			"MosaicName": %s
 		`,
 		tx.AbstractTransaction.String(),
@@ -305,8 +305,8 @@ type mosaicSupplyChangeTransactionDTO struct {
 	Tx struct {
 		AbstractTransactionDTO
 		MosaicSupplyType `json:"direction"`
-		MosaicId          *uint64DTO `json:"mosaicId"`
-		Delta             *uint64DTO `json:"delta"`
+		MosaicId         *uint64DTO `json:"mosaicId"`
+		Delta            *uint64DTO `json:"delta"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -361,8 +361,8 @@ type transferTransactionDTO struct {
 	Tx struct {
 		AbstractTransactionDTO
 		Message `json:"message"`
-		Mosaics  []*mosaicDTO `json:"mosaics"`
-		Address  string       `json:"recipient"`
+		Mosaics []*mosaicDTO `json:"mosaics"`
+		Address string       `json:"recipient"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -611,7 +611,7 @@ type secretLockTransactionDTO struct {
 		AbstractTransactionDTO
 		Mosaic    *mosaicDTO `json:"mosaic"`
 		MosaicId  *uint64DTO `json:"mosaicId"`
-		HashType `json:"hashAlgorithm"`
+		HashType  `json:"hashAlgorithm"`
 		Duration  uint64DTO `json:"duration"`
 		Secret    string    `json:"secret"`
 		Recipient string    `json:"recipient"`
@@ -630,7 +630,7 @@ func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) 
 		return nil, err
 	}
 
-	a, err :=NewAddressFromEncoded(dto.Tx.Recipient)
+	a, err := NewAddressFromEncoded(dto.Tx.Recipient)
 	if err != nil {
 		return nil, err
 	}
@@ -676,8 +676,8 @@ type secretProofTransactionDTO struct {
 	Tx struct {
 		AbstractTransactionDTO
 		HashType `json:"hashAlgorithm"`
-		Secret    string `json:"secret"`
-		Proof     string `json:"proof"`
+		Secret   string `json:"secret"`
+		Proof    string `json:"proof"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -795,11 +795,11 @@ func (dto *multisigCosignatoryModificationDTO) toStruct(networkType NetworkType)
 
 // TransactionStatus
 type TransactionStatus struct {
-	Group    string   `json:"group"`
-	Status   string   `json:"status"`
-	Hash     string   `json:"hash"`
+	Group    string    `json:"group"`
+	Status   string    `json:"status"`
+	Hash     string    `json:"hash"`
 	Deadline time.Time `json:"deadline"`
-	Height   *big.Int `json:"height"`
+	Height   *big.Int  `json:"height"`
 }
 
 func (ts *TransactionStatus) String() string {
@@ -921,8 +921,8 @@ func (t MultisigCosignatoryModificationType) String() string {
 }
 
 const (
-	ADD    MultisigCosignatoryModificationType = 0
-	REMOVE MultisigCosignatoryModificationType = 1
+	ADD MultisigCosignatoryModificationType = iota
+	REMOVE
 )
 
 type HashType uint8

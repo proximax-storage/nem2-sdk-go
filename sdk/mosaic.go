@@ -72,8 +72,8 @@ func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 		ref.Meta.Id,
 		NewNamespaceId(ref.Mosaic.NamespaceId.toStruct(), ""),
 		mosaicID,
-		ref.Mosaic.Supply,
-		ref.Mosaic.Height,
+		ref.Mosaic.Supply.toStruct(),
+		ref.Mosaic.Height.toStruct(),
 		publicAcc,
 		ref.Mosaic.Properties.toStruct(),
 	}, nil

@@ -54,6 +54,7 @@ type Client struct {
 	Mosaic      *MosaicService
 	Namespace   *NamespaceService
 	Transaction *TransactionService
+	Account     *AccountService
 }
 
 type service struct {
@@ -73,6 +74,7 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	c.Mosaic = (*MosaicService)(&c.common)
 	c.Namespace = (*NamespaceService)(&c.common)
 	c.Transaction = (*TransactionService)(&c.common)
+	c.Account = (*AccountService)(&c.common)
 
 	return c
 }

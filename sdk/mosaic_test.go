@@ -25,18 +25,18 @@ func validateMosaicInfo(nsInfo *MosaicInfo, t *testing.T) bool {
 	} else if !nsInfo.Active {
 		t.Error(fmt.Sprintf("failed Active data Convertion = '%v' (%#v)", nsInfo.Active, nsInfo))
 		result = false
-	//} else if nsId := nsInfo.NamespaceId.Id; !(nsId[0].Int64() == 929036875 && nsId[1].Int64() == 2226345261) {
-	//	t.Error(fmt.Sprintf("failed Id data Convertion = '%v' (%#v)", nsId, nsInfo))
-	//	result = false
-	//} else if nsId := nsInfo.MosaicId.Id; !(nsId[0].Int64() == 3646934825 && nsId[1].Int64() == 3576016193) {
-	//	t.Error(fmt.Sprintf("failed MosaicId data Convertion = '%v' (%#v)", nsId, nsInfo))
-	//	result = false
-	//} else if nsId := nsInfo.Supply; !(nsId[0].Int64() == 3403414400 && nsId[1].Int64() == 2095475) {
-	//	t.Error(fmt.Sprintf("failed Supply data Convertion = '%v' (%#v)", nsId, nsInfo))
-	//	result = false
-	//} else if nsId := nsInfo.Height; !(nsId[0].Int64() == 1 && nsId[1].Int64() == 0) {
-	//	t.Error(fmt.Sprintf("failed Height data Convertion = '%v' (%#v)", nsId, nsInfo))
-	//	result = false
+	} else if nsId := nsInfo.NamespaceId.Id; !(nsId == uint64DTO{929036875, 2226345261}.toStruct()) {
+		t.Error(fmt.Sprintf("failed Id data Convertion = '%v' (%#v)", nsId, nsInfo))
+		result = false
+	} else if nsId := nsInfo.MosaicId.Id; !(nsId == uint64DTO{3646934825, 3576016193}.toStruct()) {
+		t.Error(fmt.Sprintf("failed MosaicId data Convertion = '%v' (%#v)", nsId, nsInfo))
+		result = false
+	} else if nsId := nsInfo.Supply; !(nsId == uint64DTO{3403414400, 2095475}.toStruct()) {
+		t.Error(fmt.Sprintf("failed Supply data Convertion = '%v' (%#v)", nsId, nsInfo))
+		result = false
+	} else if nsId := nsInfo.Height; !(nsId == uint64DTO{1, 0}.toStruct()) {
+		t.Error(fmt.Sprintf("failed Height data Convertion = '%v' (%#v)", nsId, nsInfo))
+		result = false
 	} else if publicKey := nsInfo.Owner.PublicKey; publicKey != "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E" {
 		t.Error(fmt.Sprintf("failed Owner data Convertion = '%s' (%#v)", publicKey, nsInfo))
 		result = false

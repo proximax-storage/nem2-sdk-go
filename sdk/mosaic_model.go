@@ -113,8 +113,8 @@ type MosaicInfo struct {
 	MetaId      string
 	NamespaceId *NamespaceId
 	MosaicId    *MosaicId
-	Supply      *uint64DTO
-	Height      *uint64DTO
+	Supply      *big.Int
+	Height      *big.Int
 	Owner       *PublicAccount
 	Properties  *MosaicProperties
 }

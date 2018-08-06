@@ -1,14 +1,14 @@
 package sdk
 
 import (
+	"encoding/base32"
+	"encoding/hex"
 	"github.com/kataras/iris/core/errors"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"math/big"
 	"strconv"
 	"strings"
 	"sync"
-	"encoding/base32"
-	"encoding/hex"
 )
 
 type Account struct {
@@ -17,12 +17,12 @@ type Account struct {
 }
 
 type PublicAccount struct {
-	Address *Address
+	Address   *Address
 	PublicKey string
 }
 
 type AccountInfo struct {
-	Address Address
+	Address          *Address
 	AddressHeight    *big.Int
 	PublicKey        string
 	PublicKeyHeight  *big.Int
@@ -33,30 +33,44 @@ type AccountInfo struct {
 
 type accountInfoDTO struct {
 	Account struct {
-		Address          `json:"address"`
-		AddressHeight    uint64DTO `json:"addressHeight"`
-		PublicKey        string    `json:"publicKey"`
-		PublicKeyHeight  uint64DTO `json:"publicKeyHeight"`
-		Importance       uint64DTO `json:"importance"`
-		ImportanceHeight uint64DTO `json:"importanceHeight"`
-		Mosaics          []*Mosaic `json:"mosaics"`
+		Address          string       `json:"address"`
+		AddressHeight    uint64DTO    `json:"addressHeight"`
+		PublicKey        string       `json:"publicKey"`
+		PublicKeyHeight  uint64DTO    `json:"publicKeyHeight"`
+		Importance       uint64DTO    `json:"importance"`
+		ImportanceHeight uint64DTO    `json:"importanceHeight"`
+		Mosaics          []*mosaicDTO `json:"mosaics"`
 	} `json:"account"`
 }
 
-func (d *accountInfoDTO) toStruct() *AccountInfo {
-	return &AccountInfo{
-		d.Account.Address,
-		d.Account.AddressHeight.toStruct(),
-		d.Account.PublicKey,
-		d.Account.PublicKeyHeight.toStruct(),
-		d.Account.Importance.toStruct(),
-		d.Account.Importance.toStruct(),
-		d.Account.Mosaics,
+func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
+	var err error
+	ms := make(Mosaics, len(dto.Account.Mosaics))
+	for i, m := range dto.Account.Mosaics {
+		ms[i], err = m.toStruct()
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	add, err := NewAddressFromEncoded(dto.Account.Address)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AccountInfo{
+		add,
+		dto.Account.AddressHeight.toStruct(),
+		dto.Account.PublicKey,
+		dto.Account.PublicKeyHeight.toStruct(),
+		dto.Account.Importance.toStruct(),
+		dto.Account.ImportanceHeight.toStruct(),
+		ms,
+	}, nil
 }
 
 type Address struct {
-	Type NetworkType
+	Type    NetworkType
 	Address string
 }
 

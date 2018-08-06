@@ -1,7 +1,3 @@
-// Copyright 2017 Author: Ruslan Bikchentaev. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package sdk
 
 import (
@@ -99,9 +95,9 @@ func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 
 // NamespaceName name info structure describes basic information of a namespace and name.
 type NamespaceName struct {
-	namespaceId *NamespaceId
-	name        string
-	parentId    *NamespaceId /* Optional NamespaceId my be nil */
+	NamespaceId *NamespaceId
+	Name        string
+	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
 } /* NamespaceName */
 type NamespaceNameDTO struct {
 	namespaceId *uint64DTO
@@ -241,7 +237,7 @@ func generateId(name string, parentId *big.Int) (*big.Int, error) {
 	_, err := result.Write(parentId.Bytes())
 	if err == nil {
 		t := result.Sum([]byte(name))
-		return int.SetBytes(append(t[:4], t[4:8]...)), nil
+		return int.SetBytes(t[:8]), nil
 	}
 
 	return nil, err
