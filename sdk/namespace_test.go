@@ -124,6 +124,10 @@ var (
   }
 ]`,
 		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace): "[" + tplMosaic + "]",
+		pathNetwork: `{
+  "name": "mijinTest",
+  "description": "catapult development network"
+}`,
 	}
 )
 

@@ -57,10 +57,11 @@ type NetworkType uint8
 
 // NetworkType enums
 const (
-	MAIN_NET   NetworkType = 104
-	TEST_NET   NetworkType = 152
-	MIJIN      NetworkType = 96
-	MIJIN_TEST NetworkType = 144
+	MAIN_NET                 NetworkType = 104
+	TEST_NET                 NetworkType = 152
+	MIJIN                    NetworkType = 96
+	MIJIN_TEST               NetworkType = 144
+	networkTypeNOT_SUPPORTED NetworkType = 0
 )
 
 func (nt NetworkType) String() string {
