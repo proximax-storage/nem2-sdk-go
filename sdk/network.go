@@ -34,5 +34,5 @@ func (ref *NetworkService) GetNetworkType(ctx context.Context) (mscInfo NetworkT
 		return MIJIN_TEST, resp, nil
 	}
 
-	return networkTypeNOT_SUPPORTED, resp, errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
+	return NOT_SUPPORTED_NETWORKTYPE, resp, errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
 }
