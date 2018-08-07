@@ -11,9 +11,9 @@ import (
 
 var (
 	testAddresses = Addresses{
-		Addresses: []*Address{
-			&Address{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
-			&Address{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
+		list: []*Address{
+			{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
+			{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
 		},
 	}
 	testAddress = Address{Address: "SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE"}
@@ -189,15 +189,15 @@ func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 		t.Error("failed Owner data Convertion")
 		result = false
 	}
-	if nsId := nsInfo.ParentId.Id; !(nsId[0].Int64() == 0 && nsId[1].Int64() == 0) {
+	if nsId := nsInfo.ParentId.Id; !(nsId == uint64DTO{0, 0}.toStruct()) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
-	if sH := nsInfo.StartHeight; !(sH[0].Int64() == 1 && sH[1].Int64() == 0) {
+	if sH := nsInfo.StartHeight; !(sH == uint64DTO{1, 0}.toStruct()) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
-	if eH := nsInfo.EndHeight; !(eH[0].Int64() == 4294967295 && eH[1].Int64() == 4294967295) {
+	if eH := nsInfo.EndHeight; !(eH == uint64DTO{4294967295, 4294967295}.toStruct()) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
@@ -322,9 +322,9 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
 		t.Logf("%#v", arr0)
 	} else {
-		if id := arr0.NamespaceId.Id; !((id[0].Int64() == 929036875) && (id[1].Int64() == 2226345261)) {
+		if id := arr0.NamespaceId.Id; !(id == uint64DTO{929036875, 2226345261}.toStruct()) {
 			t.Error("failed namespaceName id Convertion")
-			t.Logf("%d %d", id[0].Int64(), id[1].Int64())
+			t.Logf("%s", id)
 		}
 		if arr0.Name != "nem" {
 			t.Error("failed namespaceName Name Convertion")

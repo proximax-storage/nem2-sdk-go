@@ -50,10 +50,10 @@ func (ref *namespaceInfoDTO) setNamespaceInfo() (*NamespaceInfo, error) {
 		NamespaceType(ref.Namespace.Type),
 		ref.Namespace.Depth,
 		ref.extractLevels(),
-		NewNamespaceId(ref.Namespace.ParentId, ""),
+		NewNamespaceId(ref.Namespace.ParentId.toStruct(), ""),
 		pubAcc,
-		ref.Namespace.StartHeight,
-		ref.Namespace.EndHeight,
+		ref.Namespace.StartHeight.toStruct(),
+		ref.Namespace.EndHeight.toStruct(),
 	}, nil
 }
 
@@ -62,15 +62,15 @@ func (ref *namespaceInfoDTO) extractLevels() []*NamespaceId {
 	levels := make([]*NamespaceId, 0)
 
 	if ref.Namespace.Level0 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level0, ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level0.toStruct(), ""))
 	}
 
 	if ref.Namespace.Level1 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level1, ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level1.toStruct(), ""))
 	}
 
 	if ref.Namespace.Level2 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level2, ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level2.toStruct(), ""))
 	}
 	return levels
 }
@@ -113,9 +113,9 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *Names
 
 	for _, val := range res {
 		nsList = append(nsList, &NamespaceName{
-			NewNamespaceId(val.NamespaceId, ""),
+			NewNamespaceId(val.NamespaceId.toStruct(), ""),
 			val.Name,
-			NewNamespaceId(val.ParentId, "")})
+			NewNamespaceId(val.ParentId.toStruct(), "")})
 	}
 	return nsList, resp, err
 }

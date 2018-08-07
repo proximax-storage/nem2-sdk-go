@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 	"time"
@@ -12,8 +13,8 @@ import (
 
 // Mosaic
 type Mosaic struct {
-	MosaicId MosaicId   `json:"id"`
-	Amount   *uint64DTO `json:"amount"`
+	MosaicId *MosaicId
+	Amount   *big.Int
 }
 
 func (m *Mosaic) String() string {
@@ -27,8 +28,21 @@ func (m *Mosaic) String() string {
 	)
 }
 
+type mosaicDTO struct {
+	MosaicId *uint64DTO `json:"id"`
+	Amount   *uint64DTO `json:"amount"`
+}
+
+func (dto *mosaicDTO) toStruct() (*Mosaic, error) {
+	id, err := NewMosaicId(dto.MosaicId.toStruct(), "")
+	if err != nil {
+		return nil, err
+	}
+	return &Mosaic{id, dto.Amount.toStruct()}, nil
+}
+
 // Mosaics
-type Mosaics []Mosaic
+type Mosaics []*Mosaic
 
 func (ref Mosaics) String() string {
 	s := "["
@@ -43,11 +57,11 @@ func (ref Mosaics) String() string {
 
 // MosaicId
 type MosaicId struct {
-	Id       *uint64DTO
+	Id       *big.Int
 	FullName string
 }
 
-func NewMosaicId(id *uint64DTO, name string) (*MosaicId, error) {
+func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 	if id != nil {
 		return &MosaicId{id, ""}, nil
 	}
@@ -69,7 +83,7 @@ func NewMosaicId(id *uint64DTO, name string) (*MosaicId, error) {
 
 var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
-func generateMosaicId(namespaceName string, mosaicName string) (*uint64DTO, error) {
+func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error) {
 
 	if mosaicName == "" {
 		return nil, errors.New(mosaicName + " having zero length")
@@ -99,8 +113,8 @@ type MosaicInfo struct {
 	MetaId      string
 	NamespaceId *NamespaceId
 	MosaicId    *MosaicId
-	Supply      *uint64DTO
-	Height      *uint64DTO
+	Supply      *big.Int
+	Height      *big.Int
 	Owner       *PublicAccount
 	Properties  *MosaicProperties
 }
