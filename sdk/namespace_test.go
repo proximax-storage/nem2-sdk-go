@@ -3,6 +3,7 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
+	"net/http"
 	"testing"
 )
 
@@ -163,6 +164,14 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 			t.Logf("%v", nsInfoArr)
 		}
 	}
+
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
+	if err == nil {
+		t.Error("addrees is null - method must return error")
+	} else if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Error responce status code = %d", resp.StatusCode)
+	}
+
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
@@ -189,6 +198,12 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 		if isValid {
 			t.Logf("%v", nsInfoArr)
 		}
+	}
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Error responce status code = %d", resp.StatusCode)
 	}
 }
 

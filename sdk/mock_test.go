@@ -41,6 +41,7 @@ func (r *sRouting) checkParams(req *http.Request) (badParams []string, err error
 			if (len(b) == 0) || (bytes.Contains(b, []byte("null"))) {
 				badParams = append(badParams, "body is empty")
 			}
+			//	todo: add check struct to match the request requirements
 		} else if valueParam := req.FormValue(key); (val.req) && (valueParam == "") {
 			badParams = append(badParams, key)
 		} else if val.Type > "" {
