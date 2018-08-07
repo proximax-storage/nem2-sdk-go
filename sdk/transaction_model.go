@@ -804,12 +804,12 @@ func mapAbstractTransaction(b *bytes.Buffer, t TransactionType) (*AbstractTransa
 	aTx.Type = t
 	aTx.TransactionInfo = rawTx.TransactionInfo
 
-	nt, err := ExtractNetworkType(aTx.Version)
+	nt := ExtractNetworkType(aTx.Version)
+
+	tv, err := ExtractTransactionVersion(aTx.Version)
 	if err != nil {
 		return nil, err
 	}
-
-	tv, err := ExtractTransactionVersion(aTx.Version)
 
 	aTx.Version = tv
 	aTx.NetworkType = nt
