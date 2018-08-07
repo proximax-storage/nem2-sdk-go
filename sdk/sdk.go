@@ -53,6 +53,7 @@ type Client struct {
 	Blockchain  *BlockchainService
 	Mosaic      *MosaicService
 	Namespace   *NamespaceService
+	Network     *NetworkService
 	Transaction *TransactionService
 	Account     *AccountService
 }
@@ -73,6 +74,7 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	c.Blockchain = (*BlockchainService)(&c.common)
 	c.Mosaic = (*MosaicService)(&c.common)
 	c.Namespace = (*NamespaceService)(&c.common)
+	c.Network = (*NetworkService)(&c.common)
 	c.Transaction = (*TransactionService)(&c.common)
 	c.Account = (*AccountService)(&c.common)
 

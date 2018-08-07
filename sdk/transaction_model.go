@@ -1127,6 +1127,5 @@ func mapAggregateTransaction(b *bytes.Buffer) (*AggregateTransaction, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return tx, nil
 }
