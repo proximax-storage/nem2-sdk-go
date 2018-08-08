@@ -9,19 +9,6 @@ import (
 )
 const NUM_CHECKSUM_BYTES = 4
 
-type KeyPair struct {
-	PrivateKey
-	PublicKey
-}
-
-type PrivateKey struct {
-	Value uint64
-}
-
-type PublicKey struct {
-	Value []byte
-}
-
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
 	pKeyD, err := hex.DecodeString(pKey)
