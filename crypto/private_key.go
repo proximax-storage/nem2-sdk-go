@@ -25,10 +25,10 @@ type PrivateKey struct { /* public  */
     /**
      * Creates a new private key.
      *
-     * @param value The raw private key value.
+     * @param value The  private key value.
      */
 } /* PrivateKey */ 
-func NewPrivateKey (uint64 value final) *PrivateKey {  /* public  */ 
+func NewPrivateKey (value uint64 ) *PrivateKey {  /* public  */
     ref := &PrivateKey{
         value,
 }
@@ -68,11 +68,11 @@ func NewPrivateKey (uint64 value final) *PrivateKey {  /* public  */
 }
 
     /**
-     * Gets the raw private key value.
+     * Gets the  private key value.
      *
-     * @return The raw private key value.
+     * @return The  private key value.
      */
-   func (ref *PrivateKey) GetRaw() uint64  { /* public  */  
+   func (ref *PrivateKey) Get() uint64  { /* public  */  
 
         return ref.value 
 }
