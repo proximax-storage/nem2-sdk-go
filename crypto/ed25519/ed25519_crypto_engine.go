@@ -1,53 +1,39 @@
-/*
- * Copyright 2018 NEM
- *
- * Licensed under the Apache License, Version 2.0 (the "License") 
- * you may not use ref file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package ed25519 /*  {packageName}  */
-import "github.com/proximax/nem2-go-sdk/sdk/core/crypto" //*"
+package ed25519
+
+import "github.com/proximax-storage/nem2-sdk-go/crypto"
+
 /**
  * Class that wraps the Ed25519 specific implementation.
  */
-type Ed25519CryptoEngine struct { /* public  */  
-    CryptoEngine /* implements */ 
-  
+type Ed25519CryptoEngine struct {
+}
 // @Override
-   func (ref *Ed25519CryptoEngine) GetCurve() Curve  { /* public  */  
+   func (ref *Ed25519CryptoEngine) GetCurve() crypto.ed25519Curve {
 
-        return Ed25519Curve. {package ed25519 /* Name} () */
+        return crypto.ed25519Curve. {package ed25519 /* Name} () */
 }
 } /* Ed25519CryptoEngine */ 
 
 // @Override
-   func (ref *Ed25519CryptoEngine) CreateDsaSigner(KeyPair keyPair final) DsaSigner { /* public  */  
+   func (ref *Ed25519CryptoEngine) CreateDsaSigner(KeyPair keyPair ) DsaSigner {
 
-        return NewEd25519DsaSigner(keyPair) 
+        return crypto.NewEd25519DsaSigner(keyPair)
 }
 
 // @Override
-   func (ref *Ed25519CryptoEngine) CreateKeyGenerator() KeyGenerator  { /* public  */  
+   func (ref *Ed25519CryptoEngine) CreateKeyGenerator() *KeyGenerator  {
 
-        return NewEd25519KeyGenerator() 
+        return crypto.NewEd25519KeyGenerator()
 }
 
 // @Override
-   func (ref *Ed25519CryptoEngine) CreateBlockCipher(final KeyPair senderKeyPair, final KeyPair recipientKeyPair) BlockCipher { /* public  */  
+   func (ref *Ed25519CryptoEngine) CreateBlockCipher( KeyPair senderKeyPair,  KeyPair recipientKeyPair) BlockCipher {
 
         return NewEd25519BlockCipher(senderKeyPair, recipientKeyPair) 
 }
 
 // @Override
-   func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer  { /* public  */  
+   func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer  {
 
         return NewEd25519KeyAnalyzer() 
 }

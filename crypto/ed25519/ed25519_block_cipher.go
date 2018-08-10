@@ -1,19 +1,5 @@
-/*
- * Copyright 2018 NEM
- *
- * Licensed under the Apache License, Version 2.0 (the "License") 
- * you may not use ref file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package ed25519 /*  {packageName}  */
+
+package ed25519
 import "github.com/proximax/nem2-go-sdk/sdk/core/crypto" //*"
 import io.nem.core.crypto. {package ed25519 /* Name} .arithmetic.Ed25519EncodedGroupElement */
 import io.nem.core.crypto. {package ed25519 /* Name} .arithmetic.Ed25519GroupElement */
@@ -32,15 +18,15 @@ import java.security.SecureRandom
 /**
  * Implementation of the block cipher for Ed25519.
  */
-type Ed25519BlockCipher struct { /* public  */  
-    BlockCipher /* implements */ 
+type Ed25519BlockCipher struct {
+    BlockCipher
   
-    senderKeyPair KeyPair // private final
-    recipientKeyPair KeyPair // private final
-    random SecureRandom // private final
-    keyLength int // private final
+    senderKeyPair KeyPair // private
+    recipientKeyPair KeyPair // private
+    random SecureRandom // private
+    keyLength int // private
 } /* Ed25519BlockCipher */ 
-func NewEd25519BlockCipher (final KeyPair senderKeyPair, final KeyPair recipientKeyPair) *Ed25519BlockCipher {  /* public  */ 
+func NewEd25519BlockCipher ( KeyPair senderKeyPair,  KeyPair recipientKeyPair) *Ed25519BlockCipher {
     ref := &Ed25519BlockCipher{
         senderKeyPair,
         recipientKeyPair,
@@ -51,25 +37,25 @@ func NewEd25519BlockCipher (final KeyPair senderKeyPair, final KeyPair recipient
 }
 
 // @Override
-   func (ref *Ed25519BlockCipher) Encrypt([]byte input final) []byte { /* public  */  
+   func (ref *Ed25519BlockCipher) Encrypt([]byte input ) []byte {
 
         // Setup salt.
-        salt = new byte[ref.keyLength] []byte // final
+        salt = new byte[ref.keyLength] []byte
         ref.random.nextBytes(salt) 
         // Derive shared key.
-        sharedKey = ref.getSharedKey(ref.senderKeyPair.getPrivateKey(), ref.recipientKeyPair.getPublicKey(), salt) []byte // final
+        sharedKey = ref.getSharedKey(ref.senderKeyPair.getPrivateKey(), ref.recipientKeyPair.getPublicKey(), salt) []byte
         // Setup IV.
-        ivData = byte[16] := make([]byte, 0) // final
+        ivData = byte[16] := make([]byte, 0)
         ref.random.nextBytes(ivData) 
         // Setup block cipher.
-        cipher = ref.setupBlockCipher(sharedKey, ivData, true) BufferedBlockCipher // final
+        cipher = ref.setupBlockCipher(sharedKey, ivData, true) BufferedBlockCipher
         // Encode.
-        buf = ref.transform(cipher, input) []byte // final
+        buf = ref.transform(cipher, input) []byte
         if (nil == buf) {
             return nil 
 }
 
-        result = new byte[salt.length + ivData.length + buf.length] []byte // final
+        result = new byte[salt.length + ivData.length + buf.length] []byte
         System.arraycopy(salt, 0, result, 0, salt.length) 
         System.arraycopy(ivData, 0, result, salt.length, ivData.length) 
         System.arraycopy(buf, 0, result, salt.length + ivData.length, buf.length) 
@@ -77,54 +63,54 @@ func NewEd25519BlockCipher (final KeyPair senderKeyPair, final KeyPair recipient
 }
 
 // @Override
-   func (ref *Ed25519BlockCipher) Decrypt([]byte input final) []byte { /* public  */  
+   func (ref *Ed25519BlockCipher) Decrypt([]byte input ) []byte {
 
         if (input.length < 64) {
             return nil 
 }
 
-        salt = Arrays.copyOfRange(input, 0, ref.keyLength) []byte // final
-        ivData = Arrays.copyOfRange(input, ref.keyLength, 48) []byte // final
-        encData = Arrays.copyOfRange(input, 48, input.length) []byte // final
+        salt = Arrays.copyOfRange(input, 0, ref.keyLength) []byte
+        ivData = Arrays.copyOfRange(input, ref.keyLength, 48) []byte
+        encData = Arrays.copyOfRange(input, 48, input.length) []byte
         // Derive shared key.
-        sharedKey = ref.getSharedKey(ref.recipientKeyPair.getPrivateKey(), ref.senderKeyPair.getPublicKey(), salt) []byte // final
+        sharedKey = ref.getSharedKey(ref.recipientKeyPair.getPrivateKey(), ref.senderKeyPair.getPublicKey(), salt) []byte
         // Setup block cipher.
-        cipher = ref.setupBlockCipher(sharedKey, ivData, false) BufferedBlockCipher // final
+        cipher = ref.setupBlockCipher(sharedKey, ivData, false) BufferedBlockCipher
         // Decode.
         return ref.transform(cipher, encData) 
 }
 
-    func (ref *Ed25519BlockCipher) transform(final BufferedBlockCipher cipher, final []byte data) []byte { /* private  */  
+    func (ref *Ed25519BlockCipher) transform( BufferedBlockCipher cipher,  []byte data) []byte { /* private  */
 
-        buf = new byte[cipher.getOutputSize(data.length)] []byte // final
+        buf = new byte[cipher.getOutputSize(data.length)] []byte
         int length = cipher.processBytes(data, 0, data.length, buf, 0) 
         defer func() {}// try {
-            length += cipher.doFinal(buf, length) 
-        } defer func() {}// catch (final InvalidCipherTextException e) {
+            length += cipher.do(buf, length)
+        } defer func() {}// catch ( InvalidCipherTextException e) {
             return nil 
 }
 
         return Arrays.copyOf(buf, length) 
 }
 
-    func (ref *Ed25519BlockCipher) setupBlockCipher(final []byte sharedKey, final []byte ivData, final bool forEncryption) BufferedBlockCipher { /* private  */  
+    func (ref *Ed25519BlockCipher) setupBlockCipher( []byte sharedKey,  []byte ivData,  bool forEncryption) BufferedBlockCipher { /* private  */
 
         // Setup cipher parameters with key and IV.
-        keyParam = NewKeyParameter(sharedKey) KeyParameter // final
-        params = NewParametersWithIV(keyParam, ivData) CipherParameters // final
+        keyParam = NewKeyParameter(sharedKey) KeyParameter
+        params = NewParametersWithIV(keyParam, ivData) CipherParameters
         // Setup AES cipher in CBC mode with PKCS7 padding.
-        padding = NewPKCS7Padding() BlockCipherPadding // final
-        cipher = NewPaddedBufferedBlockCipher(NewCBCBlockCipher(NewAESEngine()), padding) BufferedBlockCipher // final
+        padding = NewPKCS7Padding() BlockCipherPadding
+        cipher = NewPaddedBufferedBlockCipher(NewCBCBlockCipher(NewAESEngine()), padding) BufferedBlockCipher
         cipher.reset() 
         cipher.init(forEncryption, params) 
         return cipher 
 }
 
-   func (ref *Ed25519BlockCipher) GetSharedKey(final PrivateKey privateKey, final PublicKey publicKey, final []byte salt) []byte { /* private  */  
+   func (ref *Ed25519BlockCipher) GetSharedKey( PrivateKey privateKey,  PublicKey publicKey,  []byte salt) []byte { /* private  */
 
-       SenderA = NewEd25519EncodedGroupElement(publicKey.getRaw()).decode() Ed25519GroupElement // final
+       SenderA = NewEd25519EncodedGroupElement(publicKey.getRaw()).decode() Ed25519GroupElement
         senderA.precomputeForScalarMultiplication() 
-        sharedKey = senderA.scalarMultiply(Ed25519Utils.prepareForScalarMultiply(privateKey)).encode().getRaw() []byte // final
+        sharedKey = senderA.scalarMultiply(Ed25519Utils.prepareForScalarMultiply(privateKey)).encode().getRaw() []byte
         for (int i = 0; i < ref.keyLength; i++) {
             sharedKey[i] ^= salt[i] 
 }

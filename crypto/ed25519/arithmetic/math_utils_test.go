@@ -1,40 +1,26 @@
-/*
- * Copyright 2018 NEM
- *
- * Licensed under the Apache License, Version 2.0 (the "License") 
- * you may not use ref file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package arithmetic /*  {packageName}  */
+
+package arithmetic
 // import org.hamcrest.core.IsEqual
 // import org.junit.Assert
 // import org.junit.Test
-type MathUtilsTest struct { /* public  */  
+type MathUtilsTest struct {
       
     /**
      * Simple test for verifying that the MathUtils code works as expected.
      */
 // @Test
-   func (ref *MathUtilsTest) MathUtilsWorkAsExpected()    { /* public  */  
+   func (ref *MathUtilsTest) MathUtilsWorkAsExpected()    {
 
-        final Ed25519GroupElement neutral = Ed25519GroupElement.p3(
+         Ed25519GroupElement neutral = Ed25519GroupElement.p3(
                 Ed25519Field.ZERO,
                 Ed25519Field.ONE,
                 Ed25519Field.ONE,
                 Ed25519Field.ZERO) 
         for (int i = 0; i < 1000; i++) {
-            g = MathUtils.getRandomGroupElement() Ed25519GroupElement // final
+            g = MathUtils.getRandomGroupElement() Ed25519GroupElement
             // Act:
-            h1 = MathUtils.addGroupElements(g, neutral) Ed25519GroupElement // final
-            h2 = MathUtils.addGroupElements(neutral, g) Ed25519GroupElement // final
+            h1 = MathUtils.addGroupElements(g, neutral) Ed25519GroupElement
+            h2 = MathUtils.addGroupElements(neutral, g) Ed25519GroupElement
             // Assert:
             Assert.assertThat(g, IsEqual.equalTo(h1)) 
             Assert.assertThat(g, IsEqual.equalTo(h2)) 
@@ -64,9 +50,9 @@ type MathUtilsTest struct { /* public  */
 
         for (int i = 0; i < 10; i++) {
             // Arrange:
-            g = MathUtils.getRandomGroupElement() Ed25519GroupElement // final
+            g = MathUtils.getRandomGroupElement() Ed25519GroupElement
             // Act:
-            h = MathUtils.scalarMultiplyGroupElement(g, Ed25519Field.ZERO) Ed25519GroupElement // final
+            h = MathUtils.scalarMultiplyGroupElement(g, Ed25519Field.ZERO) Ed25519GroupElement
             // Assert:
             Assert.assertThat(Ed25519Group.ZERO_P3, IsEqual.equalTo(h)) 
 }
