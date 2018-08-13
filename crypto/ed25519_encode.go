@@ -25,6 +25,21 @@ func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement { /* 
 	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, a}
 }
 
+type Ed25519KeyAnalyzer struct {
+	/* public  */
+}
+
+func NewEd25519KeyAnalyzer() *Ed25519KeyAnalyzer {
+	return &Ed25519KeyAnalyzer{}
+}
+
+const COMPRESSED_KEY_SIZE = 32
+
+func (ref *Ed25519KeyAnalyzer) IsKeyCompressed(publicKey *PublicKey) bool { /* public  */
+
+	return COMPRESSED_KEY_SIZE == len(publicKey.Raw)
+}
+
 /**
  * Represents the underlying finite field for Ed25519.
  * The field has p = 2^255 - 19 elements.
@@ -84,11 +99,8 @@ func getFieldElement(value int) *Ed25519FieldElement { /* private static  */
 }
 func getD() *Ed25519FieldElement { /* private static  */
 
-	//d := Newuint64("-121665")
-	//       .multiply(Newuint64("121666").modInverse( Ed25519Field.P))
-	//       .mod( Ed25519Field.P)
-
-	d := []byte{}
+	s := big.NewInt(-121665)
+	d := s.Mod(s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field.P)), Ed25519Field.P).Bytes()
 
 	efElem, err := NewEd25519EncodedFieldElement(d)
 
@@ -2850,7 +2862,7 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(A *Ed25519Group
 	for i := 255; i >= 0; i-- {
 		if flag || (aSlide[i] != 0 || bSlide[i] != 0) {
 
-			flag := true
+			flag = true
 			t := r.dbl()
 			if aSlide[i] > 0 {
 				t = t.toP3().precomputedSubtract(A.precomputedForDouble[aSlide[i]/2])

@@ -19,7 +19,7 @@ type Ed25519CryptoEngine struct {
 // @Override
 func (ref *Ed25519CryptoEngine) GetCurve() Curve {
 
-	return ED25519Ed25519Curve
+	return Ed25519Curve
 
 } /*  */
 
@@ -36,7 +36,7 @@ func (ref *Ed25519CryptoEngine) CreateKeyGenerator() KeyGenerator {
 }
 
 // @Override
-func (ref *Ed25519CryptoEngine) createBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher {
+func (ref *Ed25519CryptoEngine) CreateBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher {
 
 	return NewEd25519BlockCipher(senderKeyPair, recipientKeyPair)
 }
@@ -46,17 +46,18 @@ func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer {
 
 	return NewEd25519KeyAnalyzer()
 }
+
 /**
  * Implementation of the block cipher for Ed25519.
  */
 type Ed25519BlockCipher struct { /* public  */
 
-	senderKeyPair *KeyPair // private 
-	recipientKeyPair *KeyPair // private 
-	random *SecureRandom // private 
-	keyLength int // private 
+	senderKeyPair    *KeyPair      // private
+	recipientKeyPair *KeyPair      // private
+	random           *SecureRandom // private
+	keyLength        int           // private
 } /* Ed25519BlockCipher */
-func NewEd25519BlockCipher (senderKeyPair *KeyPair , recipientKeyPair *KeyPair ) *Ed25519BlockCipher {  /* public  */
+func NewEd25519BlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) *Ed25519BlockCipher { /* public  */
 	ref := &Ed25519BlockCipher{
 		senderKeyPair,
 		recipientKeyPair,
@@ -65,88 +66,90 @@ func NewEd25519BlockCipher (senderKeyPair *KeyPair , recipientKeyPair *KeyPair )
 	}
 	return ref
 }
-
-// @Override
-func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte { /* public  */
-
-	// Setup salt.
-	salt := make([] byte, ref.keyLength)
-	ref.random.nextBytes(salt)
-	// Derive shared key.
-	sharedKey := ref.GetSharedKey(ref.senderKeyPair.privateKey, ref.recipientKeyPair.publicKey, salt)
-	// Setup IV.
-	ivData := new byte[16] []byte //
-	ref.random.nextBytes(ivData)
-	// Setup block cipher.
-	cipher = ref.setupBlockCipher(sharedKey, ivData, true) BufferedBlockCipher // 
-	// Encode.
-	buf = ref.transform(cipher, input) []byte // 
-	if (nil == buf) {
-		return nil
-	}
-
-	result = new byte[salt.length + ivData.length + buf.length] []byte // 
-	System.arraycopy(salt, 0, result, 0, salt.length)
-	System.arraycopy(ivData, 0, result, salt.length, ivData.length)
-	System.arraycopy(buf, 0, result, salt.length + ivData.length, buf.length)
-	return result
-}
-
-// @Override
-func (ref *Ed25519BlockCipher) Decrypt([]byte input ) []byte { /* public  */
-
-	if (input.length < 64) {
-		return nil
-	}
-
-	salt = Arrays.copyOfRange(input, 0, ref.keyLength) []byte // 
-	ivData = Arrays.copyOfRange(input, ref.keyLength, 48) []byte // 
-	encData = Arrays.copyOfRange(input, 48, input.length) []byte // 
-	// Derive shared key.
-	sharedKey = ref.getSharedKey(ref.recipientKeyPair.getPrivateKey(), ref.senderKeyPair.getPublicKey(), salt) []byte // 
-	// Setup block cipher.
-	cipher = ref.setupBlockCipher(sharedKey, ivData, false) BufferedBlockCipher // 
-	// Decode.
-	return ref.transform(cipher, encData)
-}
-
-func (ref *Ed25519BlockCipher) transform( BufferedBlockCipher cipher,  []byte data) []byte { /* private  */
-
-	buf = byte[cipher.getOutputSize(data.length)] := make([]byte, 0) // 
-	int length = cipher.processBytes(data, 0, data.length, buf, 0)
-	defer func() {}// try {
-	length += cipher.doFinal(buf, length)
-} defer func() {}// catch ( InvalidCipherTextException e) {
-return nil
-}
-
-return Arrays.copyOf(buf, length)
-}
-
-func (ref *Ed25519BlockCipher) setupBlockCipher( []byte sharedKey,  []byte ivData,  bool forEncryption) BufferedBlockCipher { /* private  */
+func (ref *Ed25519BlockCipher) setupBlockCipher(sharedKey []byte, ivData []byte, forEncryption bool) *BufferedBlockCipher { /* private  */
 
 	// Setup cipher parameters with key and IV.
-	keyParam = NewKeyParameter(sharedKey) KeyParameter // 
-	params = NewParametersWithIV(keyParam, ivData) CipherParameters // 
+	keyParam := NewKeyParameter(sharedKey) //
+	params := NewParametersWithIV(keyParam, ivData)
+	//
 	// Setup AES cipher in CBC mode with PKCS7 padding.
-	padding = NewPKCS7Padding() BlockCipherPadding // 
-	cipher = NewPaddedBufferedBlockCipher(NewCBCBlockCipher(NewAESEngine()), padding) BufferedBlockCipher // 
+	padding := NewPKCS7Padding()
+	//
+	cipher := NewPaddedBufferedBlockCipher(NewCBCBlockCipher(NewAESEngine()), padding) //
 	cipher.reset()
 	cipher.init(forEncryption, params)
 	return cipher
 }
 
-func (ref *Ed25519BlockCipher) GetSharedKey( PrivateKey privateKey,  PublicKey publicKey,  []byte salt) []byte { /* private  */
+func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *PublicKey, salt []byte) ([]byte, error) { /* private  */
 
-	SenderA := NewEd25519EncodedGroupElement(publicKey.getRaw()).decode() Ed25519GroupElement //
-	senderA.precomputeForScalarMultiplication()
-	sharedKey = senderA.scalarMultiply(Ed25519Utils.prepareForScalarMultiply(privateKey)).encode().getRaw() []byte // 
-	for (int i = 0; i < ref.keyLength; i++) {
+	senderA := NewEd25519EncodedGroupElement(publicKey.Raw).Decode()
+	senderA.PrecomputeForScalarMultiplication()
+	sharedKey := senderA.scalarMultiply(PrepareForScalarMultiply(privateKey)).Encode().Raw
+	for i := 0; i < ref.keyLength; i++ {
 		sharedKey[i] ^= salt[i]
 	}
 
-	return Hashes.sha3_256(sharedKey)
+	return HashesSha3_256(sharedKey)
 }
+
+// @Override
+func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte { /* public  */
+
+	// Setup salt.
+	salt := make([]byte, ref.keyLength)
+	ref.random.nextBytes(salt)
+	// Derive shared key.
+	sharedKey, err := ref.GetSharedKey(ref.senderKeyPair.privateKey, ref.recipientKeyPair.publicKey, salt)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// Setup IV.
+	ivData := make([]byte, 16)
+	ref.random.nextBytes(ivData)
+	// Setup block cipher.
+	cipher := ref.setupBlockCipher(sharedKey, ivData, true)
+	// Encode.
+	buf := ref.transform(cipher, input)
+	if nil == buf {
+		return nil
+	}
+
+	result := append(append(salt, ivData...), buf...)
+
+	return result
+}
+
+// @Override
+func (ref *Ed25519BlockCipher) Decrypt(input []byte) []byte { /* public  */
+
+	if len(input) < 64 {
+		return nil
+	}
+
+	salt := input[:ref.keyLength]
+	ivData := input[ref.keyLength:48]
+	encData := input[48:]
+	// Derive shared key.
+	sharedKey, err := ref.GetSharedKey(ref.recipientKeyPair.privateKey, ref.senderKeyPair.publicKey, salt)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// Setup block cipher.
+	cipher := ref.setupBlockCipher(sharedKey, ivData, false)
+	// Decode.
+	return ref.transform(cipher, encData)
+}
+
+func (ref *Ed25519BlockCipher) transform(cipher *BufferedBlockCipher, data []byte) []byte { /* private  */
+
+	buf := make([]byte, cipher.GetOutputSize(len(data)))
+	length := cipher.processBytes(data, 0, len(data), buf, 0)
+	length += cipher.doFinal(buf, length)
+
+	return buf
+}
+
 // Ed25519DsaSigner
 type Ed25519DsaSigner struct {
 	KeyPair *KeyPair // private
@@ -175,28 +178,39 @@ func (ref *Ed25519DsaSigner) Sign(data []byte) (*Signature, error) {
 	if err != nil {
 		return nil, err
 	}
-	// R = H(hash_b,...,hash_2b-1, data) where b=256.
-	//r := ed25519.NewEd25519EncodedFieldElement(HashesSha3_512( hash[32: 64]), // only include the last 32 bytes of the private key hash
-	//	data)
-	//// Reduce size of R since we are calculating mod group order anyway
-	//rModQ := r.modQ()
-	//// R = rModQ * base point.
-	//R := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
-	//encodedR := R.encode()
-	//// S = (R + H(encodedR, encodedA, data) * a) mod group order where
-	//// encodedR and encodedA are the little endian encodings of the group element R and the public key A and
-	//// a is the lower 32 bytes of hash after clamping.
-	//h := NewEd25519EncodedFieldElement(Hashes.sha3_512(
-	//	encodedR.Raw,
-	//	ref.KeyPair.publicKey.Raw,
-	//	data))
-	//hModQ := h.modQ()
-	//encodedS := hModQ.multiplyAndAddModQ(
-	//	Ed25519Utils.prepareForScalarMultiply(ref.KeyPair.privateKey),
-	//	rModQ)
-	//// Signature is (encodedR, encodedS)
-	//signature := NewSignature(encodedR.Raw, encodedS.Raw)
-	signature := &Signature{}
+	//R = H(hash_b,...,hash_2b-1, data) where b=256.
+	b, err := HashesSha3_512(hash[32:64], data) // only include the last 32 bytes of the private key hash
+	if err != nil {
+		return nil, err
+	}
+	r, err := NewEd25519EncodedFieldElement(b)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reduce size of R since we are calculating mod group order anyway
+	rModQ := r.modQ()
+	// R = rModQ * base point.
+	R := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
+	encodedR := R.Encode()
+	// S = (R + H(encodedR, encodedA, data) * a) mod group order where
+	// encodedR and encodedA are the little endian encodings of the group element R and the public key A and
+	// a is the lower 32 bytes of hash after clamping.
+	b, err = HashesSha3_512(encodedR.Raw, ref.KeyPair.publicKey.Raw, data)
+	if err != nil {
+		return nil, err
+	}
+	h, err := NewEd25519EncodedFieldElement(b)
+	if err != nil {
+		return nil, err
+	}
+	hModQ := h.modQ()
+	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.privateKey), rModQ)
+	// Signature is (encodedR, encodedS)
+	signature, err := NewSignature(encodedR.Raw, encodedS.Raw)
+	if err != nil {
+		return nil, err
+	}
 	if !ref.IsCanonicalSignature(signature) {
 		return nil, errors.New("Generated signature is not canonical")
 	}
@@ -294,6 +308,7 @@ func (ref *ed25519Curve) GetHalfGroupOrder() uint64 {
 
 // dummy class
 type SecureRandom struct{}
+
 //todo: implement in future
 func NewSecureRandom() *SecureRandom {
 	return &SecureRandom{}
@@ -319,7 +334,7 @@ func (ref *Ed25519KeyGenerator) GenerateKeyPair() (*KeyPair, error) {
 	seed := make([]byte, 32)
 	ref.random.nextBytes(seed)
 	// seed is the private key.
-	privateKey := NewPrivateKey(big.Int{}.SetBytes(seed))
+	privateKey := NewPrivateKey((&big.Int{}).SetBytes(seed))
 	return NewKeyPair(privateKey, nil, CryptoEngines.Ed25519Engine)
 }
 
@@ -331,5 +346,5 @@ func (ref *Ed25519KeyGenerator) DerivePublicKey(privateKey *PrivateKey) *PublicK
 	pubKey := Ed25519Group.BASE_POINT.scalarMultiply(a)
 	// verification of signatures will be about twice as fast when pre-calculating
 	// a suitable table of group elements.
-	return NewPublicKey(pubKey.Encode().Raw)
+	return NewPublicKey(string(pubKey.Encode().Raw))
 }

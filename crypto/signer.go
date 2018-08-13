@@ -22,7 +22,7 @@ func NewSigner(keyPair *KeyPair, engine CryptoEngine) *Signer {
 		engine = CryptoEngines.DefaultEngine
 	}
 	ref := &Signer{
-		engine.createDsaSigner(keyPair)}
+		engine.CreateDsaSigner(keyPair)}
 	return ref
 }
 

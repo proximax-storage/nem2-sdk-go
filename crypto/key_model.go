@@ -28,7 +28,7 @@ type KeyAnalyzer interface {
 	 *
 	 * @return The key pair.
 	 */
-	GenerateKeyPair() *KeyPair
+	GenerateKeyPair() (*KeyPair, error)
 	/**
 	* Derives a public key from a private key.
 	 *

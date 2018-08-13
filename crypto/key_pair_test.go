@@ -6,7 +6,10 @@ import "testing"
 // @Test
 func TestNewRandomKeyPair_HasPrivateKey(t *testing.T) {
 
-	kp := NewRandomKeyPair()
+	kp, err := NewRandomKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Assert:
 	if !kp.HasPrivateKey() {
 		t.Error("kp.hasPrivateKey() must be true!")
@@ -23,7 +26,10 @@ func TestNewRandomKeyPair_HasPrivateKey(t *testing.T) {
 
 func TestKeyPair_HasPrivateKey(t *testing.T) {
 	// Arrange:
-	kp1 := NewRandomKeyPair()
+	kp1, err := NewRandomKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Act:
 	kp2, err := NewKeyPair(kp1.privateKey, nil, nil)
 	if err != nil {
@@ -46,7 +52,10 @@ func TestKeyPair_HasPrivateKey(t *testing.T) {
 func TestNewKeyPair(t *testing.T) {
 
 	// Arrange:
-	kp1 := NewRandomKeyPair()
+	kp1, err := NewRandomKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Act:
 	kp2, err := NewKeyPair(nil, kp1.publicKey, nil)
 	if err != nil {
@@ -70,8 +79,14 @@ func TestNewKeyPair(t *testing.T) {
 func TestNewRandomKeyPair(t *testing.T) {
 
 	// Act:
-	kp1 := NewRandomKeyPair()
-	kp2 := NewRandomKeyPair()
+	kp1, err := NewRandomKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	kp2, err := NewRandomKeyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Assert:
 	if kp2.privateKey == kp1.privateKey {
 		t.Error("kp2.getPrivateKey() and kp1.getPrivateKey() must by not equal !")

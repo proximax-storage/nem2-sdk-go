@@ -10,7 +10,7 @@ type KeyPair struct {
 	 */
 }
 
-func NewRandomKeyPair() *KeyPair {
+func NewRandomKeyPair() (*KeyPair, error) {
 	return NewKeyPairByEngine(CryptoEngines.DefaultEngine)
 }
 
@@ -27,8 +27,8 @@ func NewKeyPair(privateKey *PrivateKey, publicKey *PublicKey, engine CryptoEngin
 	}
 
 	if publicKey == nil {
-		publicKey = engine.createKeyGenerator().derivePublicKey(privateKey)
-	} else if !engine.createKeyAnalyzer().isKeyCompressed(publicKey) {
+		publicKey = engine.CreateKeyGenerator().DerivePublicKey(privateKey)
+	} else if !engine.CreateKeyAnalyzer().IsKeyCompressed(publicKey) {
 		return nil, errors.New("publicKey must be in compressed form")
 	}
 	return &KeyPair{privateKey, publicKey}, nil
@@ -40,8 +40,8 @@ func NewKeyPair(privateKey *PrivateKey, publicKey *PublicKey, engine CryptoEngin
  * @param engine The crypto engine.
  * @return The key pair.
  */
-func NewKeyPairByEngine(engine CryptoEngine) *KeyPair { /* public static   */
-	return engine.createKeyGenerator().generateKeyPair()
+func NewKeyPairByEngine(engine CryptoEngine) (*KeyPair, error) { /* public static   */
+	return engine.CreateKeyGenerator().GenerateKeyPair()
 }
 
 /**

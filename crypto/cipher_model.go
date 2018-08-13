@@ -25,7 +25,7 @@ func NewCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair, engine CryptoE
 		engine = CryptoEngines.DefaultEngine
 	}
 	ref := &Cipher{
-		engine.createBlockCipher(senderKeyPair, recipientKeyPair),
+		engine.CreateBlockCipher(senderKeyPair, recipientKeyPair),
 	}
 	return ref
 }
