@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"bytes"
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
@@ -8,54 +9,15 @@ import (
 
 type BlockchainService service
 
-// Models
-// Chain Height
-type ChainHeight struct {
-	Height []uint64 `json:"height"`
-}
-
-// Chain Score
-type ChainScore struct {
-	ScoreHigh []uint64 `json:"scoreHigh"`
-	ScoreLow  []uint64 `json:"scoreLow"`
-}
-
-// Block Info
-type BlockInfo struct {
-	Block     *Block     `json:"block"`
-	BlockMeta *BlockMeta `json:"meta"`
-}
-
-// Block
-type Block struct {
-	Signature             *string  `json:"signature"`
-	Signer                *string  `json:"signer"`
-	Version               *uint64  `json:"version"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-	Type                  *uint64  `json:"type"`    // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-	Height                []uint64 `json:"version"`
-	Timestamp             []uint64 `json:"timestamp"`
-	Difficulty            []uint64 `json:"difficulty"`
-	PreviousBlockHash     *string  `json:"previousBlockHash"`
-	BlockTransactionsHash *string  `json:"blockTransactionsHash"`
-}
-
-// Block Meta
-type BlockMeta struct {
-	Hash            *string  `json:"hash"`
-	GenerationHash  *string  `json:"generationHash"`
-	TotalFee        []uint64 `json:"totalFee"`
-	NumTransactions *uint64  `json:"numTransactions"` // TODO: Java BigDecimal equivalent? big.Rat has no unmarshall?
-}
-
 // Get the Chain Height
-func (b *BlockchainService) GetChainHeight(ctx context.Context) (*ChainHeight, *http.Response, error) {
+func (b *BlockchainService) GetBlockchainHeight(ctx context.Context) (*ChainHeight, *http.Response, error) {
 	req, err := b.client.NewRequest("GET", "chain/height", nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	bh := &ChainHeight{}
-	resp, err := b.client.Do(ctx, req, bh)
+	resp, err := b.client.Do(ctx, req, &bh)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -64,14 +26,14 @@ func (b *BlockchainService) GetChainHeight(ctx context.Context) (*ChainHeight, *
 }
 
 // Get the Chain Score
-func (b *BlockchainService) GetChainScore(ctx context.Context) (*ChainScore, *http.Response, error) {
+func (b *BlockchainService) GetBlockchainScore(ctx context.Context) (*ChainScore, *http.Response, error) {
 	req, err := b.client.NewRequest("GET", "chain/score", nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	cs := &ChainScore{}
-	resp, err := b.client.Do(ctx, req, cs)
+	resp, err := b.client.Do(ctx, req, &cs)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -79,8 +41,8 @@ func (b *BlockchainService) GetChainScore(ctx context.Context) (*ChainScore, *ht
 	return cs, resp, nil
 }
 
-// Get block height
-func (b *BlockchainService) GetBlockHeight(ctx context.Context, height int) (*BlockInfo, *http.Response, error) {
+// Get Block Height
+func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height int) (*BlockInfo, *http.Response, error) {
 	u := fmt.Sprintf("block/%d", height)
 
 	req, err := b.client.NewRequest("GET", u, nil)
@@ -89,10 +51,49 @@ func (b *BlockchainService) GetBlockHeight(ctx context.Context, height int) (*Bl
 	}
 
 	binfo := &BlockInfo{}
-	resp, err := b.client.Do(ctx, req, binfo)
+	resp, err := b.client.Do(ctx, req, &binfo)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	return binfo, resp, nil
+}
+
+// Get Transactions from a block information
+func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height int) ([]Transaction, *http.Response, error) {
+	u := fmt.Sprintf("block/%d/transactions", height)
+
+	req, err := b.client.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var data bytes.Buffer
+	resp, err := b.client.Do(ctx, req, &data)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	tx, err := MapTransactions(&data)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return tx, resp, nil
+}
+
+// Get the Storage Information
+func (b *BlockchainService) GetBlockchainStorage(ctx context.Context) (*BlockchainStorageInfo, *http.Response, error) {
+	req, err := b.client.NewRequest("GET", "diagnostic/storage", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bstorage := &BlockchainStorageInfo{}
+	resp, err := b.client.Do(ctx, req, &bstorage)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return bstorage, resp, nil
 }

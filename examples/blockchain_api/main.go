@@ -19,7 +19,7 @@ func main() {
 	client := sdk.NewClient(nil, conf)
 
 	// Get the chain height
-	chainHeight, resp, err := client.Blockchain.GetChainHeight(context.Background())
+	chainHeight, resp, err := client.Blockchain.GetBlockchainHeight(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +28,7 @@ func main() {
 	fmt.Printf("%s\n\n", string(chainHeightJson))
 
 	// Get the chain score
-	chainScore, resp, err := client.Blockchain.GetChainScore(context.Background())
+	chainScore, resp, err := client.Blockchain.GetBlockchainScore(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -37,11 +37,30 @@ func main() {
 	fmt.Printf("%s\n\n", string(chainScoreJson))
 
 	// Get the Block Height
-	blockHeight, resp, err := client.Blockchain.GetBlockHeight(context.Background(), 1)
+	blockHeight, resp, err := client.Blockchain.GetBlockByHeight(context.Background(), 1)
 	if err != nil {
 		panic(err)
 	}
 	blockHeightJson, _ := json.Marshal(blockHeight)
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
 	fmt.Printf("%s\n\n", string(blockHeightJson))
+
+	// Get the Block Transactions
+	transactions, resp, err := client.Blockchain.GetBlockTransactions(context.Background(), 1)
+	if err != nil {
+		panic(err)
+	}
+	transactionsJson, _ := json.Marshal(transactions)
+	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
+	fmt.Printf("%s\n\n", string(transactionsJson))
+
+	// Get the Blockchain Storage Info
+	blockchainStorageInfo, resp, err := client.Blockchain.GetBlockchainStorage(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	blockchainStorageInfoJson, _ := json.Marshal(blockchainStorageInfo)
+	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
+	fmt.Printf("%s\n\n", string(blockchainStorageInfoJson))
 }
