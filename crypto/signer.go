@@ -4,7 +4,7 @@ package crypto
  * Wraps DSA signing and verification logic.
  */
 type Signer struct {
-	signer DsaSigner // private
+	signer DsaSigner
 	/**
 	 * Creates a signer around a KeyPair.
 	 *
@@ -38,25 +38,21 @@ func NewSignerFromDsaSigner(signer DsaSigner) *Signer {
 	return ref
 }
 
-// @Override
 func (ref *Signer) Sign(data []byte) (*Signature, error) {
 
 	return ref.signer.Sign(data)
 }
 
-// @Override
 func (ref *Signer) Verify(data []byte, signature *Signature) bool {
 
 	return ref.signer.Verify(data, signature)
 }
 
-// @Override
 func (ref *Signer) IsCanonicalSignature(signature *Signature) bool {
 
 	return ref.signer.IsCanonicalSignature(signature)
 }
 
-// @Override
 func (ref *Signer) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
 
 	return ref.signer.MakeSignatureCanonical(signature)

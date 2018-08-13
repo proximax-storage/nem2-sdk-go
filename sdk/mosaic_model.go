@@ -184,7 +184,7 @@ func (tx MosaicSupplyType) String() string {
 }
 
 type MosaicName struct {
-	MosaicId *MosaicId    // private
-	Name     string       // private
-	ParentId *NamespaceId // private
+	MosaicId *MosaicId
+	Name     string
+	ParentId *NamespaceId
 }

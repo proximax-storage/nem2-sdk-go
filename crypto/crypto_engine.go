@@ -1,8 +1,6 @@
 package crypto
 
-/**
- * Represents a cryptographic engine that is a factory of crypto-providers.
- */
+//CryptoEngine Represents a cryptographic engine that is a factory of crypto-providers.
 type CryptoEngine interface {
 
 	/**
@@ -40,9 +38,7 @@ type CryptoEngine interface {
 	CreateKeyAnalyzer() KeyAnalyzer
 }
 
-/**
- * Static class that exposes crypto engines.
- */
+//cryptoEngines Static class that exposes crypto engines.
 type cryptoEngines struct {
 	Ed25519Engine *Ed25519CryptoEngine
 	DefaultEngine *Ed25519CryptoEngine

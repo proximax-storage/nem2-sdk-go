@@ -26,7 +26,6 @@ func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement { /* 
 }
 
 type Ed25519KeyAnalyzer struct {
-	/* public  */
 }
 
 func NewEd25519KeyAnalyzer() *Ed25519KeyAnalyzer {
@@ -35,7 +34,7 @@ func NewEd25519KeyAnalyzer() *Ed25519KeyAnalyzer {
 
 const COMPRESSED_KEY_SIZE = 32
 
-func (ref *Ed25519KeyAnalyzer) IsKeyCompressed(publicKey *PublicKey) bool { /* public  */
+func (ref *Ed25519KeyAnalyzer) IsKeyCompressed(publicKey *PublicKey) bool {
 
 	return COMPRESSED_KEY_SIZE == len(publicKey.Raw)
 }
@@ -91,13 +90,13 @@ func init() {
 }
 
 // Ed25519Field
-func getFieldElement(value int) *Ed25519FieldElement { /* private static  */
+func getFieldElement(value int) *Ed25519FieldElement {
 
 	f := make([]int, 10)
 	f[0] = value
 	return &Ed25519FieldElement{f}
 }
-func getD() *Ed25519FieldElement { /* private static  */
+func getD() *Ed25519FieldElement {
 
 	s := big.NewInt(-121665)
 	d := s.Mod(s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field.P)), Ed25519Field.P).Bytes()
@@ -124,13 +123,14 @@ func getD() *Ed25519FieldElement { /* private static  */
  */
 // Ed25519FieldElement
 type Ed25519FieldElement struct {
-	Raw []int // private
+	Raw []int
 	/**
 	 * Creates a field element.
 	 *
 	 * @param Raw The 2^25.5 bit representation of the field element.
 	 */
-} /*  */
+}
+
 func NewEd25519FieldElement(Raw []int) (*Ed25519FieldElement, error) {
 	if len(Raw) != 10 {
 		return nil, errors.New("Invalid 2^25.5 bit representation.")
@@ -149,7 +149,7 @@ func NewEd25519FieldElement(Raw []int) (*Ed25519FieldElement, error) {
  * @param v The denominator of the fraction.
  * @return The square root of u / v.
  */
-func Ed25519FieldElementSqrt(u *Ed25519FieldElement, v *Ed25519FieldElement) *Ed25519FieldElement { /* public static   */
+func Ed25519FieldElementSqrt(u *Ed25519FieldElement, v *Ed25519FieldElement) *Ed25519FieldElement {
 
 	// v3 = v^3
 	v3 := v.square().multiply(v)
@@ -977,7 +977,6 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	return ref.Encode().IsNegative()
 }
 
-// @Override
 func (ref *Ed25519FieldElement) String() string {
 
 	return ref.Encode().String()
@@ -988,14 +987,15 @@ func (ref *Ed25519FieldElement) String() string {
  * The value of the field element is held in 2^8 bit representation, i.e. in a byte array.
  * The length of the array must be 32 or 64.
  */type Ed25519EncodedFieldElement struct {
-	zero []byte // private
-	Raw  []byte // private
+	zero []byte
+	Raw  []byte
 	/**
 	 * Creates a new encoded field element.
 	 *
 	 * @param Raw The byte array that holds the Raw.
 	 */
-} /*  */
+}
+
 func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, error) {
 
 	switch len(Raw) {
@@ -1006,7 +1006,7 @@ func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, err
 	}
 	return nil, errors.New("Invalid 2^8 bit representation.")
 }
-func (ref *Ed25519EncodedFieldElement) threeBytesToLong(in []byte, offset int) int64 { /* private static  */
+func (ref *Ed25519EncodedFieldElement) threeBytesToLong(in []byte, offset int) int64 {
 
 	result := in[offset] & 0xff
 	result |= (in[offset+1] & 0xff) << 8
@@ -1014,7 +1014,7 @@ func (ref *Ed25519EncodedFieldElement) threeBytesToLong(in []byte, offset int) i
 	return int64(result)
 }
 
-func (ref *Ed25519EncodedFieldElement) fourBytesToLong(in []byte, offset int) int64 { /* private static  */
+func (ref *Ed25519EncodedFieldElement) fourBytesToLong(in []byte, offset int) int64 {
 
 	result := in[offset] & 0xff
 	result |= (in[offset+1] & 0xff) << 8
@@ -1870,7 +1870,6 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedField
 	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, result}
 }
 
-// @Override
 func (ref *Ed25519EncodedFieldElement) String() string {
 
 	b := make([]byte, len(ref.Raw))
@@ -1883,16 +1882,15 @@ func (ref *Ed25519EncodedFieldElement) String() string {
 	return string(b)
 }
 
+// Ed25519EncodedGroupElement
 type Ed25519EncodedGroupElement struct {
-	Raw []byte // private
-	/**
-	 * Creates a new encoded group element.
-	 *
-	 * @param Raw The Raw.
-	 */
-} /* Ed25519EncodedGroupElement */
+	Raw []byte
+}
+
+//NewEd25519EncodedGroupElement Creates a new encoded group element.
 func NewEd25519EncodedGroupElement(Raw []byte) *Ed25519EncodedGroupElement {
 	ref := &Ed25519EncodedGroupElement{Raw}
+	//todo: add error handling
 	//        if (32 != Raw.length) {
 	//            panic(IllegalArgumentException{"Invalid encoded group element."})
 	//}
@@ -1967,7 +1965,6 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 	return encoded.Decode()
 }
 
-// @Override
 func (ref *Ed25519EncodedGroupElement) String() string {
 
 	return fmt.Sprintf(
@@ -1976,12 +1973,9 @@ func (ref *Ed25519EncodedGroupElement) String() string {
 		ref.GetAffineY().String())
 }
 
-/**
- * Available coordinate systems for a group element.
- */
+//CoordinateSystem Available coordinate systems for a group element.
 type CoordinateSystem int
 
-//CoordinateSystem
 const (
 	/**
 	 * Affine coordinate system (x, y).
@@ -2009,10 +2003,7 @@ const (
 	CACHED
 )
 
-// import java.math.uint64
-/**
- * Represents the underlying group for Ed25519.
- */
+//ed25519Group Represents the underlying group for Ed25519.
 type ed25519Group struct {
 	GROUP_ORDER                                    *big.Int
 	BASE_POINT, ZERO_P3, ZERO_P2, ZERO_PRECOMPUTED *Ed25519GroupElement
@@ -2041,13 +2032,13 @@ func init() {
 	 * (x, 4/5); x > 0
 	 * }</pre>
 	 */
-	Ed25519Group.BASE_POINT = getBasePoint() // public static
+	Ed25519Group.BASE_POINT = getBasePoint()
 	// different representations of zero
-	Ed25519Group.BASE_POINT = Ed25519GroupElementP3(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO) // public static
-	Ed25519Group.BASE_POINT = Ed25519GroupElementP2(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE)                    // public static
-	Ed25519Group.BASE_POINT = Ed25519GroupElementPrecomputed(Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO)           // public static
+	Ed25519Group.BASE_POINT = Ed25519GroupElementP3(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO)
+	Ed25519Group.BASE_POINT = Ed25519GroupElementP2(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE)
+	Ed25519Group.BASE_POINT = Ed25519GroupElementPrecomputed(Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO)
 }
-func getBasePoint() *Ed25519GroupElement { /* private static  */
+func getBasePoint() *Ed25519GroupElement {
 
 	rawEncodedGroupElement, err := HexEncoderBytes([]byte(ed25519GroupRawElement))
 	if err != nil {
@@ -2073,23 +2064,23 @@ func getBasePoint() *Ed25519GroupElement { /* private static  */
  */
 //Ed25519GroupElement
 type Ed25519GroupElement struct {
-	coordinateSystem CoordinateSystem // private
+	coordinateSystem CoordinateSystem
 	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
-	X *Ed25519FieldElement // private
+	X *Ed25519FieldElement
 	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
-	Y *Ed25519FieldElement // private
+	Y *Ed25519FieldElement
 	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
-	Z *Ed25519FieldElement // private
+	Z *Ed25519FieldElement
 	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
-	T *Ed25519FieldElement // private
+	T *Ed25519FieldElement
 	/**
 	 * Precomputed table for a single scalar multiplication.
 	 */
-	precomputedForSingle [][]*Ed25519GroupElement // private
+	precomputedForSingle [][]*Ed25519GroupElement
 	/**
 	 * Precomputed table for a float64 scalar multiplication
 	 */
-	precomputedForDouble []*Ed25519GroupElement // private
+	precomputedForDouble []*Ed25519GroupElement
 	//region constructors
 	/**
 	 * Creates a group element for a curve.
@@ -2100,7 +2091,8 @@ type Ed25519GroupElement struct {
 	 * @param Z                The Z coordinate.
 	 * @param T                The T coordinate.
 	 */
-} /*  */
+}
+
 func NewEd25519GroupElement(coordinateSystem CoordinateSystem,
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
@@ -2220,7 +2212,7 @@ func Ed25519GroupElementPrecomputed(
  *
  * @param encoded The encode field element.
  * @return 64 bytes, each between -8 and 7
- */func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []byte { /* private static  */
+ */func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []byte {
 
 	a := encoded.Raw
 	e := make([]byte, 64)
@@ -2254,7 +2246,7 @@ func Ed25519GroupElementPrecomputed(
  *
  * @param encoded The encoded field element.
  * @return The byte array r in the above described form.
- */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []byte { /* private static  */
+ */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []byte {
 
 	a := encoded.Raw
 	r := make([]byte, 256)
@@ -2907,7 +2899,6 @@ func (ref *Ed25519GroupElement) SatisfiesCurveEquation() bool {
 
 }
 
-// @Override
 func (ref *Ed25519GroupElement) String() string {
 
 	return fmt.Sprintf(

@@ -16,32 +16,27 @@ import (
 type Ed25519CryptoEngine struct {
 }
 
-// @Override
 func (ref *Ed25519CryptoEngine) GetCurve() Curve {
 
 	return Ed25519Curve
 
-} /*  */
+}
 
-// @Override
 func (ref *Ed25519CryptoEngine) CreateDsaSigner(keyPair *KeyPair) DsaSigner {
 
 	return NewEd25519DsaSigner(keyPair)
 }
 
-// @Override
 func (ref *Ed25519CryptoEngine) CreateKeyGenerator() KeyGenerator {
 
 	return NewEd25519KeyGenerator()
 }
 
-// @Override
 func (ref *Ed25519CryptoEngine) CreateBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher {
 
 	return NewEd25519BlockCipher(senderKeyPair, recipientKeyPair)
 }
 
-// @Override
 func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer {
 
 	return NewEd25519KeyAnalyzer()
@@ -50,14 +45,13 @@ func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer {
 /**
  * Implementation of the block cipher for Ed25519.
  */
-type Ed25519BlockCipher struct { /* public  */
-
-	senderKeyPair    *KeyPair      // private
-	recipientKeyPair *KeyPair      // private
-	random           *SecureRandom // private
-	keyLength        int           // private
+type Ed25519BlockCipher struct {
+	senderKeyPair    *KeyPair
+	recipientKeyPair *KeyPair
+	random           *SecureRandom
+	keyLength        int
 } /* Ed25519BlockCipher */
-func NewEd25519BlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) *Ed25519BlockCipher { /* public  */
+func NewEd25519BlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) *Ed25519BlockCipher {
 	ref := &Ed25519BlockCipher{
 		senderKeyPair,
 		recipientKeyPair,
@@ -93,8 +87,7 @@ func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *P
 	return HashesSha3_256(sharedKey)
 }
 
-// @Override
-func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte { /* public  */
+func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte {
 
 	// Setup salt.
 	salt := make([]byte, ref.keyLength)
@@ -120,8 +113,7 @@ func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte { /* public  */
 	return result
 }
 
-// @Override
-func (ref *Ed25519BlockCipher) Decrypt(input []byte) []byte { /* public  */
+func (ref *Ed25519BlockCipher) Decrypt(input []byte) []byte {
 
 	if len(input) < 64 {
 		return nil
@@ -152,13 +144,14 @@ func (ref *Ed25519BlockCipher) transform(cipher *BufferedBlockCipher, data []byt
 
 // Ed25519DsaSigner
 type Ed25519DsaSigner struct {
-	KeyPair *KeyPair // private
+	KeyPair *KeyPair
 	/**
 	 * Creates a Ed25519 DSA signer.
 	 *
 	 * @param keyPair The key pair to use.
 	 */
-} /*  */
+}
+
 func NewEd25519DsaSigner(keyPair *KeyPair) *Ed25519DsaSigner {
 	ref := &Ed25519DsaSigner{
 		keyPair,
@@ -166,7 +159,6 @@ func NewEd25519DsaSigner(keyPair *KeyPair) *Ed25519DsaSigner {
 	return ref
 }
 
-// @Override
 func (ref *Ed25519DsaSigner) Sign(data []byte) (*Signature, error) {
 
 	if !ref.KeyPair.HasPrivateKey() {
@@ -218,7 +210,6 @@ func (ref *Ed25519DsaSigner) Sign(data []byte) (*Signature, error) {
 	return signature, nil
 }
 
-// @Override
 func (ref *Ed25519DsaSigner) Verify(data []byte, signature *Signature) bool {
 
 	if !ref.IsCanonicalSignature(signature) {
@@ -270,14 +261,12 @@ func (ref *Ed25519DsaSigner) Verify(data []byte, signature *Signature) bool {
 	return bytes.Equal(encodedCalculatedR, rawEncodedR)
 }
 
-// @Override
 func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {
 
 	return uint64(signature.GetS()) != Ed25519Group.GROUP_ORDER.Uint64() &&
 		signature.GetS() == 0 //uint64.ZERO
 }
 
-// @Override
 func (ref *Ed25519DsaSigner) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
 
 	s, err := NewEd25519EncodedFieldElement(signature.S[:64])
@@ -296,12 +285,10 @@ func (ref *Ed25519DsaSigner) MakeSignatureCanonical(signature *Signature) (*Sign
 
 var Ed25519Curve = &ed25519Curve{}
 
-// @Override
 func (ref *ed25519Curve) GetGroupOrder() *big.Int {
 	return Ed25519Group.GROUP_ORDER
 }
 
-// @Override
 func (ref *ed25519Curve) GetHalfGroupOrder() uint64 {
 	return Ed25519Group.GROUP_ORDER.Uint64() >> 1
 }
@@ -319,7 +306,7 @@ func (ref *SecureRandom) nextBytes([]byte) {
 
 //Ed25519KeyGenerator Implementation of the key generator for Ed25519.
 type Ed25519KeyGenerator struct {
-	random *SecureRandom // private
+	random *SecureRandom
 } /* Ed25519KeyGenerator */
 func NewEd25519KeyGenerator() *Ed25519KeyGenerator {
 	ref := &Ed25519KeyGenerator{
@@ -328,7 +315,6 @@ func NewEd25519KeyGenerator() *Ed25519KeyGenerator {
 	return ref
 }
 
-// @Override
 func (ref *Ed25519KeyGenerator) GenerateKeyPair() (*KeyPair, error) {
 
 	seed := make([]byte, 32)
@@ -338,7 +324,6 @@ func (ref *Ed25519KeyGenerator) GenerateKeyPair() (*KeyPair, error) {
 	return NewKeyPair(privateKey, nil, CryptoEngines.Ed25519Engine)
 }
 
-// @Override
 func (ref *Ed25519KeyGenerator) DerivePublicKey(privateKey *PrivateKey) *PublicKey {
 
 	a := PrepareForScalarMultiply(privateKey)

@@ -6,9 +6,7 @@ import (
 	"strconv"
 )
 
-/**
- * Interface to analyze keys.
- */
+//KeyAnalyzer Interface to analyze keys.
 type KeyAnalyzer interface {
 
 	/**
@@ -20,9 +18,8 @@ type KeyAnalyzer interface {
 	IsKeyCompressed(publicKey *PublicKey) bool
 }
 
-/**
- * Interface for generating keys.
- */type KeyGenerator interface {
+//KeyGenerator Interface for generating keys.
+type KeyGenerator interface {
 	/**
 	 * Creates a random key pair.
 	 *
@@ -38,28 +35,23 @@ type KeyAnalyzer interface {
 	DerivePublicKey(privateKey *PrivateKey) *PublicKey
 }
 
-/**
- * Represents a private key.
- */type PrivateKey struct {
-	Value *big.Int // private
+//PrivateKey Represents a private key.
+type PrivateKey struct {
+	Value *big.Int
 	/**
 	 * Creates a new private key.
 	 *
 	 * @param Value The  private key Value.
 	 */
-} /* PrivateKey */
+}
+
 func NewPrivateKey(value *big.Int) *PrivateKey {
 	ref := &PrivateKey{value}
 	return ref
 }
 
-/**
- * Creates a private key from a hex strings.
- *
- * @param hex The hex strings.
- * @return The new private key.
- */
-func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) { /* public static   */
+//PrivatKeyfromHexString creates a private key from a hex strings.
+func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
 	value, err := hex.DecodeString(sHex)
 	if err != nil {
 		return nil, err
@@ -68,12 +60,8 @@ func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) { /* public static
 	return &PrivateKey{(&big.Int{}).SetBytes(value)}, nil
 }
 
-/**
- * Creates a private key from a decimal strings.
- *
- * @param decimal The decimal strings.
- * @return The new private key.
- */func PrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) { /* public static   */
+//PrivateKeyfromDecimalString creates a private key from a decimal strings.
+func PrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) {
 	u, err := strconv.ParseInt(decimal, 10, 64)
 	if err != nil {
 		return nil, err
@@ -88,34 +76,24 @@ func (ref *PrivateKey) getBytes() []byte {
 	return ref.Value.Bytes()
 }
 
-// @Override
 func (ref *PrivateKey) String() string {
 
 	return string(ref.getBytes())
 }
 
-// import java.util.Arrays
-/**
-* Represents a public key.
- */type PublicKey struct {
-	Raw []byte // private
-	/**
-	* Creates a new public key.
-	 *
-	* @param bytes The raw public key Value.
-	*/
-} /* PublicKey */
+//PublicKey  Represents a public key.
+type PublicKey struct {
+	Raw []byte
+}
+
+//NewPublicKey creates a new public key.
 func NewPublicKey(hex string) *PublicKey {
 	ref := &PublicKey{[]byte(hex)}
 	return ref
 }
 
-/**
-  * Creates a public key from a hex strings.
-   *
-   * @param hex The hex strings.
-  * @return The new public key.
-*/func (ref *PublicKey) hex() string { /* public static   */
+// Creates a public key from a hex strings.
+func (ref *PublicKey) hex() string {
 	return string(ref.Raw)
 }
 
