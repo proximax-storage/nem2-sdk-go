@@ -17,7 +17,7 @@ type KeyAnalyzer interface {
 	  * @param publicKey The public key.
 	  * @return true if the public key is compressed, false otherwise.
 	*/
-	isKeyCompressed(publicKey *PublicKey) bool
+	IsKeyCompressed(publicKey *PublicKey) bool
 }
 
 /**
@@ -28,14 +28,14 @@ type KeyAnalyzer interface {
 	 *
 	 * @return The key pair.
 	 */
-	generateKeyPair() *KeyPair
+	GenerateKeyPair() *KeyPair
 	/**
 	* Derives a public key from a private key.
 	 *
 	 * @param privateKey the private key.
 	* @return The public key.
 	*/
-	derivePublicKey(privateKey *PrivateKey) *PublicKey
+	DerivePublicKey(privateKey *PrivateKey) *PublicKey
 }
 
 /**
@@ -59,13 +59,13 @@ func NewPrivateKey(value *big.Int) *PrivateKey {
  * @param hex The hex strings.
  * @return The new private key.
  */
-func PrivatKeyfromHexString(hex string) (*PrivateKey, error) { /* public static   */
-	value, err := hex.DecodeString(hex)
+func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) { /* public static   */
+	value, err := hex.DecodeString(sHex)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PrivateKey{value}, nil
+	return &PrivateKey{(&big.Int{}).SetBytes(value)}, nil
 }
 
 /**

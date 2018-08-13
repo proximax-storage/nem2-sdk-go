@@ -94,3 +94,18 @@ func HexEncoderBytes(src []byte) ([]byte, error) {
 	}
 	return dst, nil
 }
+
+func isNegativeConstantTime(b int) int {
+	return (b >> 8) & 1
+}
+
+func IsEqualConstantTime(b, c int) int { /* public static  */
+
+	result := 0
+	xor := b ^ c // final
+	for i := uint(0); i < 8; i++ {
+		result |= xor >> i
+	}
+
+	return (result ^ 0x01) & 0x01
+}

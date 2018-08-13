@@ -44,11 +44,11 @@ type CryptoEngine interface {
  * Static class that exposes crypto engines.
  */
 type cryptoEngines struct {
-	Ed25519Engine Ed25519CryptoEngine
-	DefaultEngine Ed25519CryptoEngine
+	Ed25519Engine *Ed25519CryptoEngine
+	DefaultEngine *Ed25519CryptoEngine
 }
 
 var CryptoEngines = cryptoEngines{
-	Ed25519CryptoEngine{},
-	Ed25519CryptoEngine{},
+	&Ed25519CryptoEngine{},
+	&Ed25519CryptoEngine{},
 }

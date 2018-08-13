@@ -33,5 +33,5 @@ type DsaSigner interface {
 	 * @param signature The signature.
 	 * @return Signature in canonical form.
 	 */
-	MakeSignatureCanonical(signature *Signature) *Signature
+	MakeSignatureCanonical(signature *Signature) (*Signature, error)
 }

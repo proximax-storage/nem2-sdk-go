@@ -16,11 +16,12 @@ type Signature struct {
 	 */
 } /* Signature */
 // NewSignature R and S must fit into 32 bytes
-func NewSignature(r uint32, s uint32) *Signature {
-	ref := &Signature{}
-	binary.BigEndian.PutUint32(ref.R, r)
-	binary.BigEndian.PutUint32(ref.S, s)
-	return ref
+func NewSignature(r []byte, s []byte) (*Signature, error) {
+	if (len(r) != 32) || (len(s) != 32) {
+		return nil, errors.New("binary signature representation of r and s must both have 32 bytes length")
+	}
+	ref := &Signature{r, s}
+	return ref, nil
 }
 
 /**
