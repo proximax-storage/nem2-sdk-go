@@ -3,7 +3,7 @@ package sdk
 import (
 	"encoding/base32"
 	"encoding/hex"
-	"github.com/kataras/iris/core/errors"
+	"errors"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"math/big"
 	"strconv"
