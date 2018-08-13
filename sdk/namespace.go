@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
@@ -125,6 +126,10 @@ const pathNamespacesFromAccount = "/account/%s/namespaces"
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
 func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
+
+	if address == nil {
+		return nsList, nil, errors.New("address is null")
+	}
 
 	url, comma := "", "?"
 

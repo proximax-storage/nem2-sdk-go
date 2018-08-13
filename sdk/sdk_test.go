@@ -3,6 +3,14 @@ package sdk
 import (
 	"net/http"
 	"net/http/httptest"
+	"io/ioutil"
+	"errors"
+	"bytes"
+	"sync"
+	"strings"
+	"fmt"
+	"golang.org/x/net/context"
+	"time"
 )
 
 const (
@@ -63,3 +71,95 @@ func Uint64(v uint64) *uint64 { return &v }
 // String is a helper routine that allocates a new string value
 // to store v and returns a pointer to it.
 func String(v string) *string { return &v }
+
+type sParam struct {
+	desc     string
+	req      bool
+	Type     string
+	defValue interface{}
+}
+
+type sRouting struct {
+	resp   string
+	params map[string]sParam
+}
+
+func (r *sRouting) checkParams(req *http.Request) (badParams []string, err error) {
+	for key, val := range r.params {
+
+		if key == "body" {
+			b, err := ioutil.ReadAll(req.Body)
+			if err != nil {
+				err = errors.New("failed during reading Body")
+				return badParams, err
+			}
+			if (len(b) == 0) || (bytes.Contains(b, []byte("null"))) {
+				badParams = append(badParams, "body is empty")
+			}
+			//	todo: add check struct to match the request requirements
+		} else if valueParam := req.FormValue(key); (val.req) && (valueParam == "") {
+			badParams = append(badParams, key)
+		} else if val.Type > "" {
+			//	check type is later
+			if valueParam != val.Type {
+				err = errors.New("bad type param")
+				return
+			}
+		}
+	}
+
+	return
+}
+
+type mockService struct {
+	*Client
+	mux  *http.ServeMux
+	lock sync.Locker
+}
+
+func addRouters(routers map[string]sRouting) {
+
+	if serv == nil {
+		serv = NewMockServer()
+	}
+
+	for path, route := range routers {
+		apiRoute := route
+		serv.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			// Mock JSON response
+			if params, err := apiRoute.checkParams(r); (len(params) > 0) || (err != nil) {
+				w.WriteHeader(http.StatusBadRequest)
+				if len(params) > 0 {
+					p := strings.Join(params, ",")
+					fmt.Fprintf(w, "bad params - %s", p)
+				}
+				if err != nil {
+					fmt.Fprint(w, "error during params validate - ", err)
+				}
+			} else {
+				w.Write([]byte(apiRoute.resp))
+			}
+		})
+
+	}
+
+}
+
+var (
+	serv          *mockService
+	ctx           = context.TODO()
+	routeNeedBody = map[string]sParam{"body": {desc: "required body"}}
+)
+
+func NewMockServer() *mockService {
+	client, mux, _, teardown, err := setupMockServer()
+
+	if err != nil {
+		panic(err)
+	}
+
+	serv = &mockService{mux:mux, Client:client}
+	time.AfterFunc(time.Minute*5, teardown)
+
+	return nil
+}
