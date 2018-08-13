@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
@@ -41,9 +42,11 @@ func (b *BlockchainService) GetBlockchainScore(ctx context.Context) (*ChainScore
 	return cs, resp, nil
 }
 
+const pathBlockByHeight = "/block/%d"
+
 // Get Block Height
 func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height int) (*BlockInfo, *http.Response, error) {
-	u := fmt.Sprintf("block/%d", height)
+	u := fmt.Sprintf(pathBlockByHeight, height)
 
 	req, err := b.client.NewRequest("GET", u, nil)
 	if err != nil {
@@ -59,9 +62,11 @@ func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height int) (*
 	return binfo, resp, nil
 }
 
+const pathBlockGetTransaction = "block/%d/transactions"
+
 // Get Transactions from a block information
 func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height int) ([]Transaction, *http.Response, error) {
-	u := fmt.Sprintf("block/%d/transactions", height)
+	u := fmt.Sprintf(pathBlockGetTransaction, height)
 
 	req, err := b.client.NewRequest("GET", u, nil)
 	if err != nil {
@@ -96,4 +101,24 @@ func (b *BlockchainService) GetBlockchainStorage(ctx context.Context) (*Blockcha
 	}
 
 	return bstorage, resp, nil
+}
+
+const pathBlockInfo = "/blocks/%d/limit/%d"
+
+//GetBlockchainInfo Returns blocks information for a given block height and limit
+func (b *BlockchainService) GetBlockchainInfo(ctx context.Context, height, limit int) (*BlockInfo, *http.Response, error) {
+
+	if (height < 0) || (limit < 0) {
+		return nil, nil, errors.New("bad parameters - height, limit must be more then 0")
+	}
+
+	url := fmt.Sprintf(pathBlockInfo, height, limit)
+	bcInfo := &BlockInfo{}
+
+	resp, err := b.client.DoNewRequest(ctx, "GET", url, nil, &bcInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bcInfo, resp, nil
 }

@@ -1,15 +1,15 @@
 package sdk
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"io/ioutil"
-	"errors"
 	"bytes"
-	"sync"
-	"strings"
+	"errors"
 	"fmt"
 	"golang.org/x/net/context"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -158,8 +158,7 @@ func NewMockServer() *mockService {
 		panic(err)
 	}
 
-	serv = &mockService{mux:mux, Client:client}
 	time.AfterFunc(time.Minute*5, teardown)
 
-	return nil
+	return &mockService{mux: mux, Client: client}
 }

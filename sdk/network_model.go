@@ -32,6 +32,5 @@ func ExtractNetworkType(version uint64) NetworkType {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, version)
 
-	fmt.Println(b)
 	return NetworkType(b[1])
 }

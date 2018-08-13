@@ -70,10 +70,7 @@ func (dto *AbstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*AbstractTr
 		return nil, err
 	}
 
-	nt, err := ExtractNetworkType(dto.Version)
-	if err != nil {
-		return nil, err
-	}
+	nt := ExtractNetworkType(dto.Version)
 
 	tv, err := ExtractTransactionVersion(dto.Version)
 	if err != nil {
@@ -291,7 +288,7 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 		`
 			"AbstractTransaction": %s,
 			"MosaicSupplyType": %s,
-			"MosaicId": [ %d ],
+			"MosaicId": [ %v ],
 			"Delta": %d
 		`,
 		tx.AbstractTransaction.String(),
@@ -814,7 +811,7 @@ func (ts *TransactionStatus) String() string {
 		ts.Group,
 		ts.Status,
 		ts.Hash,
-		ts.Deadline,
+		ts.Deadline.Unix(),
 		ts.Height,
 	)
 }
