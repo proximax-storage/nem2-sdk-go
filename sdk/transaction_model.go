@@ -264,7 +264,7 @@ func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransact
 
 	return &MosaicDefinitionTransaction{
 		*atx,
-		dto.Tx.Properties.toStruct(),
+		dto.Tx.Properties.getMosaicProperties(),
 		NewNamespaceId(dto.Tx.ParentId.GetBigInteger(), ""),
 		m,
 		dto.Tx.MosaicName,
@@ -501,12 +501,12 @@ func (dto *registerNamespaceTransactionDTO) toStruct() (*RegisterNamespaceTransa
 		d = dto.Tx.Duration.GetBigInteger()
 	} else {
 		d = big.NewInt(0)
-		n = dto.Tx.ParentId.toStruct()
+		n = dto.Tx.ParentId.getNamespaceId()
 	}
 
 	return &RegisterNamespaceTransaction{
 		*atx,
-		dto.Tx.Id.toStruct(),
+		dto.Tx.Id.getNamespaceId(),
 		dto.Tx.NamespaceType,
 		dto.Tx.NamspaceName,
 		d,

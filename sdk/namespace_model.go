@@ -21,7 +21,7 @@ type namespaceIdDTO struct {
 	FullName string
 }
 
-func (dto *namespaceIdDTO) toStruct() *NamespaceId {
+func (dto *namespaceIdDTO) getNamespaceId() *NamespaceId {
 	return &NamespaceId{dto.Id.GetBigInteger(), dto.FullName}
 }
 

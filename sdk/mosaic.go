@@ -42,7 +42,7 @@ type mosaicInfoDTO struct {
 	Mosaic mosaicDefinitionDTO
 }
 
-func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
+func (dto mosaicPropertiesDTO) getMosaicProperties() *MosaicProperties {
 	flags := "00" + dto[0].GetBigInteger().Text(2)
 	bitMapFlags := flags[len(flags)-3:]
 
@@ -75,7 +75,7 @@ func (ref *mosaicInfoDTO) getMosaicInfo() (*MosaicInfo, error) {
 		ref.Mosaic.Supply.GetBigInteger(),
 		ref.Mosaic.Height.GetBigInteger(),
 		publicAcc,
-		ref.Mosaic.Properties.toStruct(),
+		ref.Mosaic.Properties.getMosaicProperties(),
 	}, nil
 }
 
