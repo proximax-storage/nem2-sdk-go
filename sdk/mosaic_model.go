@@ -170,9 +170,8 @@ func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
 }
 
-type MosaicName struct { /* public  */
-
-	MosaicId *MosaicId    // private final
-	Name     string       // private final
-	ParentId *NamespaceId // private final
+type MosaicName struct {
+	MosaicId *MosaicId
+	Name     string
+	ParentId *NamespaceId
 }
