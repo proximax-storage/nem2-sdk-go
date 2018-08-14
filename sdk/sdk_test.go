@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -158,7 +159,25 @@ func NewMockServer() *mockService {
 		panic(err)
 	}
 
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		//	mock router as default
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "%s not found in mock routers", r.URL)
+		fmt.Println(r.URL)
+	})
 	time.AfterFunc(time.Minute*5, teardown)
 
 	return &mockService{mux: mux, Client: client}
+}
+
+func validateResp(resp *http.Response, t *testing.T) bool {
+	if resp == nil {
+		return false
+	}
+	if resp.StatusCode != 200 {
+		t.Error(resp.Status)
+		t.Logf("%#v", resp.Body)
+		return false
+	}
+	return true
 }

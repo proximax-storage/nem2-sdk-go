@@ -47,7 +47,8 @@ func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
 	var err error
 	ms := make(Mosaics, len(dto.Account.Mosaics))
 	for i, m := range dto.Account.Mosaics {
-		ms[i], err = m.toStruct()
+		ms[i], err = m.getMosaic()
+		ms[i], err = m.getMosaic()
 	}
 	if err != nil {
 		return nil, err
@@ -60,11 +61,11 @@ func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
 
 	return &AccountInfo{
 		add,
-		dto.Account.AddressHeight.toStruct(),
+		dto.Account.AddressHeight.GetBigInteger(),
 		dto.Account.PublicKey,
-		dto.Account.PublicKeyHeight.toStruct(),
-		dto.Account.Importance.toStruct(),
-		dto.Account.ImportanceHeight.toStruct(),
+		dto.Account.PublicKeyHeight.GetBigInteger(),
+		dto.Account.Importance.GetBigInteger(),
+		dto.Account.ImportanceHeight.GetBigInteger(),
 		ms,
 	}, nil
 }

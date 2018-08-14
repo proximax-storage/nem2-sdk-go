@@ -19,10 +19,10 @@ var transaction = &TransferTransaction{
 		NetworkType: MIJIN_TEST,
 		Signature:   "ADF80CBC864B65A8D94205E9EC6640FA4AE0E3011B27F8A93D93761E454A9853BF0AB1ECB3DF62E1D2D267D3F1913FAB0E2225CE5EA3937790B78FFA1288870C",
 		Signer:      &PublicAccount{&Address{MIJIN_TEST, "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"}, "27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9"},
-		Fee:         uint64DTO{0, 0}.toStruct(),
-		Deadline:    time.Unix(uint64DTO{1094650402, 17}.toStruct().Int64(), int64(time.Millisecond)),
+		Fee:         uint64DTO{0, 0}.GetBigInteger(),
+		Deadline:    time.Unix(uint64DTO{1094650402, 17}.GetBigInteger().Int64(), int64(time.Millisecond)),
 		TransactionInfo: &TransactionInfo{
-			Height:              uint64DTO{42, 0}.toStruct(),
+			Height:              uint64DTO{42, 0}.GetBigInteger(),
 			Hash:                "45AC1259DABD7163B2816232773E66FC00342BB8DD5C965D4B784CD575FDFAF1",
 			MerkleComponentHash: "45AC1259DABD7163B2816232773E66FC00342BB8DD5C965D4B784CD575FDFAF1",
 			Index:               0,
@@ -30,7 +30,7 @@ var transaction = &TransferTransaction{
 		},
 	},
 	Mosaics: Mosaics{
-		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toStruct(), ""}, uint64DTO{10000000, 0}.toStruct()},
+		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.GetBigInteger(), ""}, uint64DTO{10000000, 0}.GetBigInteger()},
 	},
 	Address: &Address{MIJIN_TEST, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
 }
@@ -82,8 +82,8 @@ var status = &TransactionStatus{
 	"confirmed",
 	"Success",
 	"7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F",
-	time.Unix(uint64DTO{1, 0}.toStruct().Int64(), int64(time.Millisecond)),
-	uint64DTO{1, 0}.toStruct(),
+	time.Unix(uint64DTO{1, 0}.GetBigInteger().Int64(), int64(time.Millisecond)),
+	uint64DTO{1, 0}.GetBigInteger(),
 }
 
 const statusJson = `{

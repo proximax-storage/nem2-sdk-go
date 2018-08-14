@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
 	"testing"
 )
@@ -100,6 +99,9 @@ var bcRouters = map[string]sRouting{
 	fmt.Sprintf(pathBlockInfo, testHeight, testLimit): {blockInfoJSON, nil},
 	fmt.Sprintf(pathBlockGetTransaction, testHeight):  {blockTransactionsJSON, nil},
 	fmt.Sprintf(pathBlockByHeight, testHeight):        {blockInfoJSON, nil},
+	pathBlockHeight:                                   {`{"height":[11235,0]}`, nil},
+	pathBlockScore:                                    {`{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`, nil},
+	pathBlockStorage:                                  {`{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`, nil},
 }
 
 func init() {
@@ -119,32 +121,16 @@ func TestBlockchainService_GetBlockchainInfo(t *testing.T) {
 	bcInfo, resp, err := serv.Blockchain.GetBlockchainInfo(ctx, testHeight, testLimit)
 	if err != nil {
 		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if validateBlockInfo(bcInfo, t) {
+	} else if validateResp(resp, t) && validateBlockInfo(bcInfo, t) {
 		t.Logf("%#v", bcInfo)
 	}
 }
 func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
-	client, mux, _, teardown, err := setupMockServer()
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainHeight error setting up mock server: %v", err)
-	}
-	defer teardown()
 
-	mux.HandleFunc("/chain/height", func(w http.ResponseWriter, r *http.Request) {
-		// Mock JSON response
-		fmt.Fprint(w, `{"height":[11235,0]}`)
-	})
-
-	got, resp, err := client.Blockchain.GetBlockchainHeight(ctx)
+	got, resp, err := serv.Blockchain.GetBlockchainHeight(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainHeight returned error: %v", err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else {
+	} else if validateResp(resp, t) {
 
 		want := &ChainHeight{Height: []uint64{11235, 0}}
 		if !reflect.DeepEqual(got, want) {
@@ -154,26 +140,11 @@ func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
-	client, mux, _, teardown, err := setupMockServer()
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainStorage error setting up mock server: %v", err)
-	}
 
-	defer teardown()
-
-	mux.HandleFunc("/diagnostic/storage", func(w http.ResponseWriter, r *http.Request) {
-		// Mock JSON response
-		fmt.Fprint(w, `{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`)
-	})
-
-	got, resp, err := client.Blockchain.GetBlockchainStorage(ctx)
+	got, resp, err := serv.Blockchain.GetBlockchainStorage(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainStorage returned error: %v", err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else {
-
+	} else if validateResp(resp, t) {
 		want := &BlockchainStorageInfo{NumBlocks: Int(62094), NumTransactions: Int(56), NumAccounts: Int(25)}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("Blockchain.GetBlockchainStorage returned %+v, want %+v", got, want)
@@ -182,25 +153,11 @@ func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockchainScore(t *testing.T) {
-	client, mux, _, teardown, err := setupMockServer()
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainScore error setting up mock server: %v", err)
-	}
 
-	defer teardown()
-
-	mux.HandleFunc("/chain/score", func(w http.ResponseWriter, r *http.Request) {
-		// Mock JSON response
-		fmt.Fprint(w, `{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`)
-	})
-
-	got, resp, err := client.Blockchain.GetBlockchainScore(ctx)
+	got, resp, err := serv.Blockchain.GetBlockchainScore(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainScore returned error: %v", err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else {
+	} else if validateResp(resp, t) {
 
 		want := &ChainScore{ScoreHigh: []uint64{0, 0}, ScoreLow: []uint64{3999308498, 121398739}}
 		if !reflect.DeepEqual(got, want) {
@@ -214,25 +171,23 @@ func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 	got, resp, err := serv.Blockchain.GetBlockByHeight(ctx, testHeight)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockByHeight returned error: %v", err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if want := wantBlockInfo; !reflect.DeepEqual(got, want) {
-		t.Errorf("Blockchain.GetBlockByHeight returned %+v, want %+v", got, want)
+	} else if validateResp(resp, t) {
+		if want := wantBlockInfo; !reflect.DeepEqual(got, want) {
+			t.Errorf("Blockchain.GetBlockByHeight returned %+v, want %+v", got, want)
+		}
 	}
 }
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
 
-	t.Log(bcRouters)
 	got, resp, err := serv.Blockchain.GetBlockTransactions(ctx, testHeight)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockTransactions returned error: %v", err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if want := wantBlockTransactions; !reflect.DeepEqual(got, want) {
-		t.Errorf("Blockchain.GetBlockTransactions returned %+v, want %+v", got, want)
+	} else if validateResp(resp, t) {
+
+		if want := wantBlockTransactions; !reflect.DeepEqual(got, want) {
+			t.Errorf("Blockchain.GetBlockTransactions returned %+v, want %+v", got, want)
+		}
 	}
 }
 
