@@ -1904,8 +1904,15 @@ func NewEd25519EncodedGroupElement(Raw []byte) *Ed25519EncodedGroupElement {
  */
 func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 
-	x := ref.GetAffineX()
-	y := ref.GetAffineX()
+	x, err := ref.GetAffineX()
+	if err != nil {
+		return nil
+	}
+	y, err := ref.GetAffineY()
+	if err != nil {
+		return nil
+	}
+
 	return Ed25519GroupElementP3(x, y, Ed25519Field.ONE, x.multiply(y))
 }
 
@@ -1920,9 +1927,12 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
  * If sign(x) != bit 255 of s then negate x.
  *
  * @return the affine x-coordinate.
- */func (ref *Ed25519EncodedGroupElement) GetAffineX() *Ed25519FieldElement {
+ */func (ref *Ed25519EncodedGroupElement) GetAffineX() (*Ed25519FieldElement, error) {
 
-	y := ref.GetAffineY()
+	y, err := ref.GetAffineY()
+	if err != nil {
+		return nil, err
+	}
 	ySquare := y.square()
 	// u = y^2 - 1
 	u := ySquare.subtract(Ed25519Field.ONE)
@@ -1935,7 +1945,7 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 	if checkForZero.IsNonZero() {
 		checkForZero = vxSquare.add(u)
 		if checkForZero.IsNonZero() {
-			panic(errors.New("not a valid  {ClassName} ."))
+			return nil, errors.New("not a valid  {ClassName} .")
 		}
 
 		x = x.multiply(Ed25519Field.I)
@@ -1946,31 +1956,37 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 		x = x.negate()
 	}
 
-	return x
+	return x, nil
 }
 
 /**
  * Gets the affine y-coordinate.
  *
  * @return the affine y-coordinate.
- */func (ref *Ed25519EncodedGroupElement) GetAffineY() *Ed25519FieldElement {
+ */func (ref *Ed25519EncodedGroupElement) GetAffineY() (*Ed25519FieldElement, error) {
 
 	// The affine y-coordinate is in bits 0 to 254.
 	// Since the decode() method of Ed25519EncodedFieldElement ignores bit 255,
 	// we can use that method without problems.
 	encoded, err := NewEd25519EncodedFieldElement(ref.Raw)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
-	return encoded.Decode()
+	return encoded.Decode(), nil
 }
 
 func (ref *Ed25519EncodedGroupElement) String() string {
 
+	x, err := ref.GetAffineX()
+	if err != nil {
+		return err.Error()
+	}
+	y, err := ref.GetAffineY()
+	if err != nil {
+		return err.Error()
+	}
 	return fmt.Sprintf(
-		"x=%s\ny=%s\n",
-		ref.GetAffineX().String(),
-		ref.GetAffineY().String())
+		"x=%s\ny=%s\n", x.String(), y.String())
 }
 
 //CoordinateSystem Available coordinate systems for a group element.
@@ -2045,6 +2061,9 @@ func getBasePoint() *Ed25519GroupElement {
 		fmt.Println(err)
 	}
 	basePoint := NewEd25519EncodedGroupElement(rawEncodedGroupElement).Decode()
+	if basePoint == nil {
+		return nil
+	}
 	basePoint.PrecomputeForScalarMultiplication()
 	basePoint.PrecomputeForDoubleScalarMultiplication()
 	return basePoint
@@ -2495,7 +2514,7 @@ func (ref *Ed25519GroupElement) Encode() *Ed25519EncodedGroupElement {
  */
 func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 
-	if len(ref.precomputedForSingle) > 0 {
+	if (ref.precomputedForSingle == nil) || len(ref.precomputedForSingle) > 0 {
 		return
 	}
 
