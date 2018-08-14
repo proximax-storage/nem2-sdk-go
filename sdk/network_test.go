@@ -2,14 +2,16 @@ package sdk
 
 import "testing"
 
-func TestNetworkService_GetNetworkType(t *testing.T) {
-	err := setupTest()
-	if err != nil {
-		t.Fatal(err)
-	}
+func init() {
+	addRouters(map[string]sRouting{pathNetwork: {`{
+  "name": "mijinTest",
+  "description": "catapult development network"
+}`, nil}})
 
-	serv := serv.client.Network
-	netType, resp, err := serv.GetNetworkType(ctx)
+}
+func TestNetworkService_GetNetworkType(t *testing.T) {
+
+	netType, resp, err := serv.Network.GetNetworkType(ctx)
 	if err != nil {
 		t.Error(err)
 	} else if resp.StatusCode != 200 {
