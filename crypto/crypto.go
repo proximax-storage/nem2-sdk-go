@@ -3,10 +3,11 @@ package crypto
 
 import (
 	"encoding/base32"
+	"encoding/hex"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
-	"encoding/hex"
 )
+
 const NUM_CHECKSUM_BYTES = 4
 
 type KeyPair struct {
@@ -50,7 +51,7 @@ func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 
 func GenerateChecksum(b []byte) []byte {
 	// step 1: sha3 hash of (input
-	sha3StepThreeHash:= sha3.New256()
+	sha3StepThreeHash := sha3.New256()
 	sha3StepThreeHash.Write(b)
 
 	// step 2: get the first X bytes of (1)

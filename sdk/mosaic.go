@@ -18,7 +18,7 @@ const (
 	pathMosaicFromNamespace = "/namespaces/%s/mosaic/"
 )
 
-type mosaicPropertiesDTO []*uint64DTO
+type mosaicPropertiesDTO []uint64DTO
 
 // NamespaceMosaicMetaDTO
 type NamespaceMosaicMetaDTO struct {
@@ -27,10 +27,10 @@ type NamespaceMosaicMetaDTO struct {
 	Id     string
 }
 type mosaicDefinitionDTO struct {
-	NamespaceId *uint64DTO
-	MosaicId    *uint64DTO
-	Supply      *uint64DTO
-	Height      *uint64DTO
+	NamespaceId uint64DTO
+	MosaicId    uint64DTO
+	Supply      uint64DTO
+	Height      uint64DTO
 	Owner       string
 	Properties  mosaicPropertiesDTO
 	Levy        interface{}
@@ -42,18 +42,18 @@ type mosaicInfoDTO struct {
 	Mosaic mosaicDefinitionDTO
 }
 
-func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
-	flags := "00" + dto[0].toStruct().Text(2)
+func (dto mosaicPropertiesDTO) getMosaicProperties() *MosaicProperties {
+	flags := "00" + dto[0].GetBigInteger().Text(2)
 	bitMapFlags := flags[len(flags)-3:]
 
 	return NewMosaicProperties(bitMapFlags[2] == '1',
 		bitMapFlags[1] == '1',
 		bitMapFlags[0] == '1',
-		dto[1].toStruct().Int64(),
-		time.Duration(dto[2].toStruct().Uint64()))
+		dto[1].GetBigInteger().Int64(),
+		time.Duration(dto[2].GetBigInteger().Uint64()))
 }
 
-func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
+func (ref *mosaicInfoDTO) getMosaicInfo() (*MosaicInfo, error) {
 
 	publicAcc, err := NewPublicAccount(ref.Mosaic.Owner, NetworkType(1))
 	if err != nil {
@@ -62,7 +62,7 @@ func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 	if len(ref.Mosaic.Properties) < 3 {
 		return nil, errors.New("mosaic Properties is not valid")
 	}
-	mosaicID, err := NewMosaicId(ref.Mosaic.MosaicId.toStruct(), "")
+	mosaicID, err := NewMosaicId(ref.Mosaic.MosaicId.GetBigInteger(), "")
 	if err != nil {
 		return nil, err
 	}
@@ -70,19 +70,19 @@ func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 		ref.Meta.Active,
 		ref.Meta.Index,
 		ref.Meta.Id,
-		NewNamespaceId(ref.Mosaic.NamespaceId.toStruct(), ""),
+		NewNamespaceId(ref.Mosaic.NamespaceId.GetBigInteger(), ""),
 		mosaicID,
-		ref.Mosaic.Supply.toStruct(),
-		ref.Mosaic.Height.toStruct(),
+		ref.Mosaic.Supply.GetBigInteger(),
+		ref.Mosaic.Height.GetBigInteger(),
 		publicAcc,
-		ref.Mosaic.Properties.toStruct(),
+		ref.Mosaic.Properties.getMosaicProperties(),
 	}, nil
 }
 
 // mosaicInfoDTO is temporary struct for reading response & fill MosaicName
 type MosaicNameDTO struct {
-	ParentId *uint64DTO
-	MosaicId *uint64DTO
+	ParentId uint64DTO
+	MosaicId uint64DTO
 	Name     string
 }
 type MosaicNamesDTO []*MosaicNameDTO
@@ -90,14 +90,14 @@ type MosaicNamesDTO []*MosaicNameDTO
 func (ref MosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
 	mscNames := make([]*MosaicName, len(ref))
 	for i, mscNameDTO := range ref {
-		newMscId, err := NewMosaicId(mscNameDTO.MosaicId.toStruct(), "")
+		newMscId, err := NewMosaicId(mscNameDTO.MosaicId.GetBigInteger(), "")
 		if err != nil {
 			return nil, err
 		}
 		mscNames[i] = &MosaicName{
 			newMscId,
 			mscNameDTO.Name,
-			NewNamespaceId(mscNameDTO.ParentId.toStruct(), ""),
+			NewNamespaceId(mscNameDTO.ParentId.GetBigInteger(), ""),
 		}
 	}
 
@@ -115,7 +115,7 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId string) (mscIn
 		return nil, resp, err
 	}
 
-	mscInfo, err = mscInfoDTO.setMosaicInfo()
+	mscInfo, err = mscInfoDTO.getMosaicInfo()
 	if err != nil {
 		return nil, resp, err
 	}
@@ -136,7 +136,7 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds MosaicIds) (
 
 	mscInfoArr = make([]*MosaicInfo, len(nsInfosDTO))
 	for i, nsInfoDTO := range nsInfosDTO {
-		mscInfoArr[i], err = nsInfoDTO.setMosaicInfo()
+		mscInfoArr[i], err = nsInfoDTO.getMosaicInfo()
 		if err != nil {
 			return nil, resp, err
 		}
@@ -193,11 +193,24 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 	mscInfo = make([]*MosaicInfo, len(mscInfoDTOArr))
 	for i, mscInfoDTO := range mscInfoDTOArr {
 
-		mscInfo[i], err = mscInfoDTO.setMosaicInfo()
+		mscInfo[i], err = mscInfoDTO.getMosaicInfo()
 		if err != nil {
 			return nil, resp, err
 		}
 	}
 
 	return mscInfo, resp, nil
+}
+
+type mosaicDTO struct {
+	MosaicId uint64DTO `json:"id"`
+	Amount   uint64DTO `json:"amount"`
+}
+
+func (dto *mosaicDTO) getMosaic() (*Mosaic, error) {
+	id, err := NewMosaicId(dto.MosaicId.GetBigInteger(), "")
+	if err != nil {
+		return nil, err
+	}
+	return &Mosaic{id, dto.Amount.GetBigInteger()}, nil
 }

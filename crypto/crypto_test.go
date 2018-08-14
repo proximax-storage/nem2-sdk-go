@@ -1,8 +1,8 @@
 package crypto
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
 func TestGenerateEncodedAddress(t *testing.T) {

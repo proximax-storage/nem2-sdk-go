@@ -10,13 +10,13 @@ import (
 
 var account = &AccountInfo{
 	&Address{MIJIN_TEST, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"},
-	uint64DTO{1, 0}.toStruct(),
+	uint64DTO{1, 0}.GetBigInteger(),
 	"F3824119C9F8B9E81007CAA0EDD44F098458F14503D7C8D7C24F60AF11266E57",
-	uint64DTO{0, 0}.toStruct(),
-	uint64DTO{409090909, 0}.toStruct(),
-	uint64DTO{1, 0}.toStruct(),
+	uint64DTO{0, 0}.GetBigInteger(),
+	uint64DTO{409090909, 0}.GetBigInteger(),
+	uint64DTO{1, 0}.GetBigInteger(),
 	Mosaics{
-		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toStruct(), ""}, uint64DTO{3863990592, 95248}.toStruct()},
+		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.GetBigInteger(), ""}, uint64DTO{3863990592, 95248}.GetBigInteger()},
 	},
 }
 
