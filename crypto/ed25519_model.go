@@ -247,23 +247,25 @@ func NewEd25519KeyGenerator() *Ed25519KeyGenerator {
 // GenerateKeyPair generate key pair use ed25519.GenerateKey
 func (ref *Ed25519KeyGenerator) GenerateKeyPair() (*KeyPair, error) {
 
-	pubKey, prKey, err := ed25519.GenerateKey(nil)
+	//ignore publicKey
+	_, prKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return nil, err
 	}
 	// seed is the private key.
 	privateKey := NewPrivateKey(prKey)
-	publicKey := NewPublicKey(pubKey)
+	publicKey := ref.DerivePublicKey(privateKey)
 	return NewKeyPair(privateKey, publicKey, CryptoEngines.Ed25519Engine)
 }
 
 func (ref *Ed25519KeyGenerator) DerivePublicKey(privateKey *PrivateKey) *PublicKey {
 
-	//a := PrepareForScalarMultiply(privateKey)
+	a := PrepareForScalarMultiply(privateKey)
 	// a * base point is the public key.
-	var pubKey, prKey [32]byte
+	var pubKey, prKey, base [32]byte
 	copy(prKey[:], privateKey.Raw)
-	curve25519.ScalarBaseMult(&pubKey, &prKey)
+	copy(base[:], a.Raw)
+	curve25519.ScalarMult(&pubKey, &prKey, &base)
 	// verification of signatures will be about twice as fast when pre-calculating
 	// a suitable table of group elements.
 	return NewPublicKey(pubKey[:])
