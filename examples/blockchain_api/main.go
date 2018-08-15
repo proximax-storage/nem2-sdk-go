@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/proximax/nem2-go-sdk/sdk"
+	"github.com/proximax-storage/nem2-sdk-go/sdk"
 	"golang.org/x/net/context"
 )
 

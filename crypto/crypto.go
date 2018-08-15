@@ -10,6 +10,7 @@ import (
 
 const NUM_CHECKSUM_BYTES = 4
 
+// GenerateEncodedAddress convert publicKey to address
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
 	pKeyD, err := hex.DecodeString(pKey)
@@ -54,6 +55,7 @@ func GenerateChecksum(b []byte) ([]byte, error) {
 	return sha3StepThreeHash.Sum(nil)[:NUM_CHECKSUM_BYTES], nil
 }
 
+// todo: need check the three following methods
 func HashesSha3_256(b []byte) ([]byte, error) {
 	hash := sha3.New256()
 	_, err := hash.Write(b)
@@ -93,4 +95,19 @@ func HexEncoderBytes(src []byte) ([]byte, error) {
 		return nil, err
 	}
 	return dst, nil
+}
+
+func isNegativeConstantTime(b int) int {
+	return (b >> 8) & 1
+}
+
+func IsEqualConstantTime(b, c int) int {
+
+	result := 0
+	xor := b ^ c // final
+	for i := uint(0); i < 8; i++ {
+		result |= xor >> i
+	}
+
+	return (result ^ 0x01) & 0x01
 }

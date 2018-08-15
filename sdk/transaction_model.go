@@ -70,10 +70,7 @@ func (dto *AbstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*AbstractTr
 		return nil, err
 	}
 
-	nt, err := ExtractNetworkType(dto.Version)
-	if err != nil {
-		return nil, err
-	}
+	nt := ExtractNetworkType(dto.Version)
 
 	tv, err := ExtractTransactionVersion(dto.Version)
 	if err != nil {
@@ -90,8 +87,8 @@ func (dto *AbstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*AbstractTr
 		tInfo,
 		t,
 		tv,
-		dto.Fee.toStruct(),
-		time.Unix(dto.Deadline.toStruct().Int64(), int64(time.Millisecond)),
+		dto.Fee.GetBigInteger(),
+		time.Unix(dto.Deadline.GetBigInteger().Int64(), int64(time.Millisecond)),
 		dto.Signature,
 		pa,
 	}, nil
@@ -141,7 +138,7 @@ type transactionInfoDTO struct {
 
 func (dto *transactionInfoDTO) toStruct() *TransactionInfo {
 	return &TransactionInfo{
-		dto.Height.toStruct(),
+		dto.Height.GetBigInteger(),
 		dto.Index,
 		dto.Id,
 		dto.Hash,
@@ -260,15 +257,15 @@ func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransact
 		return nil, err
 	}
 
-	m, err := NewMosaicId(dto.Tx.MosaicId.toStruct(), "")
+	m, err := NewMosaicId(dto.Tx.MosaicId.GetBigInteger(), "")
 	if err != nil {
 		return nil, err
 	}
 
 	return &MosaicDefinitionTransaction{
 		*atx,
-		dto.Tx.Properties.toStruct(),
-		NewNamespaceId(dto.Tx.ParentId.toStruct(), ""),
+		dto.Tx.Properties.getMosaicProperties(),
+		NewNamespaceId(dto.Tx.ParentId.GetBigInteger(), ""),
 		m,
 		dto.Tx.MosaicName,
 	}, nil
@@ -291,7 +288,7 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 		`
 			"AbstractTransaction": %s,
 			"MosaicSupplyType": %s,
-			"MosaicId": [ %d ],
+			"MosaicId": [ %v ],
 			"Delta": %d
 		`,
 		tx.AbstractTransaction.String(),
@@ -317,7 +314,7 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 		return nil, err
 	}
 
-	m, err := NewMosaicId(dto.Tx.MosaicId.toStruct(), "")
+	m, err := NewMosaicId(dto.Tx.MosaicId.GetBigInteger(), "")
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +323,7 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 		*atx,
 		dto.Tx.MosaicSupplyType,
 		m,
-		dto.Tx.Delta.toStruct(),
+		dto.Tx.Delta.GetBigInteger(),
 	}, nil
 }
 
@@ -375,7 +372,7 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 
 	txs := make(Mosaics, len(dto.Tx.Mosaics))
 	for i, tx := range dto.Tx.Mosaics {
-		txs[i], err = tx.toStruct()
+		txs[i], err = tx.getMosaic()
 	}
 	if err != nil {
 		return nil, err
@@ -501,15 +498,15 @@ func (dto *registerNamespaceTransactionDTO) toStruct() (*RegisterNamespaceTransa
 	var d *big.Int
 	n := &NamespaceId{}
 	if dto.Tx.NamespaceType == RootNamespace {
-		d = dto.Tx.Duration.toStruct()
+		d = dto.Tx.Duration.GetBigInteger()
 	} else {
 		d = big.NewInt(0)
-		n = dto.Tx.ParentId.toStruct()
+		n = dto.Tx.ParentId.getNamespaceId()
 	}
 
 	return &RegisterNamespaceTransaction{
 		*atx,
-		dto.Tx.Id.toStruct(),
+		dto.Tx.Id.getNamespaceId(),
 		dto.Tx.NamespaceType,
 		dto.Tx.NamspaceName,
 		d,
@@ -560,7 +557,7 @@ func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
 		return nil, err
 	}
 
-	m, err := dto.Tx.Mosaic.toStruct()
+	m, err := dto.Tx.Mosaic.getMosaic()
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +565,7 @@ func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
 	return &LockFundsTransaction{
 		*atx,
 		m,
-		dto.Tx.Duration.toStruct(),
+		dto.Tx.Duration.GetBigInteger(),
 		&SignedTransaction{LOCK, "", dto.Tx.Hash},
 	}, nil
 }
@@ -625,7 +622,7 @@ func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) 
 		return nil, err
 	}
 
-	m, err := dto.Tx.Mosaic.toStruct()
+	m, err := dto.Tx.Mosaic.getMosaic()
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +636,7 @@ func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) 
 		*atx,
 		m,
 		dto.Tx.HashType,
-		dto.Tx.Duration.toStruct(),
+		dto.Tx.Duration.GetBigInteger(),
 		dto.Tx.Secret,
 		a,
 	}, nil
@@ -814,7 +811,7 @@ func (ts *TransactionStatus) String() string {
 		ts.Group,
 		ts.Status,
 		ts.Hash,
-		ts.Deadline,
+		ts.Deadline.Unix(),
 		ts.Height,
 	)
 }
@@ -832,8 +829,8 @@ func (dto *transactionStatusDTO) toStruct() (*TransactionStatus, error) {
 		dto.Group,
 		dto.Status,
 		dto.Hash,
-		time.Unix(dto.Deadline.toStruct().Int64(), int64(time.Millisecond)),
-		dto.Height.toStruct(),
+		time.Unix(dto.Deadline.GetBigInteger().Int64(), int64(time.Millisecond)),
+		dto.Height.GetBigInteger(),
 	}, nil
 }
 

@@ -1,8 +1,6 @@
 package crypto
 
-/**
- * Interface that supports signing and verification of arbitrarily sized message.
- */
+//DsaSigner Interface that supports signing and verification of arbitrarily sized message.
 type DsaSigner interface {
 
 	/**
@@ -33,5 +31,5 @@ type DsaSigner interface {
 	 * @param signature The signature.
 	 * @return Signature in canonical form.
 	 */
-	MakeSignatureCanonical(signature *Signature) *Signature
+	MakeSignatureCanonical(signature *Signature) (*Signature, error)
 }

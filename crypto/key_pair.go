@@ -2,24 +2,20 @@ package crypto
 
 import "errors"
 
+// KeyPair represent the pair of keys - private & public
 type KeyPair struct {
-	privateKey *PrivateKey // private
-	publicKey  *PublicKey  // private
-	/**
-	 * Creates a random key pair.
-	 */
+	privateKey *PrivateKey
+	publicKey  *PublicKey
 }
 
-func NewRandomKeyPair() *KeyPair {
+//NewRandomKeyPair creates a random key pair.
+func NewRandomKeyPair() (*KeyPair, error) {
 	return NewKeyPairByEngine(CryptoEngines.DefaultEngine)
 }
 
-/**
-  * The public key is calculated from the private key.
-   *
-   * @param privateKey The private key. Must by nil
-   * @param engine     The crypto engine. If is nil - default Engine
-*/
+//NewKeyPair The public key is calculated from the private key.
+//  The private key must by nil
+// if crypto engine is nil - default Engine
 func NewKeyPair(privateKey *PrivateKey, publicKey *PublicKey, engine CryptoEngine) (*KeyPair, error) {
 
 	if engine == nil {
@@ -27,29 +23,32 @@ func NewKeyPair(privateKey *PrivateKey, publicKey *PublicKey, engine CryptoEngin
 	}
 
 	if publicKey == nil {
-		publicKey = engine.createKeyGenerator().derivePublicKey(privateKey)
-	} else if !engine.createKeyAnalyzer().isKeyCompressed(publicKey) {
+		publicKey = engine.CreateKeyGenerator().DerivePublicKey(privateKey)
+	} else if !engine.CreateKeyAnalyzer().IsKeyCompressed(publicKey) {
 		return nil, errors.New("publicKey must be in compressed form")
 	}
 	return &KeyPair{privateKey, publicKey}, nil
 }
 
-/**
- * Creates a random key pair that is compatible with the specified engine.
- *
- * @param engine The crypto engine.
- * @return The key pair.
- */
-func NewKeyPairByEngine(engine CryptoEngine) *KeyPair { /* public static   */
-	return engine.createKeyGenerator().generateKeyPair()
+//NewKeyPairByEngine creates a random key pair that is compatible with the specified engine.
+func NewKeyPairByEngine(engine CryptoEngine) (*KeyPair, error) {
+	return engine.CreateKeyGenerator().GenerateKeyPair()
 }
 
-/**
- * Determines if the current key pair has a private key.
- *
- * @return true if the current key pair has a private key.
- */
+//HasPrivateKey Determines if the current key pair has a private key.
 func (ref *KeyPair) HasPrivateKey() bool {
 
 	return ref.privateKey != nil
+}
+
+//PrivateKey return raw privatKey for sign operation
+func (ref *KeyPair) PrivateKey() []byte {
+
+	return ref.privateKey.Raw
+}
+
+//PrivateKey return raw privatKey for verify operation
+func (ref *KeyPair) PublicKey() []byte {
+
+	return ref.publicKey.Raw
 }

@@ -1,9 +1,8 @@
 package crypto
 
-// import java.math.uint64
-/**
- * Interface for getting information for a curve.
- */
+import "math/big"
+
+//Curve  Interface for getting information for a curve.
 type Curve interface {
 
 	/**
@@ -11,17 +10,17 @@ type Curve interface {
 	 *
 	 * @return The name of the curve.
 	 */
-	getName() string
+	GetName() string
 	/**
 	 * Gets the group order.
 	 *
 	 * @return The group order.
 	 */
-	getGroupOrder() uint64
+	GetGroupOrder() *big.Int
 	/**
 	 * Gets the group order / 2.
 	 *
 	 * @return The group order / 2.
 	 */
-	getHalfGroupOrder() uint64
+	GetHalfGroupOrder() uint64
 }

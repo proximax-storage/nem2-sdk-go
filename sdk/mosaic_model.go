@@ -28,19 +28,6 @@ func (m *Mosaic) String() string {
 	)
 }
 
-type mosaicDTO struct {
-	MosaicId *uint64DTO `json:"id"`
-	Amount   *uint64DTO `json:"amount"`
-}
-
-func (dto *mosaicDTO) toStruct() (*Mosaic, error) {
-	id, err := NewMosaicId(dto.MosaicId.toStruct(), "")
-	if err != nil {
-		return nil, err
-	}
-	return &Mosaic{id, dto.Amount.toStruct()}, nil
-}
-
 // Mosaics
 type Mosaics []*Mosaic
 
@@ -184,7 +171,7 @@ func (tx MosaicSupplyType) String() string {
 }
 
 type MosaicName struct {
-	MosaicId *MosaicId    // private
-	Name     string       // private
-	ParentId *NamespaceId // private
+	MosaicId *MosaicId
+	Name     string
+	ParentId *NamespaceId
 }

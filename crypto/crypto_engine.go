@@ -1,8 +1,6 @@
 package crypto
 
-/**
- * Represents a cryptographic engine that is a factory of crypto-providers.
- */
+//CryptoEngine Represents a cryptographic engine that is a factory of crypto-providers.
 type CryptoEngine interface {
 
 	/**
@@ -10,20 +8,20 @@ type CryptoEngine interface {
 	 *
 	 * @return The curve.
 	 */
-	getCurve() Curve
+	GetCurve() Curve
 	/**
 	 * Creates a DSA signer.
 	 *
 	 * @param keyPair The key pair.
 	 * @return The DSA signer.
 	 */
-	createDsaSigner(keyPair *KeyPair) DsaSigner
+	CreateDsaSigner(keyPair *KeyPair) DsaSigner
 	/**
 	 * Creates a key generator.
 	 *
 	 * @return The key generator.
 	 */
-	createKeyGenerator() KeyGenerator
+	CreateKeyGenerator() KeyGenerator
 	/**
 	 * Creates a block cipher.
 	 *
@@ -31,24 +29,22 @@ type CryptoEngine interface {
 	 * @param recipientKeyPair The recipient KeyPair. The recipient'S private key is required for decryption.
 	 * @return The IES cipher.
 	 */
-	createBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher
+	CreateBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher
 	/**
 	 * Creates a key analyzer.
 	 *
 	 * @return The key analyzer.
 	 */
-	createKeyAnalyzer() KeyAnalyzer
+	CreateKeyAnalyzer() KeyAnalyzer
 }
 
-/**
- * Static class that exposes crypto engines.
- */
+//cryptoEngines Static class that exposes crypto engines.
 type cryptoEngines struct {
-	Ed25519Engine Ed25519CryptoEngine
-	DefaultEngine Ed25519CryptoEngine
+	Ed25519Engine *Ed25519CryptoEngine
+	DefaultEngine *Ed25519CryptoEngine
 }
 
 var CryptoEngines = cryptoEngines{
-	Ed25519CryptoEngine{},
-	Ed25519CryptoEngine{},
+	&Ed25519CryptoEngine{},
+	&Ed25519CryptoEngine{},
 }

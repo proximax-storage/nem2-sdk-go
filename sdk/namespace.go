@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
@@ -16,6 +17,14 @@ func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceServic
 	return ref
 }
 
+// const routers path for methods NamespaceService
+const (
+	pathNamespacesFromAccounts = "/account/namespaces"
+	pathNamespace              = "/namespace/"
+	pathNamespacenames         = "/namespace/names"
+	pathNamespacesFromAccount  = "/account/%s/namespaces"
+)
+
 // namespaceDTO temporary struct for reading responce & fill NamespaceInfo
 type namespaceDTO struct {
 	Type         int
@@ -23,11 +32,11 @@ type namespaceDTO struct {
 	Level0       *uint64DTO
 	Level1       *uint64DTO
 	Level2       *uint64DTO
-	ParentId     *uint64DTO
+	ParentId     uint64DTO
 	Owner        string
 	OwnerAddress string
-	StartHeight  *uint64DTO
-	EndHeight    *uint64DTO
+	StartHeight  uint64DTO
+	EndHeight    uint64DTO
 }
 
 // namespaceInfoDTO temporary struct for reading responce & fill NamespaceInfo
@@ -50,10 +59,10 @@ func (ref *namespaceInfoDTO) setNamespaceInfo() (*NamespaceInfo, error) {
 		NamespaceType(ref.Namespace.Type),
 		ref.Namespace.Depth,
 		ref.extractLevels(),
-		NewNamespaceId(ref.Namespace.ParentId.toStruct(), ""),
+		NewNamespaceId(ref.Namespace.ParentId.GetBigInteger(), ""),
 		pubAcc,
-		ref.Namespace.StartHeight.toStruct(),
-		ref.Namespace.EndHeight.toStruct(),
+		ref.Namespace.StartHeight.GetBigInteger(),
+		ref.Namespace.EndHeight.GetBigInteger(),
 	}, nil
 }
 
@@ -62,20 +71,18 @@ func (ref *namespaceInfoDTO) extractLevels() []*NamespaceId {
 	levels := make([]*NamespaceId, 0)
 
 	if ref.Namespace.Level0 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level0.toStruct(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level0.GetBigInteger(), ""))
 	}
 
 	if ref.Namespace.Level1 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level1.toStruct(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level1.GetBigInteger(), ""))
 	}
 
 	if ref.Namespace.Level2 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level2.toStruct(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level2.GetBigInteger(), ""))
 	}
 	return levels
 }
-
-const pathNamespace = "/namespace/"
 
 func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 
@@ -95,12 +102,17 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsI
 
 // namespaceNameDTO temporary struct for reading responce & fill NamespaceName
 type namespaceNameDTO struct {
-	NamespaceId *uint64DTO
+	NamespaceId uint64DTO
 	Name        string
-	ParentId    *uint64DTO
+	ParentId    uint64DTO
 }
 
-const pathNamespacenames = "/namespace/names"
+func (ref *namespaceNameDTO) getNamespaceName() *NamespaceName {
+	return &NamespaceName{
+		NewNamespaceId(ref.NamespaceId.GetBigInteger(), ""),
+		ref.Name,
+		NewNamespaceId(ref.ParentId.GetBigInteger(), "")}
+}
 
 // GetNamespaceNames
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
@@ -111,20 +123,19 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds *Names
 		return nil, resp, err
 	}
 
-	for _, val := range res {
-		nsList = append(nsList, &NamespaceName{
-			NewNamespaceId(val.NamespaceId.toStruct(), ""),
-			val.Name,
-			NewNamespaceId(val.ParentId.toStruct(), "")})
+	for _, dto := range res {
+		nsList = append(nsList, dto.getNamespaceName())
 	}
 	return nsList, resp, err
 }
 
-const pathNamespacesFromAccount = "/account/%s/namespaces"
-
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
 func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
+
+	if address == nil {
+		return nsList, nil, errors.New("address is null")
+	}
 
 	url, comma := "", "?"
 
@@ -149,8 +160,6 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 
 	return nsList, resp, err
 }
-
-const pathNamespacesFromAccounts = "/account/namespaces"
 
 // GetNamespacesFromAccounts get required params addresses, other skipped if value is empty
 func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,

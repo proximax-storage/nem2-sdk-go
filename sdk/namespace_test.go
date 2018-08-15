@@ -3,10 +3,8 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
-	"golang.org/x/net/context"
 	"net/http"
 	"testing"
-	"time"
 )
 
 var (
@@ -17,6 +15,13 @@ var (
 		},
 	}
 	testAddress = Address{Address: "SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE"}
+
+	testNamespaceIDs = &NamespaceIds{
+		List: []*NamespaceId{
+			{FullName: "84b3552d375ffa4b"},
+		},
+	}
+	ad = &NamespaceIds{}
 )
 
 const pageSize = 32
@@ -54,50 +59,10 @@ var (
 			  }
 			}`
 	tplInfoArr = "[" + tplInfo + "]"
-	tplMosaic  = `{
-  "meta": {
-    "active": true,
-    "index": 0,
-    "id": "5B55E02EACCB7B00015DB6EC"
-  },
-  "mosaic": {
-    "namespaceId": [
-      929036875,
-      2226345261
-    ],
-    "mosaicId": [
-      3646934825,
-      3576016193
-    ],
-    "supply": [
-      3403414400,
-      2095475
-    ],
-    "height": [
-      1,
-      0
-    ],
-    "owner": "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
-    "properties": [
-      [
-        2,
-        0
-      ],
-      [
-        6,
-        0
-      ],
-      [
-        0,
-        0
-      ]
-    ],
-    "levy": {}
-  }
-}`
-	routers = map[string]string{
-		pathNamespace: tplInfo,
-		pathNamespacenames: `[
+
+	nsRouters = map[string]sRouting{
+		pathNamespace: {tplInfo, nil},
+		pathNamespacenames: {`[
 			  {
 				"namespaceId": [
 				  929036875,
@@ -105,63 +70,14 @@ var (
 				],
 				"name": "nem"
 			  }
-			]`,
-		pathNamespacesFromAccounts:                                  tplInfoArr,
-		fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address): tplInfoArr,
-		pathMosaic + testMosaicID:                                   tplMosaic,
-		pathMosaic:                                                  "[" + tplMosaic + "]",
-		pathMosaicNames: `[
-  {
-    "mosaicId": [
-      3646934825,
-      3576016193
-    ],
-    "name": "xem",
-    "parentId": [
-      929036875,
-      2226345261
-    ]
-  }
-]`,
-		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace): "[" + tplMosaic + "]",
-		pathNetwork: `{
-  "name": "mijinTest",
-  "description": "catapult development network"
-}`,
+			]`, routeNeedBody},
+		pathNamespacesFromAccounts:                                  {tplInfoArr, routeNeedBody},
+		fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address): {tplInfoArr, nil},
 	}
 )
 
-// const for test routing
-var (
-	serv *NamespaceService
-	ctx  = context.TODO()
-)
-
-func setupTest() error {
-	if serv != nil {
-		return nil
-	}
-	client, mux, _, teardown, err := setupMockServer()
-	if err != nil {
-		return err
-	}
-	time.AfterFunc(time.Minute*5, teardown)
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Mock JSON response
-		w.Write([]byte("unknow route"))
-	})
-	for path, resp := range routers {
-		resp := []byte(resp)
-		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			// Mock JSON response
-			w.Write(resp)
-		})
-
-	}
-
-	serv = client.Namespace
-	return nil
+func init() {
+	addRouters(nsRouters)
 }
 func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 	result := true
@@ -189,15 +105,15 @@ func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 		t.Error("failed Owner data Convertion")
 		result = false
 	}
-	if nsId := nsInfo.ParentId.Id; !(nsId == uint64DTO{0, 0}.toStruct()) {
+	if nsId := nsInfo.ParentId.Id; !(nsId.Uint64() == 0) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
-	if sH := nsInfo.StartHeight; !(sH == uint64DTO{1, 0}.toStruct()) {
+	if sH := nsInfo.StartHeight; !(sH.Uint64() == 1) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
-	if eH := nsInfo.EndHeight; !(eH == uint64DTO{4294967295, 4294967295}.toStruct()) {
+	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.GetBigInteger().Uint64()) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
@@ -209,18 +125,10 @@ const testIDs = "84b3552d375ffa4b"
 
 func TestNamespaceService_GetNamespace(t *testing.T) {
 
-	err := setupTest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	nsInfo, resp, err := serv.GetNamespace(ctx, testIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testIDs)
 	if err != nil {
 		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if validateNamespaceInfo(nsInfo, t) {
+	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
 		t.Logf("%s", nsInfo)
 	}
 }
@@ -229,75 +137,54 @@ const testNamespaceID = "5B55E02EACCB7B00015DB6EB"
 
 func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 
-	err := setupTest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	nsInfoArr, resp, err := serv.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
+	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
 	if err != nil {
 		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v %#v", resp, resp.Body)
-
-		b := make([]byte, resp.ContentLength)
-		if _, err := resp.Body.Read(b); err == nil {
-			t.Logf("%s", b)
+	} else if validateResp(resp, t) {
+		if len(nsInfoArr.list) != 1 {
+			t.Error("return result must have length = 1")
 		} else {
-			t.Error(err)
+			isValid := true
+			for _, nsInfo := range nsInfoArr.list {
+				isValid = isValid && validateNamespaceInfo(nsInfo, t)
+			}
+			if isValid {
+				t.Logf("%v", nsInfoArr)
+			}
 		}
-	} else if len(nsInfoArr.list) != 1 {
-		t.Error("return result must have length = 1")
-	} else {
-		isValid := true
-		for _, nsInfo := range nsInfoArr.list {
-			isValid = isValid && validateNamespaceInfo(nsInfo, t)
-		}
-		if isValid {
-			t.Logf("%v", nsInfoArr)
-		}
+	}
+
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
+	if err == nil {
+		t.Error("addrees is null - method must return error")
 	}
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
-	err := setupTest()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	nsInfoArr, resp, err := serv.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
+	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
 	if err != nil {
 		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v %#v", resp, resp.Body)
-
-		b := make([]byte, resp.ContentLength)
-		if _, err := resp.Body.Read(b); err == nil {
-			t.Logf("%s", b)
+	} else if validateResp(resp, t) {
+		if len(nsInfoArr.list) != 1 {
+			t.Error("return result must have length = 1")
 		} else {
-			t.Error(err)
-		}
-	} else if len(nsInfoArr.list) != 1 {
-		t.Error("return result must have length = 1")
-	} else {
-		isValid := true
-		for _, nsInfo := range nsInfoArr.list {
-			isValid = isValid && validateNamespaceInfo(nsInfo, t)
-		}
-		if isValid {
-			t.Logf("%v", nsInfoArr)
+			isValid := true
+			for _, nsInfo := range nsInfoArr.list {
+				isValid = isValid && validateNamespaceInfo(nsInfo, t)
+			}
+			if isValid {
+				t.Logf("%v", nsInfoArr)
+			}
 		}
 	}
-}
 
-var testNamespaceIDs = &NamespaceIds{
-	List: []*NamespaceId{
-		{FullName: "84b3552d375ffa4b"},
-	},
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Error responce status code = %d", resp.StatusCode)
+	}
 }
-var ad = &NamespaceIds{}
 
 func init() {
 	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
@@ -306,29 +193,24 @@ func init() {
 
 }
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
-	err := setupTest()
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	nsInfo, resp, err := serv.GetNamespaceNames(ctx, testNamespaceIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v %#v", resp, resp.Body)
-	} else if (nsInfo == nil) || (len(nsInfo) == 0) {
-		t.Logf("%#v %#v", resp, resp.Body)
-	} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
-		t.Logf("%#v", arr0)
-	} else {
-		if id := arr0.NamespaceId.Id; !(id == uint64DTO{929036875, 2226345261}.toStruct()) {
-			t.Error("failed namespaceName id Convertion")
-			t.Logf("%s", id)
-		}
-		if arr0.Name != "nem" {
-			t.Error("failed namespaceName Name Convertion")
-			t.Logf("%#v", arr0.Name)
+	} else if validateResp(resp, t) {
+		if (nsInfo == nil) || (len(nsInfo) == 0) {
+			t.Logf("%#v %#v", resp, resp.Body)
+		} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
+			t.Logf("%#v", arr0)
+		} else {
+			if id := arr0.NamespaceId.Id; !(id.Uint64() == uint64DTO{929036875, 2226345261}.GetBigInteger().Uint64()) {
+				t.Error("failed namespaceName id Convertion")
+				t.Logf("%s", id)
+			}
+			if arr0.Name != "nem" {
+				t.Error("failed namespaceName Name Convertion")
+				t.Logf("%#v", arr0.Name)
+			}
 		}
 	}
 	t.Logf("%#v", nsInfo)

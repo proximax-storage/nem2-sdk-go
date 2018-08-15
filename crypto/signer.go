@@ -4,7 +4,7 @@ package crypto
  * Wraps DSA signing and verification logic.
  */
 type Signer struct {
-	signer DsaSigner // private
+	signer DsaSigner
 	/**
 	 * Creates a signer around a KeyPair.
 	 *
@@ -22,7 +22,7 @@ func NewSigner(keyPair *KeyPair, engine CryptoEngine) *Signer {
 		engine = CryptoEngines.DefaultEngine
 	}
 	ref := &Signer{
-		engine.createDsaSigner(keyPair)}
+		engine.CreateDsaSigner(keyPair)}
 	return ref
 }
 
@@ -38,26 +38,22 @@ func NewSignerFromDsaSigner(signer DsaSigner) *Signer {
 	return ref
 }
 
-// @Override
-func (ref *Signer) Sign(data []byte) Signature {
+func (ref *Signer) Sign(data []byte) (*Signature, error) {
 
-	return ref.signer.sign(data)
+	return ref.signer.Sign(data)
 }
 
-// @Override
-func (ref *Signer) Verify(data []byte, signature Signature) bool {
+func (ref *Signer) Verify(data []byte, signature *Signature) bool {
 
-	return ref.signer.verify(data, signature)
+	return ref.signer.Verify(data, signature)
 }
 
-// @Override
-func (ref *Signer) IsCanonicalSignature(signature Signature) bool {
+func (ref *Signer) IsCanonicalSignature(signature *Signature) bool {
 
-	return ref.signer.isCanonicalSignature(signature)
+	return ref.signer.IsCanonicalSignature(signature)
 }
 
-// @Override
-func (ref *Signer) MakeSignatureCanonical(signature Signature) Signature {
+func (ref *Signer) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
 
-	return ref.signer.makeSignatureCanonical(signature)
+	return ref.signer.MakeSignatureCanonical(signature)
 }
