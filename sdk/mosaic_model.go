@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"regexp"
 	"strings"
-	"time"
 )
 
 // Models
@@ -126,10 +125,10 @@ type MosaicProperties struct {
 	Transferable  bool
 	LevyMutable   bool
 	Divisibility  int64
-	Duration      time.Duration
+	Duration *big.Int
 }
 
-func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration time.Duration) *MosaicProperties {
+func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration *big.Int) *MosaicProperties {
 	ref := &MosaicProperties{
 		supplyMutable,
 		transferable,
@@ -159,7 +158,7 @@ func (mp *MosaicProperties) String() string {
 //MosaicSupplyType mosaic supply type :
 // Decrease the supply - DECREASE.
 //Increase the supply - INCREASE.
-type MosaicSupplyType uint
+type MosaicSupplyType uint8
 
 const (
 	DECREASE MosaicSupplyType = iota

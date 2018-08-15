@@ -73,7 +73,7 @@ func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Co
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, *http.Response, error) {
 	ts := &transactionStatusDTO{}
 
-	resp, err := txs.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/%s", mainTransactionRoute, id, transactionStatusesRoute), nil, ts)
+	resp, err := txs.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/%s", mainTransactionRoute, id, transactionStatusRoute), nil, ts)
 	if err != nil {
 		return nil, resp, err
 	}
