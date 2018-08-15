@@ -12,9 +12,9 @@ import (
 	"math/big"
 )
 
-func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement { /* public static  */
+func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement {
 
-	hash, err := HashesSha3_512(key.Value.Bytes())
+	hash, err := HashesSha3_512(key.Raw)
 	if err != nil {
 		fmt.Println(err)
 	}

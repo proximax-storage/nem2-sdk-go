@@ -9,55 +9,39 @@ import (
 //KeyAnalyzer Interface to analyze keys.
 type KeyAnalyzer interface {
 
-	/**
-	  * Gets a Value indicating whether or not the public key is compressed.
-	   *
-	  * @param publicKey The public key.
-	  * @return true if the public key is compressed, false otherwise.
-	*/
+	// Gets a Value indicating whether or not the public key is compressed.
 	IsKeyCompressed(publicKey *PublicKey) bool
 }
 
 //KeyGenerator Interface for generating keys.
 type KeyGenerator interface {
-	/**
-	 * Creates a random key pair.
-	 *
-	 * @return The key pair.
-	 */
+	// Creates a random key pair.
 	GenerateKeyPair() (*KeyPair, error)
-	/**
-	* Derives a public key from a private key.
-	 *
-	 * @param privateKey the private key.
-	* @return The public key.
-	*/
+	// Derives a public key from a private key.
 	DerivePublicKey(privateKey *PrivateKey) *PublicKey
 }
 
 //PrivateKey Represents a private key.
 type PrivateKey struct {
-	Value *big.Int
-	/**
-	 * Creates a new private key.
-	 *
-	 * @param Value The  private key Value.
-	 */
+	// I have kept this field for compatibility
+	value *big.Int
+	Raw   []byte
 }
 
-func NewPrivateKey(value *big.Int) *PrivateKey {
-	ref := &PrivateKey{value}
+// NewPrivateKey creates a new private key from []byte
+func NewPrivateKey(raw []byte) *PrivateKey {
+	ref := &PrivateKey{(&big.Int{}).SetBytes(raw), raw}
 	return ref
 }
 
 //PrivatKeyfromHexString creates a private key from a hex strings.
 func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
-	value, err := hex.DecodeString(sHex)
+	raw, err := hex.DecodeString(sHex)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PrivateKey{(&big.Int{}).SetBytes(value)}, nil
+	return &PrivateKey{(&big.Int{}).SetBytes(raw), raw}, nil
 }
 
 //PrivateKeyfromDecimalString creates a private key from a decimal strings.
@@ -66,19 +50,14 @@ func PrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	ref := &PrivateKey{big.NewInt(u)}
+	ref := &PrivateKey{big.NewInt(u), []byte(decimal)}
 	return ref, nil
 
 }
 
-func (ref *PrivateKey) getBytes() []byte {
-
-	return ref.Value.Bytes()
-}
-
 func (ref *PrivateKey) String() string {
 
-	return string(ref.getBytes())
+	return string(ref.Raw)
 }
 
 //PublicKey  Represents a public key.
@@ -87,14 +66,13 @@ type PublicKey struct {
 }
 
 //NewPublicKey creates a new public key.
-func NewPublicKey(hex string) *PublicKey {
-	ref := &PublicKey{[]byte(hex)}
-	return ref
+func NewPublicKey(raw []byte) *PublicKey {
+	return &PublicKey{raw}
 }
 
 // Creates a public key from a hex strings.
 func (ref *PublicKey) hex() string {
-	return string(ref.Raw)
+	return string(hex.EncodeToString(ref.Raw))
 }
 
 func (ref *PublicKey) String() string {

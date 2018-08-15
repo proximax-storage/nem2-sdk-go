@@ -45,13 +45,13 @@ func (ref *Signature) GetS() uint32 {
 	return binary.BigEndian.Uint32(ref.S)
 }
 
-//getBytes Gets a little-endian 64-byte representation of the signature.
-func (ref *Signature) getBytes() []byte {
+//Bytes Gets a little-endian 64-byte representation of the signature.
+func (ref *Signature) Bytes() []byte {
 
 	return append(ref.R, ref.S...)
 }
 
 func (ref *Signature) String() string {
 
-	return string(ref.getBytes())
+	return string(ref.Bytes())
 }

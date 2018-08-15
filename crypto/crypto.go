@@ -54,6 +54,7 @@ func GenerateChecksum(b []byte) ([]byte, error) {
 	return sha3StepThreeHash.Sum(nil)[:NUM_CHECKSUM_BYTES], nil
 }
 
+// todo: need check the three following methods
 func HashesSha3_256(b []byte) ([]byte, error) {
 	hash := sha3.New256()
 	_, err := hash.Write(b)
@@ -99,7 +100,7 @@ func isNegativeConstantTime(b int) int {
 	return (b >> 8) & 1
 }
 
-func IsEqualConstantTime(b, c int) int { /* public static  */
+func IsEqualConstantTime(b, c int) int {
 
 	result := 0
 	xor := b ^ c // final

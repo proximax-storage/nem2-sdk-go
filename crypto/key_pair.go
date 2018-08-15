@@ -40,3 +40,15 @@ func (ref *KeyPair) HasPrivateKey() bool {
 
 	return ref.privateKey != nil
 }
+
+//PrivateKey return raw privatKey for sign operation
+func (ref *KeyPair) PrivateKey() []byte {
+
+	return ref.privateKey.Raw
+}
+
+//PrivateKey return raw privatKey for verify operation
+func (ref *KeyPair) PublicKey() []byte {
+
+	return ref.publicKey.Raw
+}
