@@ -13,7 +13,7 @@ const NUM_CHECKSUM_BYTES = 4
 // GenerateEncodedAddress convert publicKey to address
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
-	pKeyD, err := hex.DecodeString(pKey)
+	pKeyD, err := hexDecodeString(pKey)
 	if err != nil {
 		return "", err
 	}
@@ -87,8 +87,13 @@ func HashesRipemd160(b []byte) ([]byte, error) {
 	return hash.Sum(nil), nil
 
 }
-
-func HexEncoderBytes(src []byte) ([]byte, error) {
+func hexDecodeString(str string) ([]byte, error) {
+	return hexDecode([]byte(str))
+}
+func hexDecode(src []byte) ([]byte, error) {
+	if len(src)%2 != 0 {
+		src = append([]byte{'0'}, src...)
+	}
 	dst := make([]byte, len(src))
 	_, err := hex.Decode(dst, src)
 	if err != nil {

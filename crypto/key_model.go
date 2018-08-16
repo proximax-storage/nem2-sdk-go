@@ -30,28 +30,32 @@ type PrivateKey struct {
 
 // NewPrivateKey creates a new private key from []byte
 func NewPrivateKey(raw []byte) *PrivateKey {
-	ref := &PrivateKey{(&big.Int{}).SetBytes(raw), raw}
-	return ref
+	return &PrivateKey{(&big.Int{}).SetBytes(raw), raw}
+}
+
+// NewPrivateKey creates a new private key from []byte
+func NewPrivateKeyfromBigInt(val *big.Int) *PrivateKey {
+	return &PrivateKey{val, val.Bytes()}
 }
 
 //PrivatKeyfromHexString creates a private key from a hex strings.
-func PrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
-	raw, err := hex.DecodeString(sHex)
+func NewPrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
+	raw, err := hexDecodeString(sHex)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PrivateKey{(&big.Int{}).SetBytes(raw), raw}, nil
+	return NewPrivateKey(raw), nil
 }
 
 //PrivateKeyfromDecimalString creates a private key from a decimal strings.
-func PrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) {
+func NewPrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) {
 	u, err := strconv.ParseInt(decimal, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	ref := &PrivateKey{big.NewInt(u), []byte(decimal)}
-	return ref, nil
+
+	return NewPrivateKeyfromBigInt(big.NewInt(u)), nil
 
 }
 
