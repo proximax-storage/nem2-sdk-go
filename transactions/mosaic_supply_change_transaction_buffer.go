@@ -190,6 +190,9 @@ func (rcv *MosaicSupplyChangeTransactionBuffer) DeltaLength() int {
 	return 0
 }
 
+func MosaicSupplyChangeTransactionBufferStart(builder *flatbuffers.Builder) {
+	builder.StartObject(10)
+}
 func MosaicSupplyChangeTransactionBufferAddMosaicId(builder *flatbuffers.Builder, mosaicId flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(mosaicId), 0)
 }

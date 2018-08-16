@@ -2,9 +2,6 @@ package transactions
 
 import "github.com/google/flatbuffers/go"
 
-func TransactionBufferStart(builder *flatbuffers.Builder) {
-	builder.StartObject(12)
-}
 func TransactionBufferAddSize(builder *flatbuffers.Builder, size int) {
 	builder.PrependUint32Slot(0, uint32(size), 0)
 }
@@ -31,21 +28,21 @@ func TransactionBufferEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
 }
 func TransactionBufferCreateUint32Vector(builder *flatbuffers.Builder, data []uint32) flatbuffers.UOffsetT {
 	builder.StartVector(4, len(data), 4)
-	for i := len(data) -1; i >= 0; i-- {
+	for i := len(data) - 1; i >= 0; i-- {
 		builder.PrependUint32(data[i])
 	}
 	return builder.EndVector(len(data))
 }
 func TransactionBufferCreateByteVector(builder *flatbuffers.Builder, data []byte) flatbuffers.UOffsetT {
 	builder.StartVector(1, len(data), 1)
-	for i := len(data) -1; i >= 0; i-- {
+	for i := len(data) - 1; i >= 0; i-- {
 		builder.PrependByte(data[i])
 	}
 	return builder.EndVector(len(data))
 }
 func TransactionBufferCreateUOffsetVector(builder *flatbuffers.Builder, data []flatbuffers.UOffsetT) flatbuffers.UOffsetT {
 	TransferTransactionBufferStartMosaicsVector(builder, len(data))
-	for i := len(data) -1; i >= 0; i-- {
+	for i := len(data) - 1; i >= 0; i-- {
 		builder.PrependUOffsetT(data[i])
 	}
 	return builder.EndVector(len(data))

@@ -104,7 +104,7 @@ type NamespaceNameDTO struct {
 	name        string
 	parentId    uint64DTO
 } /* NamespaceNameDTO */
-type NamespaceType int
+type NamespaceType uint8
 
 const (
 	RootNamespace NamespaceType = iota

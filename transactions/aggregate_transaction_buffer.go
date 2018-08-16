@@ -181,6 +181,9 @@ func (rcv *AggregateTransactionBuffer) TransactionsBytes() []byte {
 	return nil
 }
 
+func AggregateTransactionBufferStart(builder *flatbuffers.Builder) {
+	builder.StartObject(9)
+}
 func AggregateTransactionBufferAddTransactionsSize(builder *flatbuffers.Builder, transactionsSize int) {
 	builder.PrependUint32Slot(7, uint32(transactionsSize), 0)
 }

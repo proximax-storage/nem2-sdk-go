@@ -70,6 +70,3 @@ func MessageBufferAddType(builder *flatbuffers.Builder, type_ uint8) {
 func MessageBufferAddPayload(builder *flatbuffers.Builder, payload flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(1, flatbuffers.UOffsetT(payload), 0)
 }
-func MessageBufferEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
-	return builder.EndObject()
-}

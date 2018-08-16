@@ -2,8 +2,8 @@ package sdk
 
 import (
 	"encoding/binary"
-	"math/big"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"math/big"
 )
 
 type uint64DTO [2]uint32
@@ -13,14 +13,14 @@ func (dto uint64DTO) toBigInt() *big.Int {
 		return &big.Int{}
 	}
 	var int big.Int
-	b := make([]byte, len(dto) * 4)
-	binary.BigEndian.PutUint32(b[:len(dto) * 2], dto[1])
-	binary.BigEndian.PutUint32(b[len(dto) * 2:], dto[0])
+	b := make([]byte, len(dto)*4)
+	binary.BigEndian.PutUint32(b[:len(dto)*2], dto[1])
+	binary.BigEndian.PutUint32(b[len(dto)*2:], dto[0])
 	int.SetBytes(b)
 	return &int
 }
 
-func bigIntToArr(int *big.Int) []uint32 {
+func fromBigInt(int *big.Int) []uint32 {
 	b := int.Bytes()
 	ln := len(b)
 	utils.ReverseByteArray(b)
@@ -31,10 +31,10 @@ func bigIntToArr(int *big.Int) []uint32 {
 	l = binary.LittleEndian.Uint32(b[:s])
 	if ln > 4 {
 		s = 4
-		if ln - 4 < 4 {
+		if ln-4 < 4 {
 			s = ln - 4
 		}
-		h = binary.LittleEndian.Uint32(b[s + 4:s])
+		h = binary.LittleEndian.Uint32(b[s+4 : s])
 	}
 	return []uint32{l, h}
 }

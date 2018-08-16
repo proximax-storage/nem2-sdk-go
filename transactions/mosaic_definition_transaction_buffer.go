@@ -263,7 +263,9 @@ func (rcv *MosaicDefinitionTransactionBuffer) DurationLength() int {
 	return 0
 }
 
-
+func MosaicDefinitionTransactionBufferStart(builder *flatbuffers.Builder) {
+	builder.StartObject(16)
+}
 func MosaicDefinitionTransactionBufferAddParentId(builder *flatbuffers.Builder, parentId flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(parentId), 0)
 }

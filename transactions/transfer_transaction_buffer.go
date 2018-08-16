@@ -226,6 +226,9 @@ func (rcv *TransferTransactionBuffer) MosaicsLength() int {
 	return 0
 }
 
+func TransferTransactionBufferStart(builder *flatbuffers.Builder) {
+	builder.StartObject(12)
+}
 func TransferTransactionBufferAddRecipient(builder *flatbuffers.Builder, recipient flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(7, flatbuffers.UOffsetT(recipient), 0)
 }
