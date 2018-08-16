@@ -74,6 +74,15 @@ func NewPublicKey(raw []byte) *PublicKey {
 	return &PublicKey{raw}
 }
 
+func NewPublicKeyfromHex(hStr string) (*PublicKey, error) {
+	raw, err := hexDecodeString(hStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PublicKey{raw}, nil
+}
+
 // Creates a public key from a hex strings.
 func (ref *PublicKey) hex() string {
 	return string(hex.EncodeToString(ref.Raw))
@@ -81,5 +90,5 @@ func (ref *PublicKey) hex() string {
 
 func (ref *PublicKey) String() string {
 
-	return string(ref.Raw)
+	return hex.EncodeToString(ref.Raw)
 }

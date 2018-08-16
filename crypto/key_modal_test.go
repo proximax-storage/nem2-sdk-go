@@ -51,10 +51,11 @@ func TestNewPrivatKeyfromDecimalString_Malformed(t *testing.T) {
 	assert.Error(t, err)
 }
 
-const testHexPrivatKeyValue = "227F"
+const testHexKeyValue = "227F"
 const testHexPrivatKeyOdd = "ABC"
 const testHexPrivatKeyNegative = "8000"
-const testHexPrivatKeyMalformed = "22G75"
+const testHexKeyMalformed = "22G75"
+const testKeyStringResult = "22ab71"
 
 func getBigIntFromHex(hStr string) (*big.Int, error) {
 	b, err := hexDecodeString(hStr)
@@ -64,11 +65,11 @@ func getBigIntFromHex(hStr string) (*big.Int, error) {
 	return (&big.Int{}).SetBytes(b), nil
 }
 func TestNewPrivatKeyfromHexString(t *testing.T) {
-	key, err := NewPrivatKeyfromHexString(testHexPrivatKeyValue)
+	key, err := NewPrivatKeyfromHexString(testHexKeyValue)
 
 	assert.NoError(t, err, `NewPrivateKeyfromDecimalString("2275") must to return no error`)
 
-	val, err := getBigIntFromHex(testHexPrivatKeyValue)
+	val, err := getBigIntFromHex(testHexKeyValue)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,41 @@ func TestNewPrivatKeyfromHexString_Negative(t *testing.T) {
 	assertPrivateKey(t, key, val)
 }
 func TestNewPrivatKeyfromHexString_Malformed(t *testing.T) {
-	_, err := NewPrivatKeyfromHexString(testHexPrivatKeyMalformed)
+	_, err := NewPrivatKeyfromHexString(testHexKeyMalformed)
 
 	assert.Error(t, err)
+}
+
+// publicKey tests
+var (
+	testBytes         = []byte{0x22, 0xAB, 0x71}
+	modifiedTestBytes = []byte{0x22, 0xAB, 0x72}
+	testHexBytes      = []byte{0x22, 0x7F, 0, 0}
+)
+
+func TestNewPublicKey(t *testing.T) {
+	key := NewPublicKey(testBytes)
+
+	assert.Equal(t, testBytes, key.Raw, "not equal")
+}
+
+func TestNewPublicKeyfromHex(t *testing.T) {
+	key, err := NewPublicKeyfromHex(testHexKeyValue)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, testHexBytes, key.Raw, "not equal")
+}
+func TestNewPublicKeyfromHex_Malformed(t *testing.T) {
+	_, err := NewPublicKeyfromHex(testHexKeyMalformed)
+
+	assert.Error(t, err)
+}
+
+func TestPublicKey_String(t *testing.T) {
+	key := NewPublicKey(testBytes)
+
+	assert.Equal(t, testKeyStringResult, key.String(), "wrong string")
 }
