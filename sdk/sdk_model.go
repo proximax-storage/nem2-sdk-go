@@ -30,11 +30,12 @@ func fromBigInt(int *big.Int) []uint32 {
 	}
 	l = binary.LittleEndian.Uint32(b[:s])
 	if ln > 4 {
-		s = 4
 		if ln-4 < 4 {
 			s = ln - 4
 		}
-		h = binary.LittleEndian.Uint32(b[s+4 : s])
+		hb := make([]byte, 4)
+		copy(hb[:s], b[4:])
+		h = binary.LittleEndian.Uint32(hb)
 	}
 	return []uint32{l, h}
 }

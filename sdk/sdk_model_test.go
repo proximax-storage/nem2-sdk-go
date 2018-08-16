@@ -5,7 +5,6 @@
 package sdk
 
 import (
-	"math/big"
 	"testing"
 )
 
@@ -32,22 +31,16 @@ func TestUint64DTO_GetBigInteger(t *testing.T) {
 	}
 
 	//todo: check algoritm set BigInteger from string - test don't work
-	bInt = uint64DTO{12345, 99999}.toBigInt()
-	want := (&big.Int{}).SetBytes([]byte("429492434645049"))
-	if bInt.Uint64() != want.Uint64() {
-		t.Errorf("wrong result convert DTO {12345, 99999} = %v, expected - %v", bInt, want)
+	bInt = uint64DTO{1094650402, 17}.toBigInt()
+	bIntArr := fromBigInt(bInt)
+	want := []uint32{1094650402, 17}
+	if bIntArr[0] != want[0] || bIntArr[1] != want[1] {
+		t.Errorf("wrong result convert DTO {12345, 99999} = %v, expected - %v", bIntArr, want)
 	}
 	bInt = uint64DTO{1111, 2222}.toBigInt()
-	want = (&big.Int{}).SetBytes([]byte("9543417332823"))
-	if bInt.Uint64() != want.Uint64() {
+	bIntArr = fromBigInt(bInt)
+	want = []uint32{1111, 2222}
+	if bIntArr[0] != want[0] || bIntArr[1] != want[1] {
 		t.Errorf("wrong result convert DTO {1111, 2222} = %v, expected - %v", bInt, want)
-	}
-	bInt = (&big.Int{}).SetBytes([]byte("-8884663987180930485"))
-	if bInt.String() != "84b3552d375ffa4b" {
-		t.Error("wrong result convert from -8884663987180930485")
-	}
-	bInt = (&big.Int{}).SetBytes([]byte("-3087871471161192663"))
-	if bInt.String() != "d525ad41d95fcf29" {
-		t.Error("wrong result convert from -3087871471161192663")
 	}
 }

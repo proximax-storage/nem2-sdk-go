@@ -8,21 +8,22 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/flatbuffers/go"
+	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"github.com/proximax-storage/nem2-sdk-go/transactions"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 // Models
-
 // Transaction
 type Transaction interface {
-	generateBytes() ([]byte, error)
 	GetAbstractTransaction() *abstractTransaction
 	String() string
+	generateBytes() ([]byte, error)
 }
 
 // abstractTransaction
@@ -1267,6 +1268,35 @@ func (ht HashType) String() string {
 
 const SHA3_512 HashType = 0
 
+func SignTransaction(tx Transaction, account Account) (*SignedTransaction, error) {
+	s := crypto.NewSigner(account.KeyPair, nil)
+	b, err := tx.generateBytes()
+	if err != nil {
+		return nil, err
+	}
+	sb := make([]byte, len(b)-100)
+	copy(sb, b[100:len(b)-100])
+	signature, err := s.Sign(sb)
+	if err != nil {
+		return nil, err
+	}
+
+	p := make([]byte, len(b))
+	copy(p[:4], b[:4])
+	copy(p[4:len(signature.Bytes())], signature.Bytes()[:len(signature.Bytes())])
+	copy(p[64+4:len(account.KeyPair.PublicKey())], account.KeyPair.PublicKey())
+	copy(p[100:len(b)-100], b[100:len(b)-100])
+
+	ph := hex.EncodeToString(p)
+
+	h, err := createTransactionHash(ph)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SignedTransaction{tx.GetAbstractTransaction().Type, strings.ToUpper(ph), h}, nil
+}
+
 func ExtractTransactionVersion(version uint64) (uint64, error) {
 	res, err := strconv.ParseUint(strconv.FormatUint(version, 16)[2:4], 16, 32)
 	if err != nil {
@@ -1462,4 +1492,21 @@ func mapAggregateTransaction(b *bytes.Buffer) (*AggregateTransaction, error) {
 		return nil, err
 	}
 	return tx, nil
+}
+
+func createTransactionHash(p string) (string, error) {
+	b, err := hex.DecodeString(p)
+	if err != nil {
+		return "", err
+	}
+	sb := make([]byte, len(b)-36)
+	copy(sb[:32], b[4:32])
+	copy(sb[32:len(b)-68], b[68:len(b)-68])
+
+	r, err := crypto.HashesSha3_256(sb)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.ToUpper(hex.EncodeToString(r)), nil
 }
