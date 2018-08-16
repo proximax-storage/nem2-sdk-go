@@ -1,6 +1,6 @@
 package crypto
 
-//Cipher  Wraps IES encryption and decryption logic.
+//Cipher Wraps IES encryption and decryption logic.
 type Cipher struct {
 	cipher BlockCipher
 }
@@ -21,10 +21,9 @@ func NewCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair, engine CryptoE
 
 //NewCipherFromCipher creates a cipher around a cipher.
 func NewCipherFromCipher(cipher BlockCipher) *Cipher {
-	ref := &Cipher{
+	return &Cipher{
 		cipher,
 	}
-	return ref
 }
 
 func (ref *Cipher) Encrypt(input []byte) []byte {
@@ -39,18 +38,9 @@ func (ref *Cipher) Decrypt(input []byte) []byte {
 
 // BlockCipher Interface for encryption and decryption of data.
 type BlockCipher interface {
-	/**
-	 * Encrypts an arbitrarily-sized message.
-	 *
-	 * @param input The message to encrypt.
-	 * @return The encrypted message.
-	 */
+	// Encrypts an arbitrarily-sized message (input).
 	Encrypt(input []byte) []byte
-	/**
-	 * Decrypts an arbitrarily-sized message.
-	 *
-	 * @param input The message to decrypt.
-	 * @return The decrypted message or nil if decryption failed.
-	 */
+	// Decrypts an arbitrarily-sized message.
+	//return The decrypted message or nil if decryption failed.
 	Decrypt(input []byte) []byte
 }

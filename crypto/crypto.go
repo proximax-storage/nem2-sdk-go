@@ -10,9 +10,10 @@ import (
 
 const NUM_CHECKSUM_BYTES = 4
 
+// GenerateEncodedAddress convert publicKey to address
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
-	pKeyD, err := hex.DecodeString(pKey)
+	pKeyD, err := hexDecodeString(pKey)
 	if err != nil {
 		return "", err
 	}
@@ -54,6 +55,7 @@ func GenerateChecksum(b []byte) ([]byte, error) {
 	return sha3StepThreeHash.Sum(nil)[:NUM_CHECKSUM_BYTES], nil
 }
 
+// todo: need check the three following methods
 func HashesSha3_256(b []byte) ([]byte, error) {
 	hash := sha3.New256()
 	_, err := hash.Write(b)
@@ -85,8 +87,13 @@ func HashesRipemd160(b []byte) ([]byte, error) {
 	return hash.Sum(nil), nil
 
 }
-
-func HexEncoderBytes(src []byte) ([]byte, error) {
+func hexDecodeString(str string) ([]byte, error) {
+	return hexDecode([]byte(str))
+}
+func hexDecode(src []byte) ([]byte, error) {
+	if len(src)%2 != 0 {
+		src = append([]byte{'0'}, src...)
+	}
 	dst := make([]byte, len(src))
 	_, err := hex.Decode(dst, src)
 	if err != nil {
@@ -99,7 +106,7 @@ func isNegativeConstantTime(b int) int {
 	return (b >> 8) & 1
 }
 
-func IsEqualConstantTime(b, c int) int { /* public static  */
+func IsEqualConstantTime(b, c int) int {
 
 	result := 0
 	xor := b ^ c // final

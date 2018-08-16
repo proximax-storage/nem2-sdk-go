@@ -12,9 +12,9 @@ import (
 	"math/big"
 )
 
-func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement { /* public static  */
+func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement {
 
-	hash, err := HashesSha3_512(key.Value.Bytes())
+	hash, err := HashesSha3_512(key.Raw)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -60,7 +60,7 @@ func init() {
 	/**
 	 * P: 2^255 - 19
 	 */
-	dst, err := HexEncoderBytes([]byte(Ed25519FieldP))
+	dst, err := hexDecode([]byte(Ed25519FieldP))
 	if err != nil {
 		fmt.Print(err)
 	} else {
@@ -76,7 +76,7 @@ func init() {
 	/**
 	 * I ^ 2 = -1
 	 */
-	dst, err = HexEncoderBytes([]byte(Ed25519FieldI))
+	dst, err = hexDecode([]byte(Ed25519FieldI))
 	if err != nil {
 		fmt.Print(err)
 	} else {
@@ -2036,7 +2036,7 @@ func init() {
 	/**
 	 * 2^252 - 27742317777372353535851937790883648493
 	 */
-	dst, err := HexEncoderBytes([]byte(ed25519GroupOrder))
+	dst, err := hexDecode([]byte(ed25519GroupOrder))
 	if err != nil {
 		fmt.Print(err)
 	} else {
@@ -2056,7 +2056,7 @@ func init() {
 }
 func getBasePoint() *Ed25519GroupElement {
 
-	rawEncodedGroupElement, err := HexEncoderBytes([]byte(ed25519GroupRawElement))
+	rawEncodedGroupElement, err := hexDecode([]byte(ed25519GroupRawElement))
 	if err != nil {
 		fmt.Println(err)
 	}

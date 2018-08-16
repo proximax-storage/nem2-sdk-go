@@ -1,6 +1,9 @@
 package crypto
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 //region basic construction
 // @Test
@@ -39,11 +42,11 @@ func TestKeyPair_HasPrivateKey(t *testing.T) {
 		if !kp2.HasPrivateKey() {
 			t.Error("kp2.hasPrivateKey() must be true!")
 		}
-		if kp2.privateKey != kp1.privateKey {
-			t.Error("kp2.privatKey must by equal kp1.privatKey!")
+		if !bytes.Equal(kp2.PrivateKey(), kp1.PrivateKey()) {
+			t.Errorf("kp2.privatKey ('%v')\n must by equal \nkp1.privatKey ('%v') !", kp2.privateKey, kp1.privateKey)
 		}
-		if kp2.publicKey != kp1.publicKey {
-			t.Error("kp2.publicKey must by equal kp1.publicKey!")
+		if !bytes.Equal(kp2.PublicKey(), kp1.PublicKey()) {
+			t.Errorf("kp2.publicKey ('%v')\n  must by equal \nkp1.publicKey ('%v') !", kp2.publicKey, kp1.publicKey)
 		}
 	}
 }
