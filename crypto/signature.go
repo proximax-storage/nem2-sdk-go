@@ -3,6 +3,7 @@ package crypto
 import (
 	"encoding/binary"
 	"errors"
+	"math/big"
 )
 
 //Signature
@@ -11,19 +12,36 @@ type Signature struct {
 	S []byte
 }
 
+var (
+	errBadParamNewSignature          = errors.New("binary signature representation of r and s must both have 32 bytes length")
+	errBadParamNewSignatureBigInt    = errors.New("bad parameters NewSignatureFromBigInt")
+	errBadParamNewSignatureFromBytes = errors.New("binary signature representation must be 64 bytes")
+)
+
 // NewSignature R and S must fit into 32 bytes
 func NewSignature(r []byte, s []byte) (*Signature, error) {
 	if (len(r) != 32) || (len(s) != 32) {
-		return nil, errors.New("binary signature representation of r and s must both have 32 bytes length")
+		return nil, errBadParamNewSignature
 	}
 	ref := &Signature{r, s}
 	return ref, nil
+}
+func NewSignatureFromBigInt(rInt, sInt *big.Int) (*Signature, error) {
+	if (rInt == nil) || (sInt == nil) {
+		return nil, errBadParamNewSignatureBigInt
+	}
+
+	var r, s [32]byte
+	copy(r[:], rInt.Bytes())
+	copy(s[:], sInt.Bytes())
+
+	return NewSignature(r[:], s[:])
 }
 
 //NewSignatureFromBytes Creates a new signature from bytes array 64
 func NewSignatureFromBytes(b []byte) (*Signature, error) {
 	if len(b) < 64 {
-		return nil, errors.New("binary signature representation must be 64 bytes")
+		return nil, errBadParamNewSignatureFromBytes
 	}
 	ref := &Signature{b[:32], b[32:]}
 	return ref, nil
