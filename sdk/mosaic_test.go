@@ -92,13 +92,13 @@ func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
 	} else if !mscInfo.Active {
 		t.Error(fmt.Sprintf("failed Active data Convertion = '%v' (%#v)", mscInfo.Active, mscInfo))
 		result = false
-	} else if nsId := mscInfo.NamespaceId.Id; !(nsId.Uint64() == uint64DTO{929036875, 2226345261}.GetBigInteger().Uint64()) {
+	} else if nsId := mscInfo.NamespaceId.Id; !(nsId.Uint64() == uint64DTO{929036875, 2226345261}.toBigInt().Uint64()) {
 		t.Error(fmt.Sprintf("failed NamespaceId data Convertion = '%v' (%#v)", nsId, mscInfo))
 		result = false
-	} else if mscId := mscInfo.MosaicId.Id; !(mscId.Uint64() == uint64DTO{3646934825, 3576016193}.GetBigInteger().Uint64()) {
+	} else if mscId := mscInfo.MosaicId.Id; !(mscId.Uint64() == uint64DTO{3646934825, 3576016193}.toBigInt().Uint64()) {
 		t.Error(fmt.Sprintf("failed MosaicId data Convertion = '%v' (%#v)", mscId, mscInfo))
 		result = false
-	} else if nsId := mscInfo.Supply; !(nsId.Uint64() == uint64DTO{3403414400, 2095475}.GetBigInteger().Uint64()) {
+	} else if nsId := mscInfo.Supply; !(nsId.Uint64() == uint64DTO{3403414400, 2095475}.toBigInt().Uint64()) {
 		t.Error(fmt.Sprintf("failed Supply data Convertion = '%v' (%#v)", nsId, mscInfo))
 		result = false
 	} else if nsId := mscInfo.Height; !(nsId.Uint64() == 1) {

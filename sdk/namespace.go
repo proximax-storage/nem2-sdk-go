@@ -59,10 +59,10 @@ func (ref *namespaceInfoDTO) setNamespaceInfo() (*NamespaceInfo, error) {
 		NamespaceType(ref.Namespace.Type),
 		ref.Namespace.Depth,
 		ref.extractLevels(),
-		NewNamespaceId(ref.Namespace.ParentId.GetBigInteger(), ""),
+		NewNamespaceId(ref.Namespace.ParentId.toBigInt(), ""),
 		pubAcc,
-		ref.Namespace.StartHeight.GetBigInteger(),
-		ref.Namespace.EndHeight.GetBigInteger(),
+		ref.Namespace.StartHeight.toBigInt(),
+		ref.Namespace.EndHeight.toBigInt(),
 	}, nil
 }
 
@@ -71,15 +71,15 @@ func (ref *namespaceInfoDTO) extractLevels() []*NamespaceId {
 	levels := make([]*NamespaceId, 0)
 
 	if ref.Namespace.Level0 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level0.GetBigInteger(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level0.toBigInt(), ""))
 	}
 
 	if ref.Namespace.Level1 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level1.GetBigInteger(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level1.toBigInt(), ""))
 	}
 
 	if ref.Namespace.Level2 != nil {
-		levels = append(levels, NewNamespaceId(ref.Namespace.Level2.GetBigInteger(), ""))
+		levels = append(levels, NewNamespaceId(ref.Namespace.Level2.toBigInt(), ""))
 	}
 	return levels
 }
@@ -109,9 +109,9 @@ type namespaceNameDTO struct {
 
 func (ref *namespaceNameDTO) getNamespaceName() *NamespaceName {
 	return &NamespaceName{
-		NewNamespaceId(ref.NamespaceId.GetBigInteger(), ""),
+		NewNamespaceId(ref.NamespaceId.toBigInt(), ""),
 		ref.Name,
-		NewNamespaceId(ref.ParentId.GetBigInteger(), "")}
+		NewNamespaceId(ref.ParentId.toBigInt(), "")}
 }
 
 // GetNamespaceNames
