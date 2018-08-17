@@ -1,23 +1,17 @@
 package crypto
 
-/**
- * Wraps DSA signing and verification logic.
- */
+// Signer Wraps DSA signing and verification logic.
 type Signer struct {
 	signer DsaSigner
-	/**
-	 * Creates a signer around a KeyPair.
-	 *
-	 * @param keyPair The KeyPair that should be used for signing and verification.
-	 */
-} /* Signer */
-/**
- * Creates a signer around a KeyPair.
- *
- * @param keyPair The KeyPair that should be used for signing and verification.
- * @param engine  The crypto engine.
- */
-func NewSigner(keyPair *KeyPair, engine CryptoEngine) *Signer {
+}
+
+// NewSigner creates a signer around a KeyPair.
+func NewSigner(keyPair *KeyPair) *Signer {
+	return NewSignerByEngine(keyPair, CryptoEngines.DefaultEngine)
+}
+
+// NewSignerByEngine creates a signer around a KeyPair.
+func NewSignerByEngine(keyPair *KeyPair, engine CryptoEngine) *Signer {
 	if engine == nil {
 		engine = CryptoEngines.DefaultEngine
 	}
@@ -26,11 +20,7 @@ func NewSigner(keyPair *KeyPair, engine CryptoEngine) *Signer {
 	return ref
 }
 
-/**
- * Creates a signer around a DsaSigner.
- *
- * @param signer The signer.
- */
+// NewSignerFromDsaSigner Creates a signer around a DsaSigner.
 func NewSignerFromDsaSigner(signer DsaSigner) *Signer {
 	ref := &Signer{
 		signer,

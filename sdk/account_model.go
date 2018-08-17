@@ -240,22 +240,23 @@ func NewAddress(address string, networkType NetworkType) *Address {
 	return &Address{networkType, address}
 }
 
+var addressNet = map[uint8]NetworkType{
+	'N': MAIN_NET,
+	'T': TEST_NET,
+	'M': MIJIN,
+	'S': MIJIN_TEST,
+}
+
 func NewAddressFromRaw(address string) (*Address, error) {
-	switch address[:1] {
-	case "N":
-		return NewAddress(address, MAIN_NET), nil
-	case "T":
-		return NewAddress(address, TEST_NET), nil
-	case "M":
-		return NewAddress(address, MIJIN), nil
-	case "S":
-		return NewAddress(address, MIJIN_TEST), nil
+
+	if nType, ok := addressNet[address[0]]; ok {
+		return NewAddress(address, nType), nil
 	}
 	return nil, addressError
 }
 
 func NewAddressFromPublicKey(pKey string, networkType NetworkType) (*Address, error) {
-	ad, err := crypto.GenerateEncodedAddress(pKey, uint8(networkType))
+	ad, err := generateEncodedAddress(pKey, networkType)
 	if err != nil {
 		return nil, err
 	}
@@ -275,4 +276,50 @@ func NewAddressFromEncoded(encoded string) (*Address, error) {
 	}
 
 	return ad, nil
+}
+
+const NUM_CHECKSUM_BYTES = 4
+
+// generateEncodedAddress convert publicKey to address
+func generateEncodedAddress(pKey string, version NetworkType) (string, error) {
+	// step 1: sha3 hash of the public key
+	pKeyD, err := hex.DecodeString(pKey)
+	if err != nil {
+		return "", err
+	}
+	sha3PublicKeyHash, err := crypto.HashesSha3_256(pKeyD)
+	if err != nil {
+		return "", err
+	}
+	// step 2: ripemd160 hash of (1)
+	ripemd160StepOneHash, err := crypto.HashesRipemd160(sha3PublicKeyHash)
+	if err != nil {
+		return "", err
+	}
+
+	// step 3: add version byte in front of (2)
+	versionPrefixedRipemd160Hash := append([]byte{uint8(version)}, ripemd160StepOneHash...)
+
+	// step 4: get the checksum of (3)
+	stepThreeChecksum, err := GenerateChecksum(versionPrefixedRipemd160Hash)
+	if err != nil {
+		return "", err
+	}
+
+	// step 5: concatenate (3) and (4)
+	concatStepThreeAndStepSix := append(versionPrefixedRipemd160Hash, stepThreeChecksum...)
+
+	// step 6: base32 encode (5)
+	return base32.StdEncoding.EncodeToString(concatStepThreeAndStepSix), nil
+}
+
+func GenerateChecksum(b []byte) ([]byte, error) {
+	// step 1: sha3 hash of (input
+	sha3StepThreeHash, err := crypto.HashesSha3_256(b)
+	if err != nil {
+		return nil, err
+	}
+
+	// step 2: get the first NUM_CHECKSUM_BYTES bytes of (1)
+	return sha3StepThreeHash[:NUM_CHECKSUM_BYTES], nil
 }

@@ -205,8 +205,8 @@ func (ref *Ed25519DsaSigner) Verify(data []byte, signature *Signature) (res bool
 
 func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {
 
-	return uint64(signature.GetS()) != Ed25519Group.GROUP_ORDER.Uint64() &&
-		signature.GetS() == 0 //uint64.ZERO
+	sgnS := signature.GetS()
+	return uint64(sgnS) != Ed25519Group.GROUP_ORDER.Uint64() && sgnS > 0
 }
 
 func (ref *Ed25519DsaSigner) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
