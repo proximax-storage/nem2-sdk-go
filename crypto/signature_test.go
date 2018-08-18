@@ -36,8 +36,8 @@ func TestNewSignatureFromBigInt(t *testing.T) {
 	}
 
 	assert.Equal(t, uint32(r.Uint64()), signature.GetR(), `signature.getR() and r must by equal !`)
-	assert.Equal(t, uint32(s.Uint64()), signature.GetS(), `signature.getS() and s must by equal (%d = %d)`,
-		uint32(s.Uint64()), signature.GetS())
+	assert.Equal(t, uint32(s.Uint64()), signature.GetS(), `signature.getS() and s must by equal (%v = %v)`,
+		s.Bytes(), signature.S)
 
 }
 func TestNewSignatureFromBigInt_BadParams(t *testing.T) {
