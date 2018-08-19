@@ -113,7 +113,7 @@ func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
-	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.GetBigInteger().Uint64()) {
+	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.toBigInt().Uint64()) {
 		t.Error("failed ParentId data Convertion")
 		result = false
 	}
@@ -203,7 +203,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 		} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
 			t.Logf("%#v", arr0)
 		} else {
-			if id := arr0.NamespaceId.Id; !(id.Uint64() == uint64DTO{929036875, 2226345261}.GetBigInteger().Uint64()) {
+			if id := arr0.NamespaceId.Id; !(id.Uint64() == uint64DTO{929036875, 2226345261}.toBigInt().Uint64()) {
 				t.Error("failed namespaceName id Convertion")
 				t.Logf("%s", id)
 			}

@@ -21,8 +21,8 @@ type namespaceIdDTO struct {
 	FullName string
 }
 
-func (dto *namespaceIdDTO) getNamespaceId() *NamespaceId {
-	return &NamespaceId{dto.Id.GetBigInteger(), dto.FullName}
+func (dto *namespaceIdDTO) toStruct() *NamespaceId {
+	return &NamespaceId{dto.Id.toBigInt(), dto.FullName}
 }
 
 /* NamespaceId */
@@ -104,7 +104,7 @@ type NamespaceNameDTO struct {
 	name        string
 	parentId    uint64DTO
 } /* NamespaceNameDTO */
-type NamespaceType int
+type NamespaceType uint8
 
 const (
 	RootNamespace NamespaceType = iota
@@ -137,10 +137,10 @@ func NamespaceInfoFromDTO(nsInfoDTO *namespaceInfoDTO) (*NamespaceInfo, error) {
 		NamespaceType(nsInfoDTO.Namespace.Type),
 		nsInfoDTO.Namespace.Depth,
 		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId.GetBigInteger(), ""),
+		NewNamespaceId(nsInfoDTO.Namespace.ParentId.toBigInt(), ""),
 		pubAcc,
-		nsInfoDTO.Namespace.StartHeight.GetBigInteger(),
-		nsInfoDTO.Namespace.EndHeight.GetBigInteger(),
+		nsInfoDTO.Namespace.StartHeight.toBigInt(),
+		nsInfoDTO.Namespace.EndHeight.toBigInt(),
 	}, nil
 }
 
