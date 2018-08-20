@@ -3,12 +3,13 @@ package sdk
 import (
 	"encoding/base32"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"math/big"
 	"strconv"
 	"strings"
 	"sync"
-	"errors"
 )
 
 type Account struct {
@@ -19,6 +20,10 @@ type Account struct {
 type PublicAccount struct {
 	Address   *Address
 	PublicKey string
+}
+
+func (ref *PublicAccount) String() string {
+	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
 }
 
 type AccountInfo struct {

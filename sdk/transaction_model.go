@@ -707,9 +707,9 @@ type registerNamespaceTransactionDTO struct {
 	Tx struct {
 		abstractTransactionDTO
 		Id            namespaceIdDTO `json:"namespaceId"`
-		NamespaceType `json:"namespaceType"`
-		NamspaceName  string    `json:"name"`
-		Duration      uint64DTO `json:"duration"`
+		NamespaceType NamespaceType  `json:"namespaceType"`
+		NamspaceName  string         `json:"name"`
+		Duration      uint64DTO      `json:"duration"`
 		ParentId      namespaceIdDTO
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
@@ -1269,7 +1269,7 @@ func (ht HashType) String() string {
 const SHA3_512 HashType = 0
 
 func SignTransaction(tx Transaction, account Account) (*SignedTransaction, error) {
-	s := crypto.NewSigner(account.KeyPair, nil)
+	s := crypto.NewSignerFromKeyPair(account.KeyPair, nil)
 	b, err := tx.generateBytes()
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ import (
 const transactionId = "5B55E02EACCB7B00015DB6E1"
 const transactionHash = "7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F"
 
-var transaction = &TransferTransaction{
+var testTransaction = &TransferTransaction{
 	abstractTransaction: abstractTransaction{
 		Type:        TRANSFER,
 		Version:     uint64(3),
@@ -33,7 +33,7 @@ var transaction = &TransferTransaction{
 		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toBigInt(), ""}, uint64DTO{10000000, 0}.toBigInt()},
 	},
 	Recipient: &Address{MIJIN_TEST, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
-	Message: &Message{Type: 0, Payload:""},
+	Message:   &Message{Type: 0, Payload: ""},
 }
 
 const transactionJson = `
@@ -111,8 +111,8 @@ func TestTransactionService_GetTransaction_TransferTransaction(t *testing.T) {
 		t.Errorf("Transaction.GetTransaction returned error: %s", err)
 	}
 
-	if !reflect.DeepEqual(tx, transaction) {
-		t.Errorf("Transaction.GetTransaction returned %s, want %s", tx, transaction)
+	if !reflect.DeepEqual(tx, testTransaction) {
+		t.Errorf("Transaction.GetTransaction returned %s, want %s", tx, testTransaction)
 	}
 }
 
@@ -136,7 +136,7 @@ func TestTransactionService_GetTransactions(t *testing.T) {
 	}
 
 	want := []Transaction{
-		transaction,
+		testTransaction,
 	}
 
 	if !reflect.DeepEqual(tx, want) {

@@ -16,13 +16,10 @@ type NamespaceId struct {
 	FullName string
 }
 
-type namespaceIdDTO struct {
-	Id       uint64DTO
-	FullName string
-}
+type namespaceIdDTO uint64DTO
 
 func (dto *namespaceIdDTO) toStruct() *NamespaceId {
-	return &NamespaceId{dto.Id.toBigInt(), dto.FullName}
+	return NewNamespaceId(uint64DTO(*dto).toBigInt(), "")
 }
 
 /* NamespaceId */
