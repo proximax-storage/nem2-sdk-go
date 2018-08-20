@@ -12,6 +12,6 @@ func TestGenerateEncodedAddress(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(res, "SBFBW6TUGLEWQIBCMTBMXXQORZKUP3WTVVTOKK5M") {
-		t.Errorf("Wrong address %S", res)
+		t.Errorf("Wrong address %s", res)
 	}
 }

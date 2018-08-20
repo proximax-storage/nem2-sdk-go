@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net/http"
 	"reflect"
 	"testing"
@@ -14,11 +15,11 @@ const transactionHash = "7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141
 
 var transaction = &TransferTransaction{
 	abstractTransaction: abstractTransaction{
-		Type:        TRANSFER,
+		Type:        Transfer,
 		Version:     uint64(3),
-		NetworkType: MIJIN_TEST,
+		NetworkType: MijinTest,
 		Signature:   "ADF80CBC864B65A8D94205E9EC6640FA4AE0E3011B27F8A93D93761E454A9853BF0AB1ECB3DF62E1D2D267D3F1913FAB0E2225CE5EA3937790B78FFA1288870C",
-		Signer:      &PublicAccount{&Address{MIJIN_TEST, "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"}, "27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9"},
+		Signer:      &PublicAccount{&Address{MijinTest, "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"}, "27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9"},
 		Fee:         uint64DTO{0, 0}.toBigInt(),
 		Deadline:    &Deadline{time.Unix(uint64DTO{1094650402, 17}.toBigInt().Int64(), int64(time.Millisecond))},
 		TransactionInfo: &TransactionInfo{
@@ -32,8 +33,8 @@ var transaction = &TransferTransaction{
 	Mosaics: Mosaics{
 		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toBigInt(), ""}, uint64DTO{10000000, 0}.toBigInt()},
 	},
-	Recipient: &Address{MIJIN_TEST, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
-	Message: &Message{Type: 0, Payload:""},
+	Recipient: &Address{MijinTest, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
+	Message:   &Message{Type: 0, Payload: ""},
 }
 
 const transactionJson = `
@@ -184,5 +185,28 @@ func TestTransactionService_GetTransactionStatuses(t *testing.T) {
 	want := []*TransactionStatus{status}
 	if !reflect.DeepEqual(tx, want) {
 		t.Errorf("Transaction.GetTransactionStatuses returned %s, want %s", tx, want)
+	}
+}
+
+func TestTransactionSerialization(t *testing.T) {
+	want := []byte{byte(165), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		3, byte(144), 84, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, byte(144), byte(232), byte(254), byte(189), byte(103), byte(29), byte(212), byte(27), byte(238), byte(148), byte(236), byte(59), byte(165), byte(131), byte(28), byte(182), byte(8), byte(163), byte(18), byte(194), byte(242), byte(3), byte(186), byte(132), byte(172),
+		1, 0, 1, 0, 103, 43, 0, 0, byte(206), 86, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0}
+	tx := &TransferTransaction{
+		Recipient: NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
+		Mosaics:   Mosaics{{&MosaicId{Id: big.NewInt(95442763262823)}, big.NewInt(100)}},
+		Message:   &Message{0, ""},
+		abstractTransaction: abstractTransaction{
+			Deadline:    NewDeadline(time.Hour),
+			NetworkType: MijinTest,
+		},
+	}
+	b, err := tx.generateBytes()
+	if err != nil {
+		t.Errorf("TransaferTransaction generateBytes() returned error: %s", err)
+	}
+
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("TransaferTransaction generateBytes() returned wrong result: %s", b)
 	}
 }

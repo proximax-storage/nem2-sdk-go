@@ -28,7 +28,9 @@ func fromBigInt(int *big.Int) []uint32 {
 	if ln < 4 {
 		s = ln
 	}
-	l = binary.LittleEndian.Uint32(b[:s])
+	lb := make([]byte, 4)
+	copy(lb[:s], b[:s])
+	l = binary.LittleEndian.Uint32(lb)
 	if ln > 4 {
 		if ln-4 < 4 {
 			s = ln - 4

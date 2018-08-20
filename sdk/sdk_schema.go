@@ -1,32 +1,19 @@
 package sdk
 
 type schemaAttributeSuper interface {
-	serialize(bytes []byte, position int) []byte
-	serializeInnerObjectPosition(buffer []byte, position int, innerObjectPosition int) []byte
+	serialize(buffer []byte, position int, innerObjectPosition int) []byte
 }
 
 type schema struct {
 	schemaDefinition []schemaAttributeSuper
 }
 
-func newSchema(schemaDefinition []schemaAttributeSuper) schema {
-	return schema{
-		schemaDefinition: schemaDefinition}
-}
-
-func (s schema) concat(first []byte, second []byte) []byte {
-	var result []byte
-	result = append(first, second...)
-	return result
-}
-
-func (s schema) serialize(bytes []byte) []byte {
-
+func (s *schema) serialize(bytes []byte) []byte {
 	var resultBytes []byte
 
 	for i, schemaDefinition := range s.schemaDefinition {
-		tmp := schemaDefinition.serialize(bytes, 4+(i*2))
-		resultBytes = s.concat(resultBytes, tmp)
+		tmp := schemaDefinition.serialize(bytes, 4+(i*2), int(bytes[0]))
+		resultBytes = append(resultBytes, tmp...)
 	}
 	return resultBytes
 }
@@ -125,12 +112,8 @@ func newArrayAttribute(name string, typeSize int) *arrayAttribute {
 	return &arrayAttribute{schemaAttribute, name, typeSize}
 }
 
-func (s arrayAttribute) serializeInnerObjectPosition(buffer []byte, position int, innerObjectPosition int) []byte {
+func (s arrayAttribute) serialize(buffer []byte, position int, innerObjectPosition int) []byte {
 	return s.schemaAttribute.findVector(innerObjectPosition, position, buffer, s.typeSize)
-}
-
-func (s arrayAttribute) serialize(buffer []byte, position int) []byte {
-	return []byte{0}
 }
 
 type scalarAttribute struct {
@@ -144,12 +127,8 @@ func newScalarAttribute(name string, typeSize int) *scalarAttribute {
 	return &scalarAttribute{schemaAttribute, name, typeSize}
 }
 
-func (s scalarAttribute) serializeInnerObjectPosition(buffer []byte, position int, innerObjectPosition int) []byte {
+func (s scalarAttribute) serialize(buffer []byte, position int, innerObjectPosition int) []byte {
 	return s.SchemaAttribute.findParam(innerObjectPosition, position, buffer, s.TypeSize)
-}
-
-func (s scalarAttribute) serialize(buffer []byte, position int) []byte {
-	return []byte{0}
 }
 
 type tableArrayAttribute struct {
@@ -161,26 +140,22 @@ type tableArrayAttribute struct {
 
 func newTableArrayAttribute(name string, schemaSuper []schemaAttributeSuper) tableArrayAttribute {
 	schemaAttribute := newSchemaAttribute(name)
-	schema := newSchema(schemaSuper)
+	schema := schema{schemaSuper}
 	return tableArrayAttribute{schemaAttribute, name, schemaSuper, schema}
 }
 
-func (s tableArrayAttribute) serializeInnerObjectPosition(buffer []byte, position int, innerObjectPosition int) []byte {
+func (s tableArrayAttribute) serialize(buffer []byte, position int, innerObjectPosition int) []byte {
 	resultBytes := []byte{0}
 	var arrayLength = s.schemaAttribute.findArrayLength(innerObjectPosition, position, buffer)
 
 	for i := 1; i <= arrayLength; i++ {
 		var startArrayPosition = s.schemaAttribute.findObjectArrayElementStartPosition(innerObjectPosition, position, buffer, i)
 		for index, element := range s.schemaSuper {
-			tmp := element.serializeInnerObjectPosition(buffer, 4+index*2, startArrayPosition)
-			resultBytes = s.schema.concat(resultBytes, tmp)
+			tmp := element.serialize(buffer, 4+index*2, startArrayPosition)
+			resultBytes = append(resultBytes, tmp...)
 		}
 	}
 	return resultBytes
-}
-
-func (s tableArrayAttribute) serialize(buffer []byte, position int) []byte {
-	return []byte{0}
 }
 
 type tableAttribute struct {
@@ -192,31 +167,23 @@ type tableAttribute struct {
 
 func newTableAttribute(name string, schemaSuper []schemaAttributeSuper) tableAttribute {
 	schemaAttribute := newSchemaAttribute(name)
-	schema := newSchema(schemaSuper)
+	schema := schema{schemaSuper}
 	return tableAttribute{schemaAttribute, name, schemaSuper, schema}
 }
 
-func (s tableAttribute) serializeInnerObjectPosition(buffer []byte, position int, innerObjectPosition int) []byte {
+func (s tableAttribute) serialize(buffer []byte, position int, innerObjectPosition int) []byte {
 	resultBytes := []byte{0}
 	var tableStartPosition = s.schemaAttribute.findObjectStartPosition(innerObjectPosition, position, buffer)
 
 	for index, element := range s.schemaSuper {
-		tmp := element.serializeInnerObjectPosition(buffer, 4+(index*2), tableStartPosition)
-		resultBytes = s.schema.concat(resultBytes, tmp)
+		tmp := element.serialize(buffer, 4+(index*2), tableStartPosition)
+		resultBytes = append(resultBytes, tmp...)
 	}
 	return resultBytes
 }
 
-func (s tableAttribute) serialize(buffer []byte, position int) []byte {
-	return []byte{0}
-}
-
 const (
-	SIZEOF_BYTE = 1
-	SIZEOF_SHORT = 2
-	SIZEOF_INT = 4
-	SIZEOF_FLOAT = 4
-	SIZEOF_LONG = 8
-	SIZEOF_DOUBLE = 8
-	FILE_IDENTIFIER_LENGTH = 4
+	ByteSize  = 1
+	ShortSize = 2
+	IntSize   = 4
 )

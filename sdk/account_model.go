@@ -3,12 +3,12 @@ package sdk
 import (
 	"encoding/base32"
 	"encoding/hex"
+	"errors"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"math/big"
 	"strconv"
 	"strings"
 	"sync"
-	"errors"
 )
 
 type Account struct {
@@ -242,13 +242,13 @@ func NewAddress(address string, networkType NetworkType) *Address {
 func NewAddressFromRaw(address string) (*Address, error) {
 	switch address[:1] {
 	case "N":
-		return NewAddress(address, MAIN_NET), nil
+		return NewAddress(address, MainNet), nil
 	case "T":
-		return NewAddress(address, TEST_NET), nil
+		return NewAddress(address, TestNet), nil
 	case "M":
-		return NewAddress(address, MIJIN), nil
+		return NewAddress(address, Mijin), nil
 	case "S":
-		return NewAddress(address, MIJIN_TEST), nil
+		return NewAddress(address, MijinTest), nil
 	}
 	return nil, addressError
 }

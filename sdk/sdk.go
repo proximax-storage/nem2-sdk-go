@@ -27,7 +27,7 @@ func LoadMainnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, NetworkType: MAIN_NET}
+	c := &Config{BaseURL: u, NetworkType: MainNet}
 
 	return c, nil
 }
@@ -39,7 +39,7 @@ func LoadTestnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, NetworkType: TEST_NET}
+	c := &Config{BaseURL: u, NetworkType: TestNet}
 
 	return c, nil
 }

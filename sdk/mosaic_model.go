@@ -125,7 +125,7 @@ type MosaicProperties struct {
 	Transferable  bool
 	LevyMutable   bool
 	Divisibility  int64
-	Duration *big.Int
+	Duration      *big.Int
 }
 
 func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration *big.Int) *MosaicProperties {
@@ -161,8 +161,8 @@ func (mp *MosaicProperties) String() string {
 type MosaicSupplyType uint8
 
 const (
-	DECREASE MosaicSupplyType = iota
-	INCREASE
+	Decrease MosaicSupplyType = iota
+	Increase
 )
 
 func (tx MosaicSupplyType) String() string {

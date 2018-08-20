@@ -69,7 +69,7 @@ func (tx *abstractTransaction) generateBytes(builder *flatbuffers.Builder) error
 
 	signatureV := transactions.TransactionBufferCreateByteVector(builder, make([]byte, 64))
 	signerV := transactions.TransactionBufferCreateByteVector(builder, make([]byte, 32))
-	dv := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(big.NewInt(tx.Deadline.getInstant())))
+	dv := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(big.NewInt(tx.Deadline.GetInstant())))
 	fV := transactions.TransactionBufferCreateUint32Vector(builder, []uint32{0, 0})
 
 	transactions.TransactionBufferAddSignature(builder, signatureV)
@@ -243,7 +243,7 @@ func (tx *AggregateTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return aggregateTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return aggregateTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type aggregateTransactionDTO struct {
@@ -346,7 +346,7 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return mosaicDefinitionTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return mosaicDefinitionTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type mosaicDefinitionTransactionDTO struct {
@@ -422,7 +422,7 @@ func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return mosaicDefinitionTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return mosaicSupplyChangeTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type mosaicSupplyChangeTransactionDTO struct {
@@ -510,9 +510,28 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	rV := transactions.TransactionBufferCreateByteVector(builder, r)
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, mb)
 
+	v, err := strconv.ParseUint(strconv.FormatUint(uint64(tx.NetworkType), 16)+"0"+strconv.FormatUint(tx.Version, 16), 16, 32)
+	if err != nil {
+		return nil, err
+	}
+
+	signatureV := transactions.TransactionBufferCreateByteVector(builder, make([]byte, 64))
+	signerV := transactions.TransactionBufferCreateByteVector(builder, make([]byte, 32))
+	dv := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(big.NewInt(tx.Deadline.GetInstant())))
+	fV := transactions.TransactionBufferCreateUint32Vector(builder, []uint32{0, 0})
+
 	transactions.TransferTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 149+(16*ml)+pl)
-	tx.abstractTransaction.generateBytes(builder)
+
+	transactions.TransactionBufferAddSignature(builder, signatureV)
+	transactions.TransactionBufferAddSigner(builder, signerV)
+	transactions.TransactionBufferAddVersion(builder, v)
+	transactions.TransactionBufferAddType(builder, tx.abstractTransaction.Type.Hex())
+	transactions.TransactionBufferAddFee(builder, fV)
+	transactions.TransactionBufferAddDeadline(builder, dv)
+
+	//tx.abstractTransaction.generateBytes(builder)
+
 	transactions.TransferTransactionBufferAddRecipient(builder, rV)
 	transactions.TransferTransactionBufferAddNumMosaics(builder, ml)
 	transactions.TransferTransactionBufferAddMessageSize(builder, pl+1)
@@ -520,8 +539,7 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	transactions.TransferTransactionBufferAddMosaics(builder, mV)
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
-
-	return transferTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return transferTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type transferTransactionDTO struct {
@@ -615,7 +633,7 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return modifyMultisigAccountTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return modifyMultisigAccountTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type modifyMultisigAccountTransactionDTO struct {
@@ -700,7 +718,7 @@ func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return registerNamespaceTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return registerNamespaceTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type registerNamespaceTransactionDTO struct {
@@ -790,7 +808,7 @@ func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return lockFundsTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return lockFundsTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type lockFundsTransactionDTO struct {
@@ -818,7 +836,7 @@ func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
 		*atx,
 		m,
 		dto.Tx.Duration.toBigInt(),
-		&SignedTransaction{LOCK, "", dto.Tx.Hash},
+		&SignedTransaction{Lock, "", dto.Tx.Hash},
 	}, nil
 }
 
@@ -886,7 +904,7 @@ func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return secretLockTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return secretLockTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type secretLockTransactionDTO struct {
@@ -980,7 +998,7 @@ func (tx *SecretProofTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return secretProofTransactionSchema().serialize(builder.FinishedBytes()), nil
+	return secretProofTransactionSchema.serialize(builder.FinishedBytes()), nil
 }
 
 type secretProofTransactionDTO struct {
@@ -1158,15 +1176,19 @@ type TransactionHashesDTO struct {
 	Hashes []string `json:"hashes"`
 }
 
-var TIMESTAMP_NEMSIS_BLOCK = time.Unix(1459468800, int64(time.Millisecond))
+var TimestampNemesisBlock = time.Unix(1459468800, int64(time.Millisecond))
 
 // Deadline
 type Deadline struct {
 	time.Time
 }
 
-func (d *Deadline) getInstant() int64 {
-	return d.Time.Unix() - TIMESTAMP_NEMSIS_BLOCK.Unix()
+func (d *Deadline) GetInstant() int64 {
+	return d.Time.Unix() - TimestampNemesisBlock.Unix()
+}
+
+func NewDeadline(d time.Duration) *Deadline {
+	return &Deadline{time.Now().Add(d)}
 }
 
 // Message
@@ -1206,32 +1228,32 @@ type transactionTypeStruct struct {
 }
 
 var transactionTypes = []transactionTypeStruct{
-	{AGGREGATE_COMPLETE, 16705, 0x4141},
-	{AGGREGATE_BONDED, 16961, 0x4241},
-	{MOSAIC_DEFINITION, 16717, 0x414d},
-	{MOSAIC_SUPPLY_CHANGE, 16973, 0x424d},
-	{MODIFY_MULTISIG_ACCOUNT, 16725, 0x4155},
-	{REGISTER_NAMESPACE, 16718, 0x414e},
-	{TRANSFER, 16724, 0x4154},
-	{LOCK, 16716, 0x414C},
-	{SECRET_LOCK, 16972, 0x424C},
-	{SECRET_PROOF, 17228, 0x434C},
+	{AggregateCompleted, 16705, 0x4141},
+	{AggregateBonded, 16961, 0x4241},
+	{MosaicDefinition, 16717, 0x414d},
+	{MosaicSupplyChange, 16973, 0x424d},
+	{ModifyMultisig, 16725, 0x4155},
+	{RegisterNamespace, 16718, 0x414e},
+	{Transfer, 16724, 0x4154},
+	{Lock, 16716, 0x414C},
+	{SecretLock, 16972, 0x424C},
+	{SecretProof, 17228, 0x434C},
 }
 
 type TransactionType uint16
 
 // TransactionType enums
 const (
-	AGGREGATE_COMPLETE TransactionType = iota
-	AGGREGATE_BONDED
-	MOSAIC_DEFINITION
-	MOSAIC_SUPPLY_CHANGE
-	MODIFY_MULTISIG_ACCOUNT
-	REGISTER_NAMESPACE
-	TRANSFER
-	LOCK
-	SECRET_LOCK
-	SECRET_PROOF
+	AggregateCompleted TransactionType = iota
+	AggregateBonded
+	MosaicDefinition
+	MosaicSupplyChange
+	ModifyMultisig
+	RegisterNamespace
+	Transfer
+	Lock
+	SecretLock
+	SecretProof
 )
 
 func (t TransactionType) Hex() uint32 {
@@ -1256,8 +1278,8 @@ func (t MultisigCosignatoryModificationType) String() string {
 }
 
 const (
-	ADD MultisigCosignatoryModificationType = iota
-	REMOVE
+	Add MultisigCosignatoryModificationType = iota
+	Remove
 )
 
 type HashType uint8
@@ -1358,11 +1380,11 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 	}
 
 	switch t {
-	case AGGREGATE_BONDED:
+	case AggregateBonded:
 		mapAggregateTransaction(b)
-	case AGGREGATE_COMPLETE:
+	case AggregateCompleted:
 		mapAggregateTransaction(b)
-	case MOSAIC_DEFINITION:
+	case MosaicDefinition:
 		dto := mosaicDefinitionTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1376,7 +1398,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case MOSAIC_SUPPLY_CHANGE:
+	case MosaicSupplyChange:
 		dto := mosaicSupplyChangeTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1390,7 +1412,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case MODIFY_MULTISIG_ACCOUNT:
+	case ModifyMultisig:
 		dto := modifyMultisigAccountTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1404,7 +1426,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case REGISTER_NAMESPACE:
+	case RegisterNamespace:
 		dto := registerNamespaceTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1418,7 +1440,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case TRANSFER:
+	case Transfer:
 		dto := transferTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1432,7 +1454,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case LOCK:
+	case Lock:
 		dto := lockFundsTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1446,7 +1468,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case SECRET_LOCK:
+	case SecretLock:
 		dto := secretLockTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)
@@ -1460,7 +1482,7 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		}
 
 		return tx, nil
-	case SECRET_PROOF:
+	case SecretProof:
 		dto := secretProofTransactionDTO{}
 
 		err := json.Unmarshal(b.Bytes(), &dto)

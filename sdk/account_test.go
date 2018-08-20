@@ -9,7 +9,7 @@ import (
 )
 
 var account = &AccountInfo{
-	&Address{MIJIN_TEST, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"},
+	&Address{MijinTest, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"},
 	uint64DTO{1, 0}.toBigInt(),
 	"F3824119C9F8B9E81007CAA0EDD44F098458F14503D7C8D7C24F60AF11266E57",
 	uint64DTO{0, 0}.toBigInt(),
@@ -71,7 +71,7 @@ func TestAccountService_GetAccountInfo(t *testing.T) {
 		fmt.Fprint(w, accountInfoJson)
 	})
 
-	acc, _, err := cl.Account.GetAccountInfo(context.Background(), &Address{MIJIN_TEST, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"})
+	acc, _, err := cl.Account.GetAccountInfo(context.Background(), &Address{MijinTest, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"})
 	if err != nil {
 		t.Errorf("Account.GetAccountInfo returned error: %s", err)
 	}
@@ -94,7 +94,7 @@ func TestAccountService_GetAccountsInfo(t *testing.T) {
 
 	acc, _, err := cl.Account.GetAccountsInfo(
 		context.Background(),
-		[]*Address{{MIJIN_TEST, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"}},
+		[]*Address{{MijinTest, "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"}},
 	)
 
 	if err != nil {
@@ -120,7 +120,7 @@ func TestAccountService_Transactions(t *testing.T) {
 	tx, _, err := cl.Account.Transactions(
 		context.Background(),
 		&PublicAccount{
-			&Address{MIJIN_TEST, "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"},
+			&Address{MijinTest, "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"},
 			"27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9",
 		},
 		&AccountTransactionsOption{},
