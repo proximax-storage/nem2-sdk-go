@@ -1,11 +1,11 @@
 package sdk
 
-var abstractTransactionSchemaAttributes = []schemaAttributeSuper{
-	newScalarAttribute("size", ByteSize),
+var abstractTransactionSchemaAttributes = []schemaAttribute{
+	newScalarAttribute("size", IntSize),
 	newArrayAttribute("signature", ByteSize),
 	newArrayAttribute("signer", ByteSize),
 	newScalarAttribute("version", ShortSize),
-	newArrayAttribute("type", ShortSize),
+	newScalarAttribute("type", ShortSize),
 	newArrayAttribute("fee", IntSize),
 	newArrayAttribute("deadline", IntSize),
 }
@@ -13,7 +13,7 @@ var abstractTransactionSchemaAttributes = []schemaAttributeSuper{
 var aggregateTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newScalarAttribute("transactionsSize", IntSize),
 			newArrayAttribute("transactions", ByteSize),
 		}...,
@@ -23,7 +23,7 @@ var aggregateTransactionSchema = &schema{
 var mosaicDefinitionTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("parentId", IntSize),
 			newArrayAttribute("mosaicId", IntSize),
 			newScalarAttribute("mosaicNameLength", ByteSize),
@@ -40,7 +40,7 @@ var mosaicDefinitionTransactionSchema = &schema{
 var mosaicSupplyChangeTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("mosaicId", IntSize),
 			newScalarAttribute("direction", ByteSize),
 			newArrayAttribute("delta", IntSize),
@@ -51,18 +51,18 @@ var mosaicSupplyChangeTransactionSchema = &schema{
 var transferTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("recipient", ByteSize),
 			newScalarAttribute("messageSize", ShortSize),
 			newScalarAttribute("numMosaics", ByteSize),
 			newTableAttribute("message", schema{
-				[]schemaAttributeSuper{
+				[]schemaAttribute{
 					newScalarAttribute("type", ByteSize),
 					newArrayAttribute("payload", ByteSize),
 				},
 			}.schemaDefinition),
-			newTableAttribute("mosaics", schema{
-				[]schemaAttributeSuper{
+			newTableArrayAttribute("mosaics", schema{
+				[]schemaAttribute{
 					newArrayAttribute("id", IntSize),
 					newArrayAttribute("amount", IntSize),
 				},
@@ -74,12 +74,12 @@ var transferTransactionSchema = &schema{
 var modifyMultisigAccountTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newScalarAttribute("minRemovalDelta", ByteSize),
 			newScalarAttribute("minApprovalDelta", ByteSize),
 			newScalarAttribute("numModifications", ByteSize),
 			newTableArrayAttribute("modification", schema{
-				[]schemaAttributeSuper{
+				[]schemaAttribute{
 					newScalarAttribute("type", ByteSize),
 					newArrayAttribute("cosignatoryPublicKey", ByteSize),
 				},
@@ -91,7 +91,7 @@ var modifyMultisigAccountTransactionSchema = &schema{
 var registerNamespaceTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("namespaceType", IntSize),
 			newScalarAttribute("durationParentId", IntSize),
 			newArrayAttribute("namespaceId", IntSize),
@@ -104,7 +104,7 @@ var registerNamespaceTransactionSchema = &schema{
 var lockFundsTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
@@ -116,7 +116,7 @@ var lockFundsTransactionSchema = &schema{
 var secretLockTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
@@ -130,7 +130,7 @@ var secretLockTransactionSchema = &schema{
 var secretProofTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
-		[]schemaAttributeSuper{
+		[]schemaAttribute{
 			newScalarAttribute("hashAlgorithm", ByteSize),
 			newArrayAttribute("secret", ByteSize),
 			newScalarAttribute("proofSize", ShortSize),

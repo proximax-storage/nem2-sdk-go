@@ -14,8 +14,8 @@ func TransactionBufferAddSigner(builder *flatbuffers.Builder, signer flatbuffers
 func TransactionBufferAddVersion(builder *flatbuffers.Builder, version uint64) {
 	builder.PrependUint16Slot(3, uint16(version), 0)
 }
-func TransactionBufferAddType(builder *flatbuffers.Builder, type_ uint32) {
-	builder.PrependUint16Slot(4, uint16(type_), 0)
+func TransactionBufferAddType(builder *flatbuffers.Builder, type_ uint16) {
+	builder.PrependUint16Slot(4, type_, 0)
 }
 func TransactionBufferAddFee(builder *flatbuffers.Builder, fee flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(5, flatbuffers.UOffsetT(fee), 0)

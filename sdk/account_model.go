@@ -225,6 +225,25 @@ func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*Mult
 
 var addressError = errors.New("wrong address")
 
+func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
+	k, err := crypto.PrivatKeyfromHexString(pKey)
+	if err != nil {
+		return nil, err
+	}
+
+	kp, err := crypto.NewKeyPair(k, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	pa, err := NewPublicAccount(string(kp.PublicKey()), networkType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Account{pa, kp}, nil
+}
+
 func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, error) {
 	ad, err := NewAddressFromPublicKey(pKey, networkType)
 	if err != nil {

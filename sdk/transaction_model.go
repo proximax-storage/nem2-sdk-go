@@ -82,29 +82,6 @@ func (tx *abstractTransaction) generateBytes(builder *flatbuffers.Builder) error
 	return nil
 }
 
-func toAggregateTransactionBytes(tx Transaction) ([]byte, error) {
-	sb, err := hex.DecodeString(tx.GetAbstractTransaction().Signer.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-	b, err := tx.generateBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	rB := make([]byte, len(b)-64-16)
-	copy(rB[4:32+4], sb[:32])
-	copy(rB[32+4:32+4+4], b[100:104])
-	copy(rB[32+4+4:32+4+4+len(b)-120], b[100+2+2+16:100+2+2+16+len(b)-120])
-
-	s := big.NewInt(int64(len(b) - 64 - 16)).Bytes()
-	utils.ReverseByteArray(s)
-
-	copy(rB[:len(s)], s)
-
-	return rB, nil
-}
-
 type abstractTransactionDTO struct {
 	NetworkType `json:"networkType"`
 	Type        uint32     `json:"type"`
@@ -136,7 +113,7 @@ func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*abstractTr
 	return &abstractTransaction{
 		nt,
 		tInfo,
-		&Deadline{time.Unix(dto.Deadline.toBigInt().Int64(), int64(time.Millisecond))},
+		&Deadline{time.Unix(0, dto.Deadline.toBigInt().Int64()*int64(time.Millisecond))},
 		t,
 		tv,
 		dto.Fee.toBigInt(),
@@ -510,7 +487,7 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	rV := transactions.TransactionBufferCreateByteVector(builder, r)
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, mb)
 
-	v, err := strconv.ParseUint(strconv.FormatUint(uint64(tx.NetworkType), 16)+"0"+strconv.FormatUint(tx.Version, 16), 16, 32)
+	v, err := strconv.ParseUint(strconv.FormatUint(uint64(tx.NetworkType), 16)+"0"+strconv.FormatUint(tx.Version, 16), 16, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -1176,7 +1153,7 @@ type TransactionHashesDTO struct {
 	Hashes []string `json:"hashes"`
 }
 
-var TimestampNemesisBlock = time.Unix(1459468800, int64(time.Millisecond))
+var TimestampNemesisBlock = time.Unix(0, 1459468800*int64(time.Millisecond))
 
 // Deadline
 type Deadline struct {
@@ -1184,7 +1161,7 @@ type Deadline struct {
 }
 
 func (d *Deadline) GetInstant() int64 {
-	return d.Time.Unix() - TimestampNemesisBlock.Unix()
+	return (d.Time.UnixNano() / 1e6) - (TimestampNemesisBlock.UnixNano() / 1e6)
 }
 
 func NewDeadline(d time.Duration) *Deadline {
@@ -1224,7 +1201,7 @@ func (m *messageDTO) toStruct() *Message {
 type transactionTypeStruct struct {
 	transactionType TransactionType
 	raw             uint32
-	hex             uint32
+	hex             uint16
 }
 
 var transactionTypes = []transactionTypeStruct{
@@ -1256,7 +1233,7 @@ const (
 	SecretProof
 )
 
-func (t TransactionType) Hex() uint32 {
+func (t TransactionType) Hex() uint16 {
 	return transactionTypes[t].hex
 }
 
@@ -1290,7 +1267,7 @@ func (ht HashType) String() string {
 
 const SHA3_512 HashType = 0
 
-func SignTransaction(tx Transaction, account Account) (*SignedTransaction, error) {
+func SignTransaction(tx Transaction, account *Account) (*SignedTransaction, error) {
 	s := crypto.NewSigner(account.KeyPair, nil)
 	b, err := tx.generateBytes()
 	if err != nil {
@@ -1531,4 +1508,27 @@ func createTransactionHash(p string) (string, error) {
 	}
 
 	return strings.ToUpper(hex.EncodeToString(r)), nil
+}
+
+func toAggregateTransactionBytes(tx Transaction) ([]byte, error) {
+	sb, err := hex.DecodeString(tx.GetAbstractTransaction().Signer.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	b, err := tx.generateBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	rB := make([]byte, len(b)-64-16)
+	copy(rB[4:32+4], sb[:32])
+	copy(rB[32+4:32+4+4], b[100:104])
+	copy(rB[32+4+4:32+4+4+len(b)-120], b[100+2+2+16:100+2+2+16+len(b)-120])
+
+	s := big.NewInt(int64(len(b) - 64 - 16)).Bytes()
+	utils.ReverseByteArray(s)
+
+	copy(rB[:len(s)], s)
+
+	return rB, nil
 }
