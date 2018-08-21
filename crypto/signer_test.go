@@ -13,7 +13,7 @@ var testDataForSigner = []byte("abcdefg")
 
 func TestNewSigner(t *testing.T) {
 	keyPair, _ := NewRandomKeyPair()
-	sign := NewSigner(keyPair)
+	sign := NewSignerFromKeyPair(keyPair, nil)
 
 	signature, err := sign.Sign(testDataForSigner)
 

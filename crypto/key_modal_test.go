@@ -5,6 +5,7 @@
 package crypto
 
 import (
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
@@ -58,7 +59,7 @@ const testHexKeyMalformed = "22G75"
 const testKeyStringResult = "22ab71"
 
 func getBigIntFromHex(hStr string) (*big.Int, error) {
-	b, err := hexDecodeString(hStr)
+	b, err := utils.HexDecodeStringOdd(hStr)
 	if err != nil {
 		return nil, err
 	}

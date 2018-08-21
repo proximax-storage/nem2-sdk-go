@@ -1,8 +1,9 @@
 package crypto
 
 import (
-	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 )
 
@@ -31,11 +32,10 @@ func NewSignatureFromBigInt(rInt, sInt *big.Int) (*Signature, error) {
 		return nil, errBadParamNewSignatureBigInt
 	}
 
-	var r, s [32]byte
-	copy(r[:], rInt.Bytes())
-	copy(s[:], sInt.Bytes())
+	r := utils.BigIntToByteArray(rInt, 32)
+	s := utils.BigIntToByteArray(sInt, 32)
 
-	return NewSignature(r[:], s[:])
+	return NewSignature(r, s)
 }
 
 //NewSignatureFromBytes Creates a new signature from bytes array 64
@@ -43,8 +43,7 @@ func NewSignatureFromBytes(b []byte) (*Signature, error) {
 	if len(b) < 64 {
 		return nil, errBadParamNewSignatureFromBytes
 	}
-	ref := &Signature{b[:32], b[32:]}
-	return ref, nil
+	return NewSignature(b[:32], b[32:])
 }
 
 /**
@@ -52,15 +51,15 @@ func NewSignatureFromBytes(b []byte) (*Signature, error) {
  *
  * @return The R-part of the signature.
  */
-func (ref *Signature) GetR() uint32 {
+func (ref *Signature) GetR() *big.Int {
 
-	return binary.BigEndian.Uint32(ref.R)
+	return utils.BytesToBigInteger(ref.R)
 }
 
 //GetS Gets the S-part of the signature.
-func (ref *Signature) GetS() uint32 {
+func (ref *Signature) GetS() *big.Int {
 
-	return binary.BigEndian.Uint32(ref.S)
+	return utils.BytesToBigInteger(ref.S)
 }
 
 //Bytes Gets a little-endian 64-byte representation of the signature.
@@ -71,5 +70,5 @@ func (ref *Signature) Bytes() []byte {
 
 func (ref *Signature) String() string {
 
-	return string(ref.Bytes())
+	return hex.EncodeToString(ref.Bytes())
 }

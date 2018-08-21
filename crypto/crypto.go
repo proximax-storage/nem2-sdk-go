@@ -2,7 +2,7 @@
 package crypto
 
 import (
-	"encoding/hex"
+	"crypto/subtle"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 )
@@ -38,26 +38,12 @@ func HashesRipemd160(b []byte) ([]byte, error) {
 	return hash.Sum(nil), nil
 
 }
-func hexDecodeString(str string) ([]byte, error) {
-	return hexDecode([]byte(str))
-}
-func hexDecode(src []byte) ([]byte, error) {
-	if len(src)%2 != 0 {
-		src = append([]byte{'0'}, src...)
-	}
-	dst := make([]byte, len(src))
-	_, err := hex.Decode(dst, src)
-	if err != nil {
-		return nil, err
-	}
-	return dst, nil
-}
 
 func isNegativeConstantTime(b int) int {
 	return (b >> 8) & 1
 }
 
-func IsEqualConstantTime(b, c int) int {
+func IsConstantTimeByteEq(b, c int) int {
 
 	result := 0
 	xor := b ^ c // final
@@ -66,4 +52,8 @@ func IsEqualConstantTime(b, c int) int {
 	}
 
 	return (result ^ 0x01) & 0x01
+}
+
+func isEqualConstantTime(x, y []byte) bool {
+	return subtle.ConstantTimeCompare(x, y) == 1
 }
