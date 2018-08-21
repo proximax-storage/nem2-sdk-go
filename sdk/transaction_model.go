@@ -592,7 +592,7 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 	msb := make([]flatbuffers.UOffsetT, len(tx.Modifications))
 	for i, m := range tx.Modifications {
-		b, err := utils.HexDecode(m.PublicAccount.PublicKey)
+		b, err := utils.HexDecodeStringOdd(m.PublicAccount.PublicKey)
 		if err != nil {
 			return nil, err
 		}

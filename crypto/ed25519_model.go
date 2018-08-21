@@ -5,8 +5,8 @@
 package crypto
 
 import (
-	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/curve25519"
@@ -15,31 +15,36 @@ import (
 	"math/big"
 )
 
-//Ed25519CryptoEngine
+//Ed25519CryptoEngine wraps a cryptographic engine ed25519
 type Ed25519CryptoEngine struct {
 }
 
+// GetCurve implemented interface CryptoEngine method
 func (ref *Ed25519CryptoEngine) GetCurve() Curve {
 
 	return Ed25519Curve
 
 }
 
+// CreateDsaSigner implemented interface CryptoEngine method
 func (ref *Ed25519CryptoEngine) CreateDsaSigner(keyPair *KeyPair) DsaSigner {
 
 	return NewEd25519DsaSigner(keyPair)
 }
 
+// CreateKeyGenerator implemented interface CryptoEngine method
 func (ref *Ed25519CryptoEngine) CreateKeyGenerator() KeyGenerator {
 
 	return NewEd25519KeyGenerator()
 }
 
+// CreateBlockCipher implemented interface CryptoEngine method
 func (ref *Ed25519CryptoEngine) CreateBlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) BlockCipher {
 
 	return NewEd25519BlockCipher(senderKeyPair, recipientKeyPair)
 }
 
+// CreateKeyAnalyzer implemented interface CryptoEngine method
 func (ref *Ed25519CryptoEngine) CreateKeyAnalyzer() KeyAnalyzer {
 
 	return NewEd25519KeyAnalyzer()
@@ -80,14 +85,24 @@ func (ref *Ed25519BlockCipher) setupBlockCipher(sharedKey []byte, ivData []byte,
 
 func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *PublicKey, salt []byte) ([]byte, error) { /* private  */
 
-	senderA := NewEd25519EncodedGroupElement(publicKey.Raw).Decode()
+	grA, err := NewEd25519EncodedGroupElement(publicKey.Raw)
+	if err != nil {
+		return nil, err
+	}
+	senderA, err := grA.Decode()
+	if err != nil {
+		return nil, err
+	}
 	senderA.PrecomputeForScalarMultiplication()
-	sharedKey := senderA.scalarMultiply(PrepareForScalarMultiply(privateKey)).Encode().Raw
+	sharedKey, err := senderA.scalarMultiply(PrepareForScalarMultiply(privateKey)).Encode()
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < ref.keyLength; i++ {
-		sharedKey[i] ^= salt[i]
+		sharedKey.Raw[i] ^= salt[i]
 	}
 
-	return HashesSha3_256(sharedKey)
+	return HashesSha3_256(sharedKey.Raw)
 }
 
 func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte {
@@ -156,21 +171,60 @@ type Ed25519DsaSigner struct {
 	KeyPair *KeyPair
 }
 
-//NewEd25519DsaSigner Creates a Ed25519 DSA signer.
+//NewEd25519DsaSigner creates a Ed25519 DSA signer.
 func NewEd25519DsaSigner(keyPair *KeyPair) *Ed25519DsaSigner {
-	return &Ed25519DsaSigner{
-		keyPair,
-	}
+	return &Ed25519DsaSigner{keyPair}
 }
 
-func (ref *Ed25519DsaSigner) Sign(data []byte) (*Signature, error) {
+func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 
 	if !ref.KeyPair.HasPrivateKey() {
 		return nil, errors.New("cannot sign without private key")
 	}
 
+	// Hash the private key to improve randomness.
+	hash, err := HashesSha3_512(ref.KeyPair.PrivateKey())
+	if err != nil {
+		return nil, err
+	}
+	// r = H(hash_b,...,hash_2b-1, data) where b=256.
+	hashR, err := HashesSha3_512(
+		hash[32:], // only include the last 32 bytes of the private key hash
+		mess)
+	if err != nil {
+		return nil, err
+	}
+	r, err := NewEd25519EncodedFieldElement(hashR)
+	if err != nil {
+		return nil, err
+	}
+	// Reduce size of r since we are calculating mod group order anyway
+	rModQ := r.modQ()
+	// R = rModQ * base point.
+	R := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
+	encodedR, err := R.Encode()
+	if err != nil {
+		return nil, err
+	}
+	// S = (r + H(encodedR, encodedA, data) * a) mod group order where
+	// encodedR and encodedA are the little endian encodings of the group element R and the public key A and
+	// a is the lower 32 bytes of hash after clamping.
+	hashH, err := HashesSha3_512(
+		encodedR.Raw,
+		ref.KeyPair.PublicKey(),
+		mess)
+	if err != nil {
+		return nil, err
+	}
+	h, err := NewEd25519EncodedFieldElement(hashH)
+	if err != nil {
+		return nil, err
+	}
+	hModQ := h.modQ()
+	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.privateKey),
+		rModQ)
 	// Signature is (encodedR, encodedS)
-	signature, err := NewSignatureFromBytes(ed25519.Sign(ref.KeyPair.PrivateKey(), data))
+	signature, err := NewSignature(encodedR.Raw, encodedS.Raw)
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +237,13 @@ func (ref *Ed25519DsaSigner) Sign(data []byte) (*Signature, error) {
 
 // Verify reports whether sig is a valid signature of message 'data' by publicKey. It
 // prevent  panic inside ed25519.Verify
-func (ref *Ed25519DsaSigner) Verify(data []byte, signature *Signature) (res bool) {
+func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool) {
 
 	if !ref.IsCanonicalSignature(signature) || (len(ref.KeyPair.PublicKey()) != ed25519.PublicKeySize) {
 		return false
 	}
 
-	if b := make([]byte, 32); bytes.Equal(ref.KeyPair.PrivateKey(), b) {
+	if b := make([]byte, 32); subtle.ConstantTimeCompare(ref.KeyPair.PrivateKey(), b) == 1 {
 		return false
 	}
 
@@ -200,13 +254,13 @@ func (ref *Ed25519DsaSigner) Verify(data []byte, signature *Signature) (res bool
 			res = false
 		}
 	}()
-	return ed25519.Verify(ref.KeyPair.PublicKey(), data, signature.Bytes())
+	return ed25519.Verify(ref.KeyPair.PrivateKey()[32:], mess, signature.Bytes())
 }
 
 func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {
 
-	sgnS := signature.GetS()
-	return uint64(sgnS) != Ed25519Group.GROUP_ORDER.Uint64() && sgnS > 0
+	sgnS := signature.GetS().Uint64()
+	return sgnS != Ed25519Group.GROUP_ORDER.Uint64() && sgnS > 0
 }
 
 func (ref *Ed25519DsaSigner) MakeSignatureCanonical(signature *Signature) (*Signature, error) {

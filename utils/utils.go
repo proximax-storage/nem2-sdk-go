@@ -11,8 +11,14 @@ func ReverseByteArray(a []byte) {
 		a[i], a[opp] = a[opp], a[i]
 	}
 }
-
-func HexDecode(s string) ([]byte, error) {
+func MustHexDecodeString(s string) []byte {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+func HexDecodeStringOdd(s string) ([]byte, error) {
 	if len(s)%2 != 0 {
 		s = "0" + s
 	}
@@ -43,7 +49,7 @@ func BigIntToByteArray(value *big.Int, numBytes int) []byte {
 	return outputBytes
 }
 
-//BytesToBigInteger converts a little endian byte array to a BigInteger.
+// BytesToBigInteger converts a little endian byte array to a BigInteger.
 func BytesToBigInteger(bytes []byte) *big.Int {
 
 	bigEndianBytes := make([]byte, len(bytes)+1)
@@ -53,4 +59,12 @@ func BytesToBigInteger(bytes []byte) *big.Int {
 	}
 
 	return (&big.Int{}).SetBytes(bigEndianBytes)
+}
+func HexDecode(src []byte) ([]byte, error) {
+	dst := make([]byte, len(src))
+	_, err := hex.Decode(dst, src)
+	if err != nil {
+		return nil, err
+	}
+	return dst, nil
 }

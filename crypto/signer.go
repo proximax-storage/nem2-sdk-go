@@ -1,48 +1,42 @@
 package crypto
 
-// Signer Wraps DSA signing and verification logic.
+// Signer wraps DSA signing and verification logic.
 type Signer struct {
 	signer DsaSigner
 }
 
-// NewSigner creates a signer around a KeyPair.
-func NewSigner(keyPair *KeyPair) *Signer {
-	return NewSignerByEngine(keyPair, CryptoEngines.DefaultEngine)
+// NewSignerFromDsaSigner Creates a signer around a DsaSigner.
+func NewSigner(signer DsaSigner) *Signer {
+	return &Signer{signer}
 }
 
-// NewSignerByEngine creates a signer around a KeyPair.
-func NewSignerByEngine(keyPair *KeyPair, engine CryptoEngine) *Signer {
+// NewSigner creates a signer around a KeyPair.
+func NewSignerFromKeyPair(keyPair *KeyPair, engine CryptoEngine) *Signer {
 	if engine == nil {
 		engine = CryptoEngines.DefaultEngine
 	}
-	ref := &Signer{
-		engine.CreateDsaSigner(keyPair)}
-	return ref
+	return NewSigner(engine.CreateDsaSigner(keyPair))
 }
 
-// NewSignerFromDsaSigner Creates a signer around a DsaSigner.
-func NewSignerFromDsaSigner(signer DsaSigner) *Signer {
-	ref := &Signer{
-		signer,
-	}
-	return ref
-}
-
+// Sign implemented interface DsaSigner method
 func (ref *Signer) Sign(data []byte) (*Signature, error) {
 
 	return ref.signer.Sign(data)
 }
 
+// Verify implemented interface DsaSigner method
 func (ref *Signer) Verify(data []byte, signature *Signature) bool {
 
 	return ref.signer.Verify(data, signature)
 }
 
+// IsCanonicalSignature implemented interface DsaSigner method
 func (ref *Signer) IsCanonicalSignature(signature *Signature) bool {
 
 	return ref.signer.IsCanonicalSignature(signature)
 }
 
+// MakeSignatureCanonical implemented interface DsaSigner method
 func (ref *Signer) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
 
 	return ref.signer.MakeSignatureCanonical(signature)

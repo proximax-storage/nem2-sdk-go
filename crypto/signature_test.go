@@ -35,8 +35,8 @@ func TestNewSignatureFromBigInt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, uint32(r.Uint64()), signature.GetR(), `signature.getR() and r must by equal !`)
-	assert.Equal(t, uint32(s.Uint64()), signature.GetS(), `signature.getS() and s must by equal (%v = %v)`,
+	assert.Equal(t, r.Uint64(), signature.GetR().Uint64(), `signature.getR() and r must by equal !`)
+	assert.Equal(t, s.Uint64(), signature.GetS().Uint64(), `signature.getS() and s must by equal (%v = %v)`,
 		s.Bytes(), signature.S)
 
 }
@@ -82,6 +82,21 @@ func TestNewSignature_Fail(t *testing.T) {
 	_, err := NewSignature([]byte{0}, []byte{1})
 	assert.Error(t, err, "we must get error - %s", errBadParamNewSignature)
 }
+
+const expectedSignature = "0c000000000000000000000000000000000000000000000000000000000000000102000000000000000000000000000000000000000000000000000000000000"
+
+func TestSignature_String_HexRepresentation(t *testing.T) {
+
+	signature, err := createSignature("12", "513")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Assert:
+
+	assert.Equal(t, expectedSignature, signature.String(), `signature.toString() and expectedSignature must by not equal !`)
+}
+
+// createSignature create Signature from two string values
 func createSignature(strR, strS string) (*Signature, error) {
 	rInt, err := strconv.ParseInt(strR, 10, 64)
 	if err != nil {

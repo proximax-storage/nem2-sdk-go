@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/hex"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"strconv"
 )
@@ -40,7 +41,7 @@ func NewPrivateKeyfromBigInt(val *big.Int) *PrivateKey {
 
 //PrivatKeyfromHexString creates a private key from a hex strings.
 func NewPrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
-	raw, err := hexDecodeString(sHex)
+	raw, err := utils.HexDecodeStringOdd(sHex)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func NewPublicKey(raw []byte) *PublicKey {
 }
 
 func NewPublicKeyfromHex(hStr string) (*PublicKey, error) {
-	raw, err := hexDecodeString(hStr)
+	raw, err := utils.HexDecodeStringOdd(hStr)
 	if err != nil {
 		return nil, err
 	}
