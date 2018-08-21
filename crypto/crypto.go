@@ -4,6 +4,7 @@ package crypto
 import (
 	"encoding/base32"
 	"encoding/hex"
+	"fmt"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 )
@@ -13,22 +14,24 @@ const NUM_CHECKSUM_BYTES = 4
 // GenerateEncodedAddress convert publicKey to address
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
-	pKeyD, err := hex.DecodeString(pKey)
+	//pKeyD, err := hexDecodeString(pKey)
+	//if err != nil {
+	//	return "", err
+	//}
+	sha3PublicKeyHash, err := HashesSha3_256([]byte(pKey))
 	if err != nil {
 		return "", err
 	}
-	sha3PublicKeyHash := sha3.New256()
-	_, err = sha3PublicKeyHash.Write(pKeyD)
-	if err != nil {
-		return "", err
-	}
-
+	fmt.Println(string(sha3PublicKeyHash))
 	// step 2: ripemd160 hash of (1)
-	ripemd160StepOneHash := ripemd160.New()
-	ripemd160StepOneHash.Write(sha3PublicKeyHash.Sum(nil))
+	ripemd160StepOneHash, err := HashesRipemd160(sha3PublicKeyHash)
+	if err != nil {
+		return "", err
+	}
 
+	fmt.Println(string(ripemd160StepOneHash))
 	// step 3: add version byte in front of (2)
-	versionPrefixedRipemd160Hash := append([]byte{version}, ripemd160StepOneHash.Sum(nil)...)
+	versionPrefixedRipemd160Hash := append([]byte{version}, ripemd160StepOneHash...)
 
 	// step 4: get the checksum of (3)
 	stepThreeChecksum, err := GenerateChecksum(versionPrefixedRipemd160Hash)
@@ -39,6 +42,7 @@ func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 5: concatenate (3) and (4)
 	concatStepThreeAndStepSix := append(versionPrefixedRipemd160Hash, stepThreeChecksum...)
 
+	fmt.Printf("%#v", concatStepThreeAndStepSix)
 	// step 6: base32 encode (5)
 	return base32.StdEncoding.EncodeToString(concatStepThreeAndStepSix), nil
 }
@@ -51,7 +55,7 @@ func GenerateChecksum(b []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	// step 2: get the first X bytes of (1)
+	// step 2: get the first NUM_CHECKSUM_BYTES bytes of (1)
 	return sha3StepThreeHash.Sum(nil)[:NUM_CHECKSUM_BYTES], nil
 }
 
@@ -87,8 +91,13 @@ func HashesRipemd160(b []byte) ([]byte, error) {
 	return hash.Sum(nil), nil
 
 }
-
-func HexEncoderBytes(src []byte) ([]byte, error) {
+func hexDecodeString(str string) ([]byte, error) {
+	return hexDecode([]byte(str))
+}
+func hexDecode(src []byte) ([]byte, error) {
+	if len(src)%2 != 0 {
+		src = append([]byte{'0'}, src...)
+	}
 	dst := make([]byte, len(src))
 	_, err := hex.Decode(dst, src)
 	if err != nil {
