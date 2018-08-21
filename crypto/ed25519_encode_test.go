@@ -2,7 +2,6 @@ package crypto
 
 import (
 	"github.com/agl/ed25519/edwards25519"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
@@ -62,8 +61,8 @@ func TestSubtractReturnsCorrectResult(t *testing.T) {
 
 		f1 := MathUtils.GetRandomFieldElement()
 		f2 := MathUtils.GetRandomFieldElement()
-		b1 := utils.BytesToBigInteger(f1.Encode().Raw)
-		b2 := utils.BytesToBigInteger(f2.Encode().Raw)
+		b1 := MathUtils.BytesToBigInteger(f1.Encode().Raw)
+		b2 := MathUtils.BytesToBigInteger(f2.Encode().Raw)
 
 		f3 := f1.subtract(f2)
 
@@ -77,7 +76,7 @@ func TestNegateReturnsCorrectResult(t *testing.T) {
 
 	for i := 0; i < numIter; i++ {
 		f1 := MathUtils.GetRandomFieldElement()
-		b1 := utils.BytesToBigInteger(f1.Encode().Raw)
+		b1 := MathUtils.BytesToBigInteger(f1.Encode().Raw)
 
 		f2 := f1.negate()
 
