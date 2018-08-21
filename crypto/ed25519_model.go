@@ -5,6 +5,7 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/subtle"
 	"errors"
@@ -94,7 +95,11 @@ func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *P
 		return nil, err
 	}
 	senderA.PrecomputeForScalarMultiplication()
-	sharedKey, err := senderA.scalarMultiply(PrepareForScalarMultiply(privateKey)).Encode()
+	el, err := senderA.scalarMultiply(PrepareForScalarMultiply(privateKey))
+	if err != nil {
+		return nil, err
+	}
+	sharedKey, err := el.Encode()
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +206,10 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 	// Reduce size of r since we are calculating mod group order anyway
 	rModQ := r.modQ()
 	// R = rModQ * base point.
-	R := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
+	R, err := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
+	if err != nil {
+		return nil, err
+	}
 	encodedR, err := R.Encode()
 	if err != nil {
 		return nil, err
@@ -239,22 +247,52 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 // prevent  panic inside ed25519.Verify
 func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool) {
 
-	if !ref.IsCanonicalSignature(signature) || (len(ref.KeyPair.PublicKey()) != ed25519.PublicKeySize) {
+	if !ref.IsCanonicalSignature(signature) {
 		return false
 	}
 
-	if b := make([]byte, 32); subtle.ConstantTimeCompare(ref.KeyPair.PrivateKey(), b) == 1 {
+	if b := make([]byte, 32); subtle.ConstantTimeCompare(ref.KeyPair.PublicKey(), b) == 1 {
 		return false
 	}
 
-	defer func() {
-		err := recover()
-		if err != nil {
-			fmt.Errorf("%v", err)
-			res = false
-		}
-	}()
-	return ed25519.Verify(ref.KeyPair.PrivateKey()[32:], mess, signature.Bytes())
+	// h = H(encodedR, encodedA, data).
+	rawEncodedR := signature.R
+	rawEncodedA := ref.KeyPair.PublicKey()
+	hashR, err := HashesSha3_512(
+		rawEncodedR,
+		rawEncodedA,
+		mess)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	h, err := NewEd25519EncodedFieldElement(hashR)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	// hReduced = h mod group order
+	hModQ := h.modQ()
+	// Must compute A.
+	A, err := (&Ed25519EncodedGroupElement{rawEncodedA}).Decode()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	A.PrecomputeForDoubleScalarMultiplication()
+	// R = encodedS * B - H(encodedR, encodedA, data) * A
+	calculatedR := Ed25519Group.BASE_POINT.doubleScalarMultiplyVariableTime(
+		A,
+		hModQ,
+		&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, signature.S})
+	// Compare calculated R to given R.
+	encodedCalculatedR, err := calculatedR.Encode()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	return bytes.Equal(encodedCalculatedR.Raw, rawEncodedR)
 }
 
 func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {

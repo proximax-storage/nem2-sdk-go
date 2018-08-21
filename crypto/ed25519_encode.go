@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"bytes"
+	binary "encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -46,17 +47,15 @@ type ed25519Field struct {
 	I                              *Ed25519FieldElement
 }
 
-const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
 const Ed25519FieldI = "b0a00e4a271beec478e42fad0618432fa7d7fb3d99004d2b0bdfc14f8024832b"
 
 var (
-	Ed25519Field_P          = (&big.Int{}).SetBytes(utils.MustHexDecodeString(Ed25519FieldP))
-	Ed25519Field_D          = getD()
+	Ed25519Field_P          = getP()
 	Ed25519Field_TWO        = getFieldElement(2)
 	Ed25519Field_ZERO_SHORT = make([]byte, 32)
+	Ed25519Field_D          = getD()
 )
 var Ed25519Field = &ed25519Field{
-	// P: 2^255 - 19
 	Ed25519Field_P,
 	getFieldElement(0),
 	getFieldElement(1),
@@ -67,6 +66,14 @@ var Ed25519Field = &ed25519Field{
 	make([]byte, 64),
 	// I ^ 2 = -1
 	(&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, utils.MustHexDecodeString(Ed25519FieldI)}).Decode(),
+}
+
+// P: 2^255 - 19
+func getP() *big.Int {
+	const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
+	p := (&big.Int{}).Lsh(big.NewInt(1), 255)
+	//SetBytes(utils.MustHexDecodeString(Ed25519FieldP))
+	return p.Sub(p, big.NewInt(19))
 }
 
 // Ed25519Field
@@ -857,19 +864,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 
 	// Step 1:
 	g := ref.modP()
-	gRaw := g.Raw
-	h := []intRaw{
-		gRaw[0],
-		gRaw[1],
-		gRaw[2],
-		gRaw[3],
-		gRaw[4],
-		gRaw[5],
-		gRaw[6],
-		gRaw[7],
-		gRaw[8],
-		gRaw[9],
-	}
+	h := g.Raw
 	// Step 2:
 	s := make([]byte, 32)
 	s[0] = (byte)(h[0])
@@ -946,21 +941,23 @@ func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, err
 	}
 	return nil, errors.New("Invalid 2^8 bit representation.")
 }
-func (ref *Ed25519EncodedFieldElement) threeBytesToLong(in []byte, offset int) int64 {
+func (ref *Ed25519EncodedFieldElement) threeBytesToLong(b []byte, offset int) intRaw {
 
-	result := in[offset] & 0xff
-	result |= (in[offset+1] & 0xff) << 8
-	result |= (in[offset+2] & 0xff) << 16
-	return int64(result)
+	return intRaw(uint32(b[offset]) | uint32(b[offset+1])<<8 | uint32(b[offset+2])<<16)
+	//result := in[offset] & 0xff
+	//result |= (in[offset+1] & 0xff) << 8
+	//result |= (in[offset+2] & 0xff) << 16
+	//return int64(result)
 }
 
-func (ref *Ed25519EncodedFieldElement) fourBytesToLong(in []byte, offset int) int64 {
+func (ref *Ed25519EncodedFieldElement) fourBytesToLong(b []byte, offset int) intRaw {
 
-	result := in[offset] & 0xff
-	result |= (in[offset+1] & 0xff) << 8
-	result |= (in[offset+2] & 0xff) << 16
-	result |= in[offset+3] << 24
-	return int64(result) & 0xffffffff //L
+	return intRaw(binary.LittleEndian.Uint32(b[offset:]))
+	//result := in[offset] & 0xff
+	//result |= (in[offset+1] & 0xff) << 8
+	//result |= (in[offset+2] & 0xff) << 16
+	//result |= in[offset+3] << 24
+	//return int64(result) & 0xffffffff //L
 }
 
 /**
@@ -1472,7 +1469,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedField
 	s20 := a9*b11 + a10*b10 + a11*b9
 	s21 := a10*b11 + a11*b10
 	s22 := a11 * b11
-	s23 := int64(0)
+	s23 := intRaw(0)
 	carry0 := (s0 + (1 << 20)) >> 21
 	s1 += carry0
 	s0 -= carry0 << 21
@@ -1952,7 +1949,7 @@ func init() {
 	z := (&big.Int{}).Lsh(big.NewInt(1), 252)
 	rFloat, _, err := big.ParseFloat(ed25519GroupOrder, 10, 0, big.ToZero)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return
 	}
 
@@ -1966,7 +1963,7 @@ func init() {
 	 */
 	Ed25519Group.BASE_POINT, err = getBasePoint()
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 }
 func getBasePoint() (*Ed25519GroupElement, error) {
@@ -2396,18 +2393,16 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 
 	Bi := ref.copy()
 	ref.precomputedForSingle = make([][]*Ed25519GroupElement, 32)
-	for i, bi := range ref.precomputedForSingle {
+	for i := range ref.precomputedForSingle {
 		ref.precomputedForSingle[i] = make([]*Ed25519GroupElement, 8)
 		Bij := Bi.copy()
-		for j := range bi {
+		for j := range ref.precomputedForSingle[i] {
 			inverse := Bij.Z.invert()
 			x := Bij.X.multiply(inverse)
 			y := Bij.Y.multiply(inverse)
 			ref.precomputedForSingle[i][j] = Ed25519GroupElementPrecomputed(y.add(x), y.subtract(x), x.multiply(y).multiply(Ed25519Field.D_Times_TWO))
 			Bij = Bij.add(Bi.toCached()).toP3()
-			bi[j] = Bij
 		}
-
 		// Only every second summand is precomputed (16^2 = 256).
 		for k := 0; k < 8; k++ {
 			Bi = Bi.add(Bi.toCached()).toP3()
@@ -2656,20 +2651,26 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * @param u The group element to return if b == 1.
  * @param b in {0, 1}
  * @return u if b == 1; ref if b == 0; nil otherwise.
- */func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) *Ed25519GroupElement {
+ */func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519GroupElement, error) {
 
-	ret := &Ed25519GroupElement{}
-	for i := 0; i < b; i++ {
-		// Only for b == 1
-		ret = u
+	if b == 1 {
+		return u, nil
+	} else if b == 0 {
+		return ref, nil
 	}
-
-	for i := 0; i < 1-b; i++ {
-		// Only for b == 0
-		ret = ref
-	}
-
-	return ret
+	return nil, errors.New("parameter 'b' must by in range {0,1}")
+	//ret := &Ed25519GroupElement{}
+	//for i := 0; i < b; i++ {
+	//	// Only for b == 1
+	//	ret = u
+	//}
+	//
+	//for i := 0; i < 1-b; i++ {
+	//	// Only for b == 0
+	//	ret = ref
+	//}
+	//
+	//return ret
 }
 
 /**
@@ -2682,22 +2683,29 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * @param pos = i/2 for i in {0, 2, 4,..., 62}
  * @param b   = r_i
  * @return The Ed25519GroupElement
- */func (ref *Ed25519GroupElement) Select(pos int, b int) *Ed25519GroupElement {
+ */func (ref *Ed25519GroupElement) Select(pos int, b int) (*Ed25519GroupElement, error) {
 	// Is r_i negative?
 	bNegative := isNegativeConstantTime(b)
 
 	// |r_i|
 	bAbs := b - (((-bNegative) & b) << 1)
 	// 16^i |r_i| B
-	t := Ed25519Group.ZERO_PRECOMPUTED.cmov(ref.precomputedForSingle[pos][0], IsConstantTimeByteEq(bAbs, 1)).cmov(ref.precomputedForSingle[pos][1], IsConstantTimeByteEq(bAbs, 2))
-	t.cmov(ref.precomputedForSingle[pos][2], IsConstantTimeByteEq(bAbs, 3))
-	t.cmov(ref.precomputedForSingle[pos][3], IsConstantTimeByteEq(bAbs, 4))
-	t.cmov(ref.precomputedForSingle[pos][4], IsConstantTimeByteEq(bAbs, 5))
-	t.cmov(ref.precomputedForSingle[pos][5], IsConstantTimeByteEq(bAbs, 6))
-	t.cmov(ref.precomputedForSingle[pos][6], IsConstantTimeByteEq(bAbs, 7))
-	t.cmov(ref.precomputedForSingle[pos][7], IsConstantTimeByteEq(bAbs, 8))
+	t := Ed25519Group.ZERO_PRECOMPUTED
+	for i, el := range ref.precomputedForSingle[pos] {
+		tt, err := t.cmov(el, IsConstantTimeByteEq(bAbs, i+1))
+		if err != nil {
+			return nil, err
+		} else if tt == nil {
+			return nil, errors.New("get nil object - don;t work ")
+		}
+		t = tt
+	}
 	// -16^i |r_i| B
 	//noinspection SuspiciousNameCombination
+	//z := t.Z
+	//if z != nil {
+	//	z = z
+	//}
 	tMinus := Ed25519GroupElementPrecomputed(t.Y, t.X, t.Z.negate())
 	// 16^i r_i B
 	return t.cmov(tMinus, bNegative)
@@ -2712,22 +2720,28 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * @param a The encoded field element.
  * @return The resulting group element.
  */
-func (ref *Ed25519GroupElement) scalarMultiply(a *Ed25519EncodedFieldElement) *Ed25519GroupElement {
+func (ref *Ed25519GroupElement) scalarMultiply(a *Ed25519EncodedFieldElement) (*Ed25519GroupElement, error) {
 
 	e := ref.toRadix16(a)
 	h := Ed25519Group.ZERO_P3
 	for i := 1; i < 64; i += 2 {
-		g := ref.Select(i/2, int(e[i]))
+		g, err := ref.Select(i/2, int(e[i]))
+		if err != nil {
+			return nil, err
+		}
 		h = h.precomputedAdd(g).toP3()
 	}
 
 	h = h.dbl().toP2().dbl().toP2().dbl().toP2().dbl().toP3()
 	for i := 0; i < 64; i += 2 {
-		g := ref.Select(i/2, int(e[i]))
+		g, err := ref.Select(i/2, int(e[i]))
+		if err != nil {
+			return nil, err
+		}
 		h = h.precomputedAdd(g).toP3()
 	}
 
-	return h
+	return h, nil
 }
 
 /**

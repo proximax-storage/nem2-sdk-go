@@ -82,7 +82,7 @@ func TestNewPrivatKeyfromHexString_OddLength(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b := []byte{0x0A, 0xBC, 0, 0}
+	b := []byte{0x0A, 0xBC}
 	val := (&big.Int{}).SetBytes(b)
 	assertPrivateKey(t, key, val)
 }
@@ -92,7 +92,7 @@ func TestNewPrivatKeyfromHexString_Negative(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b := []byte{0x80, 0x00, 0, 0}
+	b := []byte{0x80, 0x00}
 	val := (&big.Int{}).SetBytes(b)
 	assertPrivateKey(t, key, val)
 }
@@ -106,7 +106,7 @@ func TestNewPrivatKeyfromHexString_Malformed(t *testing.T) {
 var (
 	testBytes         = []byte{0x22, 0xAB, 0x71}
 	modifiedTestBytes = []byte{0x22, 0xAB, 0x72}
-	testHexBytes      = []byte{0x22, 0x7F, 0, 0}
+	testHexBytes      = []byte{0x22, 0x7F}
 )
 
 func TestNewPublicKey(t *testing.T) {

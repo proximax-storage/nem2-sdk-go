@@ -34,9 +34,9 @@ func (ref *mathUtils) BytesToBigInteger(bytes []byte) *big.Int {
 	b := BigInteger_ZERO()
 	for i, val := range bytes {
 		el := (&big.Int{}).SetUint64(uint64(uint8(val)) & 0xff)
-		one := BigInteger_ONE()
-		one = one.Mul(one, el)
-		b = b.Add(b, one.Lsh(one, uint(i*8)))
+		//one := BigInteger_ONE()
+		//one = one.Mul(one, el)
+		b = b.Add(b, el.Lsh(el, uint(i*8)))
 	}
 
 	return b
@@ -240,6 +240,100 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	}
 	return nil, errors.New("NewUnsupportedOperationException")
 }
+func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFieldElement { /* public static  */
+
+	bytes := ref.getRandomByteArray(length)
+	bytes[31] &= 0x7f
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, bytes}
+}
+
+/**
+ * Creates and returns a random byte array of given length.
+ *
+ * @param length The desired length.
+ * @return The random byte array.
+ */
+func (ref *mathUtils) getRandomByteArray(length int) []byte { /* public static  */
+
+	bytes := make([]byte, length)
+	rand := rand2.Reader
+	_, err := io.ReadFull(rand, bytes)
+	if err != nil {
+		fmt.Print(err)
+	}
+	return bytes
+}
+
+/**
+ * Reduces an encoded field element modulo the group order and returns the result.
+ *
+ * @param encoded The encoded field element.
+ * @return The mod group order reduced encoded field element.
+ */
+func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement { /* public static  */
+
+	b := ref.BytesToBigInteger(encoded.Raw)
+	b.Mod(b, Ed25519Group.GROUP_ORDER)
+	return ref.ToEncodedFieldElement(b)
+}
+
+/**
+ * Converts a biginteger to an encoded field element.
+ *
+ * @param b The biginteger.
+ * @return The encoded field element.
+ */
+func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElement { /* public static  */
+
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, ref.ToByteArray(b)}
+}
+
+/**
+ * Converts a biginteger to a little endian 32 byte representation.
+ *
+ * @param b The biginteger.
+ * @return The 32 byte representation.
+ */
+func (ref *mathUtils) ToByteArray(b *big.Int) []byte { /* public static  */
+
+	if b.Cmp(BigInteger_ONE().Lsh(BigInteger_ONE(), 256)) >= 0 {
+		panic(errors.New("only numbers < 2^256 are allowed"))
+	}
+
+	bytes := make([]byte, 32)
+	original := b.Bytes()
+	// Although b < 2^256, original can have length > 32 with some bytes set to 0.
+	offset := 0
+	if len(original) > 32 {
+		offset = len(original) - 32
+	}
+	for i := range original[:len(original)-offset] {
+		bytes[len(original)-i-offset-1] = original[i+offset]
+	}
+
+	return bytes
+}
+
+/**
+ * Calculates (a * b + c) mod group order and returns the result.
+ * a, b and c are given in 2^8 bit representation.
+ *
+ * @param a The first integer.
+ * @param b The second integer.
+ * @param c The third integer.
+ * @return The mod group order reduced result.
+ */
+func (ref *mathUtils) multiplyAndAddModGroupOrder(
+	a *Ed25519EncodedFieldElement,
+	b *Ed25519EncodedFieldElement,
+	c *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
+	result := ref.BytesToBigInteger(a.Raw)
+	result.Mul(result, ref.BytesToBigInteger(b.Raw))
+	result.Add(result, ref.BytesToBigInteger(c.Raw))
+	result.Mod(result, Ed25519Group.GROUP_ORDER)
+	return ref.ToEncodedFieldElement(result)
+}
+
 func toFieldElement(b *big.Int) (*Ed25519FieldElement, error) {
 
 	elem, err := NewEd25519EncodedFieldElement(utils.BigIntToByteArray(b, 32))
