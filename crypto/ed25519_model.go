@@ -284,7 +284,7 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 	calculatedR := Ed25519Group.BASE_POINT.doubleScalarMultiplyVariableTime(
 		A,
 		hModQ,
-		&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, signature.S})
+		&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), signature.S})
 	// Compare calculated R to given R.
 	encodedCalculatedR, err := calculatedR.Encode()
 	if err != nil {
@@ -303,7 +303,9 @@ func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {
 
 func (ref *Ed25519DsaSigner) MakeSignatureCanonical(signature *Signature) (*Signature, error) {
 
-	s, err := NewEd25519EncodedFieldElement(signature.S[:64])
+	sign := make([]byte, 64)
+	copy(sign, signature.S)
+	s, err := NewEd25519EncodedFieldElement(sign)
 	if err != nil {
 		return nil, err
 	}

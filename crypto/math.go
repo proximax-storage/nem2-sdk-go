@@ -2,6 +2,7 @@ package crypto
 
 import (
 	rand2 "crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
@@ -33,7 +34,7 @@ func (ref *mathUtils) BytesToBigInteger(bytes []byte) *big.Int {
 
 	b := BigInteger_ZERO()
 	for i, val := range bytes {
-		el := (&big.Int{}).SetUint64(uint64(uint8(val)) & 0xff)
+		el := (&big.Int{}).SetUint64(uint64(uint8(val))) // & 0xff)
 		//one := BigInteger_ONE()
 		//one = one.Mul(one, el)
 		b = b.Add(b, el.Lsh(el, uint(i*8)))
@@ -47,7 +48,7 @@ func (ref *mathUtils) BytesToBigInteger(bytes []byte) *big.Int {
 //     *
 //     * @param t The 2^25.5 bit representation.
 //     * @return The BigInteger.
-func (ref *mathUtils) IntsToBigInteger(t []int) *big.Int {
+func (ref *mathUtils) IntsToBigInteger(t []intRaw) *big.Int {
 	b := BigInteger_ZERO()
 	for i, val := range t {
 		el := (&big.Int{}).SetInt64(int64(val) & 0xff)
@@ -91,7 +92,7 @@ func (ref *mathUtils) GetRandomGroupElement() (*Ed25519GroupElement, error) {
 	}
 	return grElem.Decode()
 }
-func (ref *mathUtils) GetRandomFieldElement() *Ed25519FieldElement {
+func (ref *mathUtils) GetRandomFieldElement() Ed25519FieldElement {
 
 	t := make([]intRaw, 10)
 	rand := rand2.Reader
@@ -100,14 +101,13 @@ func (ref *mathUtils) GetRandomFieldElement() *Ed25519FieldElement {
 		var v [4]byte
 		_, err := rand.Read(v[:])
 		if err != nil {
-			fmt.Println(err)
-			return nil
+			panic(err)
 		}
 		//(1 << 25)
 		t[j] = (&big.Int{}).SetBytes(v[:]).Int64() - (1 << 24)
 	}
 
-	return &Ed25519FieldElement{t}
+	return Ed25519FieldElement{t}
 }
 
 /**
@@ -187,18 +187,18 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	// Now back to the desired coordinate system.
 	switch newCoorSys {
 	case AFFINE:
-		return Ed25519GroupElementAffine(x1, y1, Ed25519Field.ONE), nil
+		return NewEd25519GroupElementAffine(x1, y1, Ed25519Field_ONE()), nil
 	case P2:
-		return Ed25519GroupElementP2(x1, y1, Ed25519Field.ONE), nil
+		return Ed25519GroupElementP2(x1, y1, Ed25519Field_ONE()), nil
 	case P3:
 		m := x.Mul(x, y)
 		z, err := toFieldElement(m.Mod(m, Ed25519Field.P))
 		if err != nil {
 			return nil, err
 		}
-		return Ed25519GroupElementP3(x1, y1, Ed25519Field.ONE, z), nil
+		return Ed25519GroupElementP3(x1, y1, Ed25519Field_ONE(), z), nil
 	case P1xP1:
-		return Ed25519GroupElementP1XP1(x1, y1, Ed25519Field.ONE, Ed25519Field.ONE), nil
+		return Ed25519GroupElementP1XP1(x1, y1, Ed25519Field_ONE(), Ed25519Field_ONE()), nil
 	case CACHED:
 		m := y.Add(y, x)
 		x1, err := toFieldElement(m.Mod(m, Ed25519Field.P))
@@ -217,7 +217,7 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 		if err != nil {
 			return nil, err
 		}
-		return Ed25519GroupElementCached(x1, y1, Ed25519Field.ONE, z), nil
+		return Ed25519GroupElementCached(x1, y1, Ed25519Field_ONE(), z), nil
 	case PRECOMPUTED:
 		m := y.Add(y, x)
 		x1, err := toFieldElement(m.Mod(m, Ed25519Field.P))
@@ -240,11 +240,11 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	}
 	return nil, errors.New("NewUnsupportedOperationException")
 }
-func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFieldElement { /* public static  */
+func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFieldElement {
 
 	bytes := ref.getRandomByteArray(length)
 	bytes[31] &= 0x7f
-	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, bytes}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), bytes}
 }
 
 /**
@@ -253,7 +253,7 @@ func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFi
  * @param length The desired length.
  * @return The random byte array.
  */
-func (ref *mathUtils) getRandomByteArray(length int) []byte { /* public static  */
+func (ref *mathUtils) getRandomByteArray(length int) []byte {
 
 	bytes := make([]byte, length)
 	rand := rand2.Reader
@@ -264,13 +264,22 @@ func (ref *mathUtils) getRandomByteArray(length int) []byte { /* public static  
 	return bytes
 }
 
-/**
- * Reduces an encoded field element modulo the group order and returns the result.
- *
- * @param encoded The encoded field element.
- * @return The mod group order reduced encoded field element.
- */
-func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement { /* public static  */
+func (ref *mathUtils) getRandomIntRaw() intRaw {
+
+	bytes := make([]byte, 8)
+	rand := rand2.Reader
+	_, err := io.ReadFull(rand, bytes)
+	if err != nil {
+		fmt.Print(err)
+	}
+	return int64(binary.LittleEndian.Uint64(bytes))
+}
+
+// Reduces an encoded field element modulo the group order and returns the result.
+// *
+// * @param encoded The encoded field element.
+// * @return The mod group order reduced encoded field element.
+func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
 
 	b := ref.BytesToBigInteger(encoded.Raw)
 	b.Mod(b, Ed25519Group.GROUP_ORDER)
@@ -283,9 +292,9 @@ func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *
  * @param b The biginteger.
  * @return The encoded field element.
  */
-func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElement { /* public static  */
+func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElement {
 
-	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, ref.ToByteArray(b)}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), ref.ToByteArray(b)}
 }
 
 /**
@@ -294,7 +303,7 @@ func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElem
  * @param b The biginteger.
  * @return The 32 byte representation.
  */
-func (ref *mathUtils) ToByteArray(b *big.Int) []byte { /* public static  */
+func (ref *mathUtils) ToByteArray(b *big.Int) []byte {
 
 	if b.Cmp(BigInteger_ONE().Lsh(BigInteger_ONE(), 256)) >= 0 {
 		panic(errors.New("only numbers < 2^256 are allowed"))
@@ -334,6 +343,16 @@ func (ref *mathUtils) multiplyAndAddModGroupOrder(
 	return ref.ToEncodedFieldElement(result)
 }
 
+/**
+ * Converts a *big.Int to an encoded field element.
+ *
+ * @param b The *big.Int.
+ * @return The encoded field element.
+ */
+func (ref *mathUtils) toEncodedFieldElement(b *big.Int) (*Ed25519EncodedFieldElement, error) {
+
+	return NewEd25519EncodedFieldElement(ref.ToByteArray(b))
+}
 func toFieldElement(b *big.Int) (*Ed25519FieldElement, error) {
 
 	elem, err := NewEd25519EncodedFieldElement(utils.BigIntToByteArray(b, 32))

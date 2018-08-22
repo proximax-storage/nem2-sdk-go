@@ -9,7 +9,6 @@ import (
 
 //KeyAnalyzer Interface to analyze keys.
 type KeyAnalyzer interface {
-
 	// Gets a Value indicating whether or not the public key is compressed.
 	IsKeyCompressed(publicKey *PublicKey) bool
 }
@@ -81,7 +80,7 @@ func NewPublicKeyfromHex(hStr string) (*PublicKey, error) {
 		return nil, err
 	}
 
-	return &PublicKey{raw}, nil
+	return NewPublicKey(raw), nil
 }
 
 // Creates a public key from a hex strings.
