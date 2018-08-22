@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 )
@@ -14,11 +15,11 @@ const NUM_CHECKSUM_BYTES = 4
 // GenerateEncodedAddress convert publicKey to address
 func GenerateEncodedAddress(pKey string, version uint8) (string, error) {
 	// step 1: sha3 hash of the public key
-	//pKeyD, err := hexDecodeString(pKey)
-	//if err != nil {
-	//	return "", err
-	//}
-	sha3PublicKeyHash, err := HashesSha3_256([]byte(pKey))
+	pKeyD, err := utils.HexDecode(pKey)
+	if err != nil {
+		return "", err
+	}
+	sha3PublicKeyHash, err := HashesSha3_256(pKeyD)
 	if err != nil {
 		return "", err
 	}

@@ -226,7 +226,7 @@ func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*Mult
 var addressError = errors.New("wrong address")
 
 func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
-	k, err := crypto.PrivatKeyfromHexString(pKey)
+	k, err := crypto.NewPrivateKeyfromHexString(pKey)
 	if err != nil {
 		return nil, err
 	}

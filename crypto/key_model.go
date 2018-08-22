@@ -38,8 +38,8 @@ func NewPrivateKeyfromBigInt(val *big.Int) *PrivateKey {
 	return &PrivateKey{val, val.Bytes()}
 }
 
-//PrivatKeyfromHexString creates a private key from a hex strings.
-func NewPrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
+//PrivateKeyfromHexString creates a private key from a hex strings.
+func NewPrivateKeyfromHexString(sHex string) (*PrivateKey, error) {
 	raw, err := hexDecodeString(sHex)
 	if err != nil {
 		return nil, err
