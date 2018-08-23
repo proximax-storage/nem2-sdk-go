@@ -63,7 +63,7 @@ func Ed25519Field_TWO() *Ed25519FieldElement {
 }
 
 var Ed25519Field = ed25519Field{
-	getP(),
+	(&big.Int{}).Sub((&big.Int{}).Lsh(big.NewInt(1), 255), big.NewInt(19)),
 	*(Ed25519Field_ZERO()),
 	*(Ed25519Field_ONE()),
 	*(Ed25519Field_TWO()),
@@ -1838,7 +1838,7 @@ func (ref *Ed25519EncodedGroupElement) Decode() (*Ed25519GroupElement, error) {
 	}
 
 	t := x.multiply(*y)
-	return Ed25519GroupElementP3(x, y, Ed25519Field_ONE(), &t), nil
+	return NewEd25519GroupElementP3(x, y, Ed25519Field_ONE(), &t), nil
 }
 
 //GetAffineX gets the affine x-coordinate.
@@ -1944,9 +1944,9 @@ const ed25519GroupRawElement = "b0a00e4a271beec478e42fad0618432fa7d7fb3d99004d2b
 func init() {
 
 	// different representations of zero
-	Ed25519Group.ZERO_P3 = Ed25519GroupElementP3(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
-	Ed25519Group.ZERO_P2 = Ed25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE())
-	Ed25519Group.ZERO_PRECOMPUTED = Ed25519GroupElementPrecomputed(Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+	Ed25519Group.ZERO_P3 = NewEd25519GroupElementP3(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+	Ed25519Group.ZERO_P2 = NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE())
+	Ed25519Group.ZERO_PRECOMPUTED = NewEd25519GroupElementPrecomputed(Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
 	/**
 	 * 2^252 + 27742317777372353535851937790883648493
 	 */
@@ -2049,16 +2049,16 @@ func NewEd25519GroupElementAffine(
 	return NewEd25519GroupElement(AFFINE, x, y, z, nil)
 }
 
-//Ed25519GroupElementP2 creates a new group element using the P2 coordinate system.
-func Ed25519GroupElementP2(
+//NewEd25519GroupElementP2 creates a new group element using the P2 coordinate system.
+func NewEd25519GroupElementP2(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(P2, x, y, z, nil)
 }
 
-//Ed25519GroupElementP3 creates a new group element using the P3 coordinate system.
-func Ed25519GroupElementP3(
+//NewEd25519GroupElementP3 creates a new group element using the P3 coordinate system.
+func NewEd25519GroupElementP3(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
@@ -2066,8 +2066,8 @@ func Ed25519GroupElementP3(
 	return NewEd25519GroupElement(P3, x, y, x, t)
 }
 
-//Ed25519GroupElementP1XP1 Creates a new group element using the P1xP1 coordinate system.
-func Ed25519GroupElementP1XP1(
+//NewEd25519GroupElementP1XP1 Creates a new group element using the P1xP1 coordinate system.
+func NewEd25519GroupElementP1XP1(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
@@ -2075,18 +2075,18 @@ func Ed25519GroupElementP1XP1(
 	return NewEd25519GroupElement(P1xP1, x, y, z, t)
 }
 
-//Ed25519GroupElementPrecomputed сreates a new group element using the PRECOMPUTED coordinate system.
+//NewEd25519GroupElementPrecomputed сreates a new group element using the PRECOMPUTED coordinate system.
 //(CoordinateSystem.PRECOMPUTED, yPlusx, yMinusx, xy2d, nil)
-func Ed25519GroupElementPrecomputed(
+func NewEd25519GroupElementPrecomputed(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(PRECOMPUTED, x, y, z, nil)
 }
 
-// Ed25519GroupElementCached сreates a new group element using the CACHED coordinate system.
+// NewEd25519GroupElementCached сreates a new group element using the CACHED coordinate system.
 //(CoordinateSystem.CACHED, YPlusX, YMinusX, Z, T2d)
-func Ed25519GroupElementCached(
+func NewEd25519GroupElementCached(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
@@ -2322,7 +2322,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 	case P2:
 		switch newCoordinateSystem {
 		case P2:
-			return Ed25519GroupElementP2(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementP2(ref.X, ref.Y, ref.Z)
 		default:
 			panic("NewIllegalArgumentException()")
 		}
@@ -2330,14 +2330,14 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 	case P3:
 		switch newCoordinateSystem {
 		case P2:
-			return Ed25519GroupElementP2(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementP2(ref.X, ref.Y, ref.Z)
 		case P3:
-			return Ed25519GroupElementP3(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementP3(ref.X, ref.Y, ref.Z, ref.T)
 		case CACHED:
 			t := ref.T.multiply(Ed25519Field.D_Times_TWO)
 			X := ref.Y.add(*(ref.X))
 			Y := ref.Y.subtract(*(ref.X))
-			return Ed25519GroupElementCached(&X, &Y, ref.Z, &t)
+			return NewEd25519GroupElementCached(&X, &Y, ref.Z, &t)
 		default:
 			panic("NewIllegalArgumentException()")
 		}
@@ -2348,15 +2348,15 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 			x := ref.X.multiply(*(ref.T))
 			y := ref.Y.multiply(*(ref.Z))
 			z := ref.Z.multiply(*(ref.T))
-			return Ed25519GroupElementP2(&x, &y, &z)
+			return NewEd25519GroupElementP2(&x, &y, &z)
 		case P3:
 			x := ref.X.multiply(*(ref.T))
 			y := ref.Y.multiply(*(ref.Z))
 			z := ref.Z.multiply(*(ref.T))
 			t := ref.X.multiply(*(ref.Y))
-			return Ed25519GroupElementP3(&x, &y, &z, &t)
+			return NewEd25519GroupElementP3(&x, &y, &z, &t)
 		case P1xP1:
-			return Ed25519GroupElementP1XP1(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementP1XP1(ref.X, ref.Y, ref.Z, ref.T)
 		default:
 			panic("NewIllegalArgumentException()")
 		}
@@ -2365,7 +2365,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 		switch newCoordinateSystem {
 		case PRECOMPUTED:
 			//noinspection SuspiciousNameCombination
-			return Ed25519GroupElementPrecomputed(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementPrecomputed(ref.X, ref.Y, ref.Z)
 		default:
 			panic("NewIllegalArgumentException()")
 		}
@@ -2373,7 +2373,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 	case CACHED:
 		switch newCoordinateSystem {
 		case CACHED:
-			return Ed25519GroupElementCached(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementCached(ref.X, ref.Y, ref.Z, ref.T)
 		default:
 			panic("NewIllegalArgumentException()")
 		}
@@ -2417,7 +2417,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 			X := y.add(x)
 			Y := y.subtract(x)
 			Z := x.multiply(y).multiply(Ed25519Field.D_Times_TWO)
-			ref.precomputedForSingle[i][j] = Ed25519GroupElementPrecomputed(&X, &Y, &Z)
+			ref.precomputedForSingle[i][j] = NewEd25519GroupElementPrecomputed(&X, &Y, &Z)
 			Bij = Bij.add(Bi.toCached()).toP3()
 		}
 		// Only every second summand is precomputed (16^2 = 256).
@@ -2445,7 +2445,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		X := y.add(x)
 		Y := y.subtract(x)
 		Z := x.multiply(y).multiply(Ed25519Field.D_Times_TWO)
-		ref.precomputedForDouble[i] = Ed25519GroupElementPrecomputed(&X, &Y, &Z)
+		ref.precomputedForDouble[i] = NewEd25519GroupElementPrecomputed(&X, &Y, &Z)
 		ref.add(ref.add(ref.toCached()).toP3().toCached()).toP3()
 	}
 
@@ -2492,7 +2492,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		YSquareMinusXSquare := YSquare.subtract(XSquare)
 		X := ASquare.subtract(YSquarePlusXSquare)
 		T := B.subtract(YSquareMinusXSquare)
-		return Ed25519GroupElementP1XP1(&X, &YSquarePlusXSquare, &YSquareMinusXSquare, &T)
+		return NewEd25519GroupElementP1XP1(&X, &YSquarePlusXSquare, &YSquareMinusXSquare, &T)
 	default:
 		panic("NewUnsupportedOperationException()")
 	}
@@ -2558,7 +2558,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 	y := A.add(B)
 	z := D.add(C)
 	t := D.subtract(C)
-	return Ed25519GroupElementP1XP1(&x, &y, &z, &t)
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
 /**
@@ -2592,7 +2592,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 	z := D.subtract(C)
 	t := D.add(C)
 
-	return Ed25519GroupElementP1XP1(&x, &y, &z, &t)
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
 /**
@@ -2638,7 +2638,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 	z := D.add(C)
 	t := D.subtract(C)
 
-	return Ed25519GroupElementP1XP1(&x, &y, &z, &t)
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
 /**
@@ -2671,7 +2671,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 	z := D.subtract(C)
 	t := D.add(C)
 
-	return Ed25519GroupElementP1XP1(&x, &y, &z, &t)
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
 // negate Negates ref group element by subtracting it from the neutral group element.
@@ -2733,7 +2733,7 @@ func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519Gro
 	//	z = z
 	//}
 	z := t.Z.negate()
-	tMinus := Ed25519GroupElementPrecomputed(t.Y, t.X, &z)
+	tMinus := NewEd25519GroupElementPrecomputed(t.Y, t.X, &z)
 	// 16^i r_i B
 	return t.cmov(tMinus, bNegative)
 }

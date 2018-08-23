@@ -35,16 +35,22 @@ func TestNewSignerFromKeyPair(t *testing.T) {
 	assert.Equal(t, signature1.S, signature.S, `signature.getS() and s must by not equal !`)
 }
 func TestNewSigner(t *testing.T) {
-	sign := NewSignerFromKeyPair(keyPair, nil)
+	for i := 0; i < numIter; i++ {
+		keyPair, err := NewRandomKeyPair()
+		assert.Nil(t, err)
+		sign := NewSignerFromKeyPair(keyPair, nil)
 
-	signature, err := sign.Sign(testDataForSigner)
+		signature, err := sign.Sign(testDataForSigner)
 
-	if err != nil {
-		t.Fatal(err)
+		if err != nil {
+			t.Fatal(err)
+		}
+		//sign.MakeSignatureCanonical()
+		res := sign.Verify(testDataForSigner, signature)
+		if !assert.Truef(t, res, "iter=%d, sign %v", i+1, signature) {
+			break
+		}
 	}
-	//sign.MakeSignatureCanonical()
-	res := sign.Verify(testDataForSigner, signature)
-	assert.Equal(t, true, res, "sign %v", signature)
 }
 func TestIsCanonicalSignatureDelegatesToDsaSigner(t *testing.T) {
 

@@ -1,13 +1,12 @@
 package crypto
 
 import (
-	"github.com/agl/ed25519/edwards25519"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 )
 
-const numIter = 100
+const numIter = 1000
 
 // region Ed25519FieldElement
 
@@ -124,7 +123,22 @@ func TestEd25519FieldMultiply_Mirror(t *testing.T) {
 		assert.Equal(t, f3, f4)
 	}
 }
+func TestEd25519FieldElement_Muiltiply(t *testing.T) {
+	raw := make([]intRaw, lenEd25519FieldElementRaw)
+	for i := 0; i < numIter; i++ {
+		for j := 0; j < lenEd25519FieldElementRaw; j++ {
+			raw[j] = intRaw(i+1) - (1 << 24)
+			f1 := Ed25519FieldElement{raw}
+			f2 := MathUtils.GetRandomFieldElement()
+			f3 := f1.multiply(f2)
 
+			b1 := MathUtils.BytesToBigInteger(f1.Encode().Raw)
+			b2 := MathUtils.BytesToBigInteger(f2.Encode().Raw)
+			b3 := MathUtils.BytesToBigInteger(f3.Encode().Raw)
+			assertEquals(t, f3, b3.Mul(b1, b2))
+		}
+	}
+}
 func TestMultiplyReturnsCorrectResult(t *testing.T) {
 
 	for i := 0; i < numIter; i++ {
@@ -134,26 +148,11 @@ func TestMultiplyReturnsCorrectResult(t *testing.T) {
 		b2 := MathUtils.BytesToBigInteger(f2.Encode().Raw)
 
 		f3 := f1.multiply(f2)
-		assertEquals(t, f3, b1.Mul(b1, b2), b1, b2)
+		if assertEquals(t, f3, (&big.Int{}).Mul(b1, b2)) {
+			t.Log(b1, b2, i)
+		}
 		f4 := f2.multiply(f1)
 		assert.Equal(t, f3, f4)
-		var h, f, g edwards25519.FieldElement
-		for i, val := range f1.Raw {
-			f[i] = int32(val)
-		}
-		for i, val := range f2.Raw {
-			g[i] = int32(val)
-		}
-		// agl method use
-		edwards25519.FeMul(&h, &f, &g)
-
-		f4 = Ed25519FieldElement{make([]intRaw, len(h))}
-		for i, val := range h {
-			f4.Raw[i] = intRaw(val)
-		}
-
-		assertEquals(t, f4, b1, f, g)
-		assert.Equal(t, f3, f4, `equal two methods Iter = %d`, i)
 	}
 
 }
@@ -400,12 +399,12 @@ func TestSqrtReturnsCorrectResult(t *testing.T) {
 	}
 }
 
-func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs ...interface{}) {
+func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs ...interface{}) bool {
 
-	msg := `b2.mod(Ed25519Field.P) and b.mod(Ed25519Field.P) must by equal ! %d = %d`
+	msg := `b2.mod(%+v) and b.mod(%+v) must by equal !`
 	b2 := MathUtils.BytesToBigInteger(f.Encode().Raw)
 
-	args := []interface{}{msg, b1.Uint64(), b2.Uint64()}
+	args := []interface{}{msg, b1, b2}
 	if len(msgAndArgs) > 0 {
 		i := 0
 		if arg, ok := msgAndArgs[0].(string); ok {
@@ -419,7 +418,7 @@ func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs .
 		}
 		args = append(args, msgAndArgs[i:])
 	}
-	assert.Equal(t, (&big.Int{}).Mod(b1, Ed25519Field.P), b2.Mod(b2, Ed25519Field.P), args...)
+	return assert.Equal(t, (&big.Int{}).Mod(b1, Ed25519Field.P), (&big.Int{}).Mod(b2, Ed25519Field.P), args...)
 
 }
 func differsOnlyByAFactorOfAFourthRootOfOne(x Ed25519FieldElement, root Ed25519FieldElement) bool {

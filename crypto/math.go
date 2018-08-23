@@ -32,13 +32,13 @@ type mathUtils struct {
 //* @return The BigInteger.
 func (ref *mathUtils) BytesToBigInteger(bytes []byte) *big.Int {
 
-	b := BigInteger_ZERO()
-	for i, val := range bytes {
-		el := (&big.Int{}).SetUint64(uint64(uint8(val))) // & 0xff)
-		//one := BigInteger_ONE()
-		//one = one.Mul(one, el)
-		b = b.Add(b, el.Lsh(el, uint(i*8)))
-	}
+	b := utils.BytesToBigInteger(bytes)
+	//for i, val := range bytes {
+	//	el := (&big.Int{}).SetUint64(uint64(uint8(val))) // & 0xff)
+	//	//one := BigInteger_ONE()
+	//	//one = one.Mul(one, el)
+	//	b = b.Add(b, el.Lsh(el, uint(i*8)))
+	//}
 
 	return b
 }
@@ -98,7 +98,7 @@ func (ref *mathUtils) GetRandomFieldElement() Ed25519FieldElement {
 	rand := rand2.Reader
 
 	for j := range t {
-		var v [4]byte
+		var v [2]byte
 		_, err := rand.Read(v[:])
 		if err != nil {
 			panic(err)
@@ -189,16 +189,16 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	case AFFINE:
 		return NewEd25519GroupElementAffine(x1, y1, Ed25519Field_ONE()), nil
 	case P2:
-		return Ed25519GroupElementP2(x1, y1, Ed25519Field_ONE()), nil
+		return NewEd25519GroupElementP2(x1, y1, Ed25519Field_ONE()), nil
 	case P3:
 		m := x.Mul(x, y)
 		z, err := toFieldElement(m.Mod(m, Ed25519Field.P))
 		if err != nil {
 			return nil, err
 		}
-		return Ed25519GroupElementP3(x1, y1, Ed25519Field_ONE(), z), nil
+		return NewEd25519GroupElementP3(x1, y1, Ed25519Field_ONE(), z), nil
 	case P1xP1:
-		return Ed25519GroupElementP1XP1(x1, y1, Ed25519Field_ONE(), Ed25519Field_ONE()), nil
+		return NewEd25519GroupElementP1XP1(x1, y1, Ed25519Field_ONE(), Ed25519Field_ONE()), nil
 	case CACHED:
 		m := y.Add(y, x)
 		x1, err := toFieldElement(m.Mod(m, Ed25519Field.P))
@@ -217,7 +217,7 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 		if err != nil {
 			return nil, err
 		}
-		return Ed25519GroupElementCached(x1, y1, Ed25519Field_ONE(), z), nil
+		return NewEd25519GroupElementCached(x1, y1, Ed25519Field_ONE(), z), nil
 	case PRECOMPUTED:
 		m := y.Add(y, x)
 		x1, err := toFieldElement(m.Mod(m, Ed25519Field.P))
@@ -236,7 +236,7 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 		if err != nil {
 			return nil, err
 		}
-		return Ed25519GroupElementPrecomputed(x1, y1, z), nil
+		return NewEd25519GroupElementPrecomputed(x1, y1, z), nil
 	}
 	return nil, errors.New("NewUnsupportedOperationException")
 }
@@ -259,7 +259,7 @@ func (ref *mathUtils) getRandomByteArray(length int) []byte {
 	rand := rand2.Reader
 	_, err := io.ReadFull(rand, bytes)
 	if err != nil {
-		fmt.Print(err)
+		panic(err)
 	}
 	return bytes
 }
@@ -294,7 +294,7 @@ func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *
  */
 func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElement {
 
-	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), ref.ToByteArray(b)}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), utils.BigIntToByteArray(b, 32)}
 }
 
 /**
