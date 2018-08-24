@@ -666,10 +666,8 @@ func TestToCachedThrowsIfGroupElementHasP1P1Representation(t *testing.T) {
 
 func TestToCachedReturnsExpectedResultIfGroupElementHasCachedRepresentation(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
+
 	for i := 0; i < 10; i++ {
 		//
 		grEl := MathUtils.GetRandomGroupElement()
@@ -703,9 +701,9 @@ func TestToCachedReturnsExpectedResultIfGroupElementHasP3Representation(t *testi
 		h2, err := MathUtils.ToRepresentation(g, CACHED)
 		assert.Nil(t, err)
 		//
-		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+		assert.True(t, h1.Equals(h2), `h1 and h2 must by equal !`)
 		assert.Equal(t, h1.GetCoordinateSystem(), CACHED, `h1.GetCoordinateSystem() and CACHED must by equal !`)
-		assert.Equal(t, h1, g, `h1 and g must by equal !`)
+		assert.Equal(t, h1, g, `h and g must by equal !`)
 
 		x := g.GetX()
 		assert.Equal(t, h1.GetX(), g.Y.add(*x), `h1.GetX() and g.Y.add(g.GetX()) must by equal !`)
@@ -726,7 +724,7 @@ func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 		for j := 0; j < 8; j++ {
 			g, err := MathUtils.ToRepresentation(h, PRECOMPUTED)
 			assert.Nil(t, err)
-			assert.Equal(t, Ed25519Group.BASE_POINT.precomputedForSingle[i][j], g, "iter = %d, %d", i, j)
+			assert.True(t, Ed25519Group.BASE_POINT.precomputedForSingle[i][j].Equals(g), "iter = %d, %d", i, j)
 			h = MathUtils.AddGroupElements(h, grEl)
 		}
 
@@ -756,10 +754,7 @@ func TestDblPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 
 func TestDblReturnsExpectedResult(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < numIter; i++ {
 		g := MathUtils.GetRandomGroupElement()
 
@@ -820,7 +815,7 @@ func TestSubReturnsExpectedResult(t *testing.T) {
 		h1 := g1.subtract(g2.toCached())
 		h2 := MathUtils.AddGroupElements(g1, MathUtils.NegateGroupElement(g2))
 		//
-		assert.Equal(t, h2, h1, `h2 and h1 must by equal !`)
+		assert.True(t, h2.Equals(h1), `h2 and h1 must by equal !`)
 	}
 
 }
@@ -870,16 +865,13 @@ func TestScalarMultiplyBasePointWithZeroReturnsNeutralElement(t *testing.T) {
 	//
 	g, err := basePoint.scalarMultiply(Ed25519Field.ZERO.Encode())
 	assert.Nil(t, err)
-	//
-	assert.Equal(t, Ed25519Group.ZERO_P3, g, `Ed25519Group.ZERO_P3 and g must by equal !`)
+
+	assert.True(t, Ed25519Group.ZERO_P3.Equals(g), `Ed25519Group.ZERO_P3 and g must by equal !`)
 }
 
 func TestScalarMultiplyBasePointReturnsExpectedResult(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < 100; i++ {
 		//
 		basePoint := Ed25519Group.BASE_POINT
@@ -957,7 +949,7 @@ func TestScalarMultiplyBasePointWithOneReturnsBasePoint(t *testing.T) {
 	basePoint := Ed25519Group.BASE_POINT.copy()
 	g, err := basePoint.scalarMultiply(Ed25519Field.ONE.Encode())
 	assert.Nil(t, err)
-	assert.Equal(t, basePoint, g, `basePoint and g must by equal !`)
+	assert.Equal(t, basePoint.Equals(g), `basePoint and g must by equal !`)
 }
 
 // endregion

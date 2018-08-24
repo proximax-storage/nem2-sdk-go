@@ -928,7 +928,15 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 
 	return ref.Encode().IsNegative()
 }
+func (ref *Ed25519FieldElement) Equals(ge *Ed25519FieldElement) bool { /* public  */
 
+	for i, val := range ref.Raw {
+		if ge.Raw[i] != val {
+			return false
+		}
+	}
+	return true
+}
 func (ref *Ed25519FieldElement) String() string {
 
 	return ref.Encode().String()
@@ -2097,6 +2105,51 @@ func NewEd25519GroupElementCached(
 	z *Ed25519FieldElement,
 	t *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(CACHED, x, y, z, t)
+}
+func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) bool {
+
+	if ref.coordinateSystem != ge.coordinateSystem {
+		defer func() {
+			err := recover()
+			if err != nil {
+				fmt.Println(err)
+			}
+		}()
+		ge = ge.toCoordinateSystem(ref.coordinateSystem)
+	}
+
+	switch ref.coordinateSystem {
+	case P2, P3:
+		if ref.Z.Equals(ge.Z) {
+			return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y)
+		}
+
+		x1 := ref.X.multiply(*(ge.Z))
+		y1 := ref.Y.multiply(*(ge.Z))
+		x2 := ge.X.multiply(*(ref.Z))
+		y2 := ge.Y.multiply(*(ref.Z))
+		return x1.Equals(&x2) && y1.Equals(&y2)
+	case P1xP1:
+		return ref.toP2().Equals(ge)
+	case PRECOMPUTED:
+		return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y) && ref.Z.Equals(ge.Z)
+	case CACHED:
+		if ref.Z.Equals(ge.Z) {
+			return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y) && ref.T.Equals(ge.T)
+		}
+
+		x3 := ref.X.multiply(*(ge.Z))
+		y3 := ref.Y.multiply(*(ge.Z))
+		t3 := ref.T.multiply(*(ge.Z))
+		x4 := ge.X.multiply(*(ref.Z))
+		y4 := ge.Y.multiply(*(ref.Z))
+		t4 := ge.T.multiply(*(ref.Z))
+		return x3.Equals(&x4) && y3.Equals(&y4) && t3.Equals(&t4)
+	default:
+		panic(errors.New("not supportet coor type"))
+	}
+	return false
+
 }
 
 // Convert a to 2^16 bit representation.

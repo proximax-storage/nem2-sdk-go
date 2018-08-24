@@ -503,7 +503,8 @@ func (ref *mathUtils) ToByteArray(b *big.Int) []byte {
 	return bytes
 }
 func coorModify(g, b *big.Int) *big.Int {
-	return (&big.Int{}).Mul(g, (&big.Int{}).ModInverse(b, Ed25519Field.P)).Mod(g, Ed25519Field.P)
+	x := (&big.Int{}).Mul(g, (&big.Int{}).ModInverse(b, Ed25519Field.P))
+	return x.Mod(x, Ed25519Field.P)
 }
 
 /**
@@ -548,7 +549,9 @@ func (ref *mathUtils) AddGroupElements(g1 *Ed25519GroupElement, g2 *Ed25519Group
 	one := BigInteger_ONE()
 	x3 := ref.funcName(*g1x, g2y, g2x, g1y, (&big.Int{}).Add(one, dx1x2y1y2))
 	y3 := ref.funcName(*g1x, g2x, g1y, g2y, (&big.Int{}).Sub(one, dx1x2y1y2))
-	t3 := x3.Mul(x3, y3).Mod(x3, Ed25519Field.P)
+	t3 := (&big.Int{}).Mul(x3, y3)
+	t3.Mod(t3, Ed25519Field.P)
+
 	return NewEd25519GroupElementP3(
 		ref.ToFieldElement(x3),
 		ref.ToFieldElement(y3),
