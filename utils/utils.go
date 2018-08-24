@@ -32,6 +32,10 @@ func BigIntToByteArray(value *big.Int, numBytes int) []byte {
 	outputBytes := make([]byte, numBytes)
 	bigIntegerBytes := value.Bytes()
 	copyStartIndex := 0
+
+	if len(bigIntegerBytes) == 0 {
+		return outputBytes
+	}
 	if 0x00 == bigIntegerBytes[0] {
 		copyStartIndex = 1
 	}

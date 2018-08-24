@@ -43,9 +43,7 @@ func TestNewSigner(t *testing.T) {
 		}
 		//sign.MakeSignatureCanonical()
 		res := sign.Verify(testDataForSigner, signature)
-		if !assert.Truef(t, res, "iter=%d, sign %v", i+1, signature) {
-			break
-		}
+		assert.Truef(t, res, "iter=%d, sign %v", i+1, signature)
 	}
 }
 func TestIsCanonicalSignatureDelegatesToDsaSigner(t *testing.T) {

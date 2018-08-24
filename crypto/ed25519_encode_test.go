@@ -5,6 +5,7 @@ import (
 	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"github.com/stretchr/testify/assert"
 	"math/big"
+	"runtime"
 	"testing"
 )
 
@@ -242,16 +243,14 @@ func TestEd25519EncodedFieldElement_MultiplyAndAddModQReturnsExpectedResult(t *t
 
 }
 
-func TestEncodeReturnsCorrectByteArrayForSimpleFieldElements(t *testing.T) {
+func TestEd25519FieldElementEncode_ReturnsCorrectByteArrayForSimpleFieldElements(t *testing.T) {
 
 	t1 := make([]intRaw, 10)
 	t2 := make([]intRaw, 10)
 	t2[0] = 1
-	fieldElement1, err := NewEd25519FieldElement(t1)
+	fieldElement1 := &Ed25519FieldElement{t1}
 
-	assert.Nil(t, err)
-	fieldElement2, err := NewEd25519FieldElement(t2)
-	assert.Nil(t, err)
+	fieldElement2 := &Ed25519FieldElement{t2}
 	// Act:
 	encoded1 := fieldElement1.Encode()
 	encoded2 := fieldElement2.Encode()
@@ -343,10 +342,7 @@ func TestEncodedFieldElement_EqualsOnlyReturnsTrueForEquivalentObjects(t *testin
 }
 func TestEd25519EncodedGroupElement_GetAffineX(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < numIter; i++ {
 		enc := MathUtils.GetRandomGroupElement()
 		encoded, err := enc.Encode()
@@ -488,22 +484,29 @@ func TestCanBeCreatedWithSpecifiedCoordinates(t *testing.T) {
 // @Test
 func TestConstructorUsingEncodedGroupElementReturnsExpectedResult(t *testing.T) { /* public  */
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < 100; i++ {
 
 		g := MathUtils.GetRandomGroupElement()
 
-		encoded, err := g.Encode() // Ed25519EncodedGroupElement
+		encoded, err := g.Encode()
 		assert.Nil(t, err)
 
 		h1, err := encoded.Decode()
 		assert.Nil(t, err)
-		h2 := MathUtils.ToGroupElement(encoded.Raw)
+		assert.Equal(t, g, h1, `h1 and h2 must by equal !`)
 
-		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+		h2, err := MathUtils.ToGroupElement(encoded.Raw)
+		if (err == errNoValidEd25519Group) || !assert.Nil(t, err) {
+			continue
+		}
+
+		if !assert.Equal(t, h1, h2, `h1 and h2 must by equal !`) {
+			assert.Equal(t, h1.X, h2.X)
+			assert.Equal(t, h1.Y, h2.Y)
+			assert.Equal(t, h1.Z, h2.Z)
+			assert.Equal(t, h1.T, h2.T)
+		}
 	}
 }
 func TestEncodeReturnsExpectedResult(t *testing.T) {
@@ -515,7 +518,7 @@ func TestEncodeReturnsExpectedResult(t *testing.T) {
 	for i := 0; i < 100; i++ {
 
 		g := MathUtils.GetRandomGroupElement()
-		encoded, err := g.Encode() // Ed25519EncodedGroupElement
+		encoded, err := g.Encode()
 		assert.Nil(t, err)
 		bytes := utils.BigIntToByteArray(MathUtils.FieldToBigInteger(g.GetY()), 32)
 
@@ -609,7 +612,9 @@ func testRecover(t *testing.T) {
 	err := recover()
 	switch err.(type) {
 	case error:
-		t.Fatal(err)
+		buf := make([]byte, 1024)
+		runtime.Stack(buf, true)
+		t.Fatal(err, string(buf))
 	case nil:
 	default:
 		t.Log(err)
@@ -717,14 +722,14 @@ func TestToCachedReturnsExpectedResultIfGroupElementHasP3Representation(t *testi
 func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 
 	defer testRecover(t)
-	grEl := Ed25519Group.BASE_POINT
+	grEl := Ed25519Group.BASE_POINT.copy()
 	// Act + Assert:
 	for i := 0; i < 32; i++ {
-		h := grEl
+		h := grEl.copy()
 		for j := 0; j < 8; j++ {
 			g, err := MathUtils.ToRepresentation(h, PRECOMPUTED)
 			assert.Nil(t, err)
-			assert.Equal(t, Ed25519Group.BASE_POINT.getPrecomputedForSingle()[i][j], g)
+			assert.Equal(t, Ed25519Group.BASE_POINT.precomputedForSingle[i][j], g, "iter = %d, %d", i, j)
 			h = MathUtils.AddGroupElements(h, grEl)
 		}
 
@@ -746,7 +751,7 @@ func TestDblPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
 		assert.Nil(t, err)
-		assert.Equal(t, Ed25519Group.BASE_POINT.getPrecomputedForDouble()[i], g)
+		assert.Equal(t, Ed25519Group.BASE_POINT.precomputedForDouble[i], g)
 		grEl = MathUtils.AddGroupElements(grEl, h)
 	}
 
@@ -772,10 +777,7 @@ func TestDblReturnsExpectedResult(t *testing.T) {
 //
 func TestAddingNeutralGroupElementDoesNotChangeGroupElement(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	neutral := NewEd25519GroupElementP3(
 		Ed25519Field_ZERO(),
 		Ed25519Field_ONE(),
@@ -795,10 +797,7 @@ func TestAddingNeutralGroupElementDoesNotChangeGroupElement(t *testing.T) {
 
 func TestAddReturnsExpectedResult(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < numIter; i++ {
 		//
 		g1 := MathUtils.GetRandomGroupElement()
@@ -815,10 +814,7 @@ func TestAddReturnsExpectedResult(t *testing.T) {
 //
 func TestSubReturnsExpectedResult(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < numIter; i++ {
 		//
 		g1 := MathUtils.GetRandomGroupElement()
@@ -844,13 +840,13 @@ func TestGroupElement_EqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
 	assert.Nil(t, err)
 	g5 := MathUtils.GetRandomGroupElement()
 	// Assert
-	assert.Equal(t, g2, g1, `g2 and g1 must by equal !`)
-	assert.Equal(t, g3, g1, `g3 and g1 must by equal !`)
+	assert.Equal(t, g1, g2, `g2 and g1 must by equal !`)
+	assert.Equal(t, g1, g3, `g3 and g1 must by equal !`)
 	assert.Equal(t, g1, g4, `g1 and g4 must by equal !`)
-	assert.Equal(t, g1, g5, `g1 and g5 must by not equal !`)
-	assert.Equal(t, g2, g5, `g2 and g5 must by not equal !`)
-	assert.Equal(t, g3, g5, `g3 and g5 must by not equal !`)
-	assert.Equal(t, g5, g4, `g5 and g4 must by not equal !`)
+	assert.NotEqual(t, g1, g5, `g1 and g5 must by not equal !`)
+	assert.NotEqual(t, g2, g5, `g2 and g5 must by not equal !`)
+	assert.NotEqual(t, g3, g5, `g3 and g5 must by not equal !`)
+	assert.NotEqual(t, g5, g4, `g5 and g4 must by not equal !`)
 }
 
 func TestEd25519GroupElementP3String_ReturnsCorrectRepresentation(t *testing.T) {
@@ -993,7 +989,7 @@ func TestGetRawReturnsUnderlyingArray(t *testing.T) {
 	values[0] = 5
 	values[6] = 15
 	values[23] = 256 - 67
-	encoded, err := NewEd25519EncodedGroupElement(values) // Ed25519EncodedGroupElement
+	encoded, err := NewEd25519EncodedGroupElement(values)
 	assert.Nil(t, err)
 
 	assert.Equal(t, values, encoded.Raw, `values and encoded.Raw must by equal !`)
@@ -1008,7 +1004,7 @@ func TestDecodePlusEncodeDoesNotAlterTheEncodedGroupElement(t *testing.T) {
 	}()
 	for i := 0; i < numIter; i++ {
 		//
-		original := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+		original := MathUtils.GetRandomEncodedGroupElement()
 		grEl, err := original.Decode()
 		assert.Nil(t, err)
 		encoded, err := grEl.Encode()
@@ -1061,7 +1057,7 @@ func TestGetAffineYReturnsExpectedResult(t *testing.T) {
 	}()
 	for i := 0; i < numIter; i++ {
 		//
-		encoded := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+		encoded := MathUtils.GetRandomEncodedGroupElement()
 		//
 		affineY1, err := encoded.GetAffineY()
 		assert.Nil(t, err)
@@ -1077,33 +1073,29 @@ func TestGetAffineYReturnsExpectedResult(t *testing.T) {
 
 }
 
-// region hashCode / equals
 // @Test
 func TestEqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
-	g1 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+	defer testRecover(t)
+	g1 := MathUtils.GetRandomEncodedGroupElement()
 	g2Enc, err := g1.Decode()
 	assert.Nil(t, err)
-	g2, err := g2Enc.Encode() // Ed25519EncodedGroupElement
+	g2, err := g2Enc.Encode()
 	assert.Nil(t, err)
-	g3 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
-	g4 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+	g3 := MathUtils.GetRandomEncodedGroupElement()
+	g4 := MathUtils.GetRandomEncodedGroupElement()
 	// Assert
-	assert.Equal(t, g2, g1, `g2 and g1 must by equal !`)
-	assert.Equal(t, g1, g3, `g1 and g3 must by not equal !`)
-	assert.Equal(t, g2, g4, `g2 and g4 must by not equal !`)
-	assert.Equal(t, g3, g4, `g3 and g4 must by not equal !`)
+	assert.Equal(t, g1, g2, `g2 and g1 must by equal !`)
+	assert.NotEqual(t, g1, g3, `g1 and g3 must by not equal !`)
+	assert.NotEqual(t, g2, g4, `g2 and g4 must by not equal !`)
+	assert.NotEqual(t, g3, g4, `g3 and g4 must by not equal !`)
 }
 
 //
 func TestEd25519GroupP2ElementString_ReturnsCorrectRepresentation(t *testing.T) {
 
 	//
-	encoded, err := NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE()).Encode() // Ed25519EncodedGroupElement
+	encoded, err := NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE()).Encode()
 	assert.Nil(t, err)
 	encodedAsString := encoded.String()
 	expectedString := fmt.Sprintf("x=%s\ny=%s\n",

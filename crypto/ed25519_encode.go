@@ -20,7 +20,7 @@ func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement {
 	a[31] &= 0x7F
 	a[31] |= 0x40
 	a[0] &= 0xF8
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, a}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), a}
 }
 
 type Ed25519KeyAnalyzer struct {
@@ -42,7 +42,7 @@ func (ref *Ed25519KeyAnalyzer) IsKeyCompressed(publicKey *PublicKey) bool {
 type ed25519Field struct {
 	P                              *big.Int
 	ZERO, ONE, TWO, D, D_Times_TWO Ed25519FieldElement
-	ZERO_SHORT                     []byte
+	ZERO_SHORT1                    []byte
 	ZERO_LONG                      []byte
 	I                              Ed25519FieldElement
 }
@@ -58,6 +58,9 @@ func Ed25519Field_ONE() *Ed25519FieldElement {
 func Ed25519Field_ZERO_SHORT() []byte {
 	return make([]byte, 32)
 }
+func Ed25519Field_ZERO_LONG() []byte {
+	return make([]byte, 64)
+}
 func Ed25519Field_TWO() *Ed25519FieldElement {
 	return &Ed25519FieldElement{[]intRaw{2, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 }
@@ -70,7 +73,7 @@ var Ed25519Field = ed25519Field{
 	getD(),
 	getD().multiply(*(Ed25519Field_TWO())),
 	Ed25519Field_ZERO_SHORT(),
-	make([]byte, 64),
+	Ed25519Field_ZERO_LONG(),
 	// I ^ 2 = -1
 	*((&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), utils.MustHexDecodeString(Ed25519FieldI)}).Decode()),
 }
@@ -945,9 +948,9 @@ func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, err
 
 	switch len(Raw) {
 	case 32:
-		return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, Raw}, nil
+		return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), Raw}, nil
 	case 64:
-		return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_LONG, Raw}, nil
+		return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_LONG(), Raw}, nil
 	}
 	return nil, errors.New("Invalid 2^8 bit representation.")
 }
@@ -1367,7 +1370,7 @@ func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
 	result[29] = (byte)(s11 >> 1)
 	result[30] = (byte)(s11 >> 9)
 	result[31] = (byte)(s11 >> 17)
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, result}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), result}
 }
 
 /**
@@ -1805,7 +1808,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
 	result[29] = (byte)(s11 >> 1)
 	result[30] = (byte)(s11 >> 9)
 	result[31] = (byte)(s11 >> 17)
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, result}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), result}
 }
 
 func (ref *Ed25519EncodedFieldElement) String() string {
@@ -2240,25 +2243,6 @@ func (ref *Ed25519GroupElement) IsPrecomputedForDoubleScalarMultiplication() boo
 	return nil != ref.precomputedForDouble
 }
 
-//endregion
-/**
- * Gets the table with the precomputed group elements for single scalar multiplication.
- *
- * @return The precomputed table.
- */func (ref *Ed25519GroupElement) getPrecomputedForSingle() [][]*Ed25519GroupElement {
-
-	return ref.precomputedForSingle
-}
-
-/**
- * Gets the table with the precomputed group elements for float64 scalar multiplication.
- *
- * @return The precomputed table.
- */func (ref *Ed25519GroupElement) getPrecomputedForDouble() []*Ed25519GroupElement {
-
-	return ref.precomputedForDouble
-}
-
 // Converts the group element to an encoded point on the curve.
 // *
 // * @return The encoded point as byte array.
@@ -2377,15 +2361,27 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 
 // make copy ref object
 func (ref *Ed25519GroupElement) copy() *Ed25519GroupElement {
-	return &Ed25519GroupElement{
+	el := &Ed25519GroupElement{
 		ref.coordinateSystem,
 		ref.X,
 		ref.Y,
 		ref.Z,
 		ref.T,
-		nil,
-		nil,
+		make([][]*Ed25519GroupElement, len(ref.precomputedForSingle)),
+		make([]*Ed25519GroupElement, len(ref.precomputedForDouble)),
 	}
+	for i, val := range ref.precomputedForSingle {
+		el.precomputedForSingle[i] = make([]*Ed25519GroupElement, 8)
+		for j, valElem := range val {
+			el.precomputedForSingle[i][j] = valElem
+		}
+	}
+
+	for i, val := range ref.precomputedForDouble {
+		el.precomputedForDouble[i] = val
+	}
+
+	return el
 }
 
 // PrecomputeForScalarMultiplication precomputes the group elements needed to speed up a scalar multiplication.
@@ -2778,7 +2774,7 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(A *Ed25519Group
 	aSlide := ref.slide(a)
 	bSlide := ref.slide(b)
 
-	r := Ed25519Group.ZERO_P2
+	r := Ed25519Group.ZERO_P2.copy()
 	flag := false
 	for i := 255; i >= 0; i-- {
 		if flag || (aSlide[i] != 0 || bSlide[i] != 0) {
@@ -2806,11 +2802,8 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(A *Ed25519Group
 	return r
 }
 
-/**
- * Verify that the group element satisfies the curve equation.
- *
- * @return true if the group element satisfies the curve equation, false otherwise.
- */
+// SatisfiesCurveEquation Verify that the group element satisfies the curve equation.
+//* @return true if the group element satisfies the curve equation, false otherwise.
 func (ref *Ed25519GroupElement) SatisfiesCurveEquation() bool {
 
 	switch ref.coordinateSystem {
