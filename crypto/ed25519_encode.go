@@ -1380,7 +1380,9 @@ func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
  * @param c The third encoded field element which is added.
  * @return The encoded field element (32 bytes).
  */
-func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedFieldElement, c *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
+func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
+	b *Ed25519EncodedFieldElement,
+	c *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
 	a0 := 0x1FFFFF & ref.threeBytesToLong(ref.Raw, 0)
 
 	a1 := 0x1FFFFF & (ref.fourBytesToLong(ref.Raw, 2) >> 5)
@@ -2063,7 +2065,7 @@ func NewEd25519GroupElementP3(
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
 	t *Ed25519FieldElement) *Ed25519GroupElement {
-	return NewEd25519GroupElement(P3, x, y, x, t)
+	return NewEd25519GroupElement(P3, x, y, z, t)
 }
 
 //NewEd25519GroupElementP1XP1 Creates a new group element using the P1xP1 coordinate system.
@@ -2257,11 +2259,9 @@ func (ref *Ed25519GroupElement) IsPrecomputedForDoubleScalarMultiplication() boo
 	return ref.precomputedForDouble
 }
 
-/**
- * Converts the group element to an encoded point on the curve.
- *
- * @return The encoded point as byte array.
- */
+// Converts the group element to an encoded point on the curve.
+// *
+// * @return The encoded point as byte array.
 func (ref *Ed25519GroupElement) Encode() (*Ed25519EncodedGroupElement, error) {
 
 	switch ref.coordinateSystem {
@@ -2281,29 +2281,20 @@ func (ref *Ed25519GroupElement) Encode() (*Ed25519EncodedGroupElement, error) {
 
 }
 
-/**
- * Converts the group element to the P2 coordinate system.
- *
- * @return The group element in the P2 coordinate system.
- */func (ref *Ed25519GroupElement) toP2() *Ed25519GroupElement {
+// Converts the group element to the P2 coordinate system.
+func (ref *Ed25519GroupElement) toP2() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(P2)
 }
 
-/**
- * Converts the group element to the P3 coordinate system.
- *
- * @return The group element in the P3 coordinate system.
- */func (ref *Ed25519GroupElement) toP3() *Ed25519GroupElement {
+// Converts the group element to the P3 coordinate system.
+func (ref *Ed25519GroupElement) toP3() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(P3)
 }
 
-/**
- * Converts the group element to the CACHED coordinate system.
- *
- * @return The group element in the CACHED coordinate system.
- */func (ref *Ed25519GroupElement) toCached() *Ed25519GroupElement {
+// Converts the group element to the CACHED coordinate system.
+func (ref *Ed25519GroupElement) toCached() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(CACHED)
 }
@@ -2823,8 +2814,7 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(A *Ed25519Group
 func (ref *Ed25519GroupElement) SatisfiesCurveEquation() bool {
 
 	switch ref.coordinateSystem {
-	case P2:
-	case P3:
+	case P2, P3:
 		inverse := ref.Z.invert()
 		x := ref.X.multiply(inverse)
 		y := ref.Y.multiply(inverse)

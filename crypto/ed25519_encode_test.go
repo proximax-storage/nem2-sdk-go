@@ -1,6 +1,8 @@
 package crypto
 
 import (
+	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
@@ -46,7 +48,7 @@ func TestEd25519FieldElement_GetRawReturnsUnderlyingArray(t *testing.T) {
 	values[8] = -67
 	f, _ := NewEd25519FieldElement(values[:])
 
-	assert.Equal(t, values[:], f.Raw, `values and f.getRaw() must by equal !`)
+	assert.Equal(t, values[:], f.Raw, `values and f.GetRaw() must by equal !`)
 }
 
 // TestAddReturnsCorrectResult test Ed25519FieldElement summaring corection
@@ -195,7 +197,7 @@ func TestEd25519EncodedFieldElement_GetRawReturnsUnderlyingArray(t *testing.T) {
 	values[8] = 67
 	f, _ := NewEd25519EncodedFieldElement(values)
 
-	assert.Equal(t, values[:], f.Raw, `values and f.getRaw() must by equal !`)
+	assert.Equal(t, values[:], f.Raw, `values and f.GetRaw() must by equal !`)
 }
 func TestDecodePlusEncodeDoesNotAlterTheEncodedFieldElement(t *testing.T) {
 
@@ -212,7 +214,7 @@ func TestDecodePlusEncodeDoesNotAlterTheEncodedFieldElement(t *testing.T) {
 func TestEd25519EncodedFieldElement_ModQReturnsExpectedResult(t *testing.T) {
 
 	for i := 0; i < numIter; i++ {
-		encoded := &Ed25519EncodedFieldElement{Ed25519Field.ZERO_LONG, MathUtils.getRandomByteArray(64)}
+		encoded := &Ed25519EncodedFieldElement{Ed25519Field.ZERO_LONG, MathUtils.GetRandomByteArray(64)}
 		reduced1 := encoded.modQ()
 		b1 := MathUtils.BytesToBigInteger(reduced1.Raw)
 
@@ -235,7 +237,7 @@ func TestEd25519EncodedFieldElement_MultiplyAndAddModQReturnsExpectedResult(t *t
 		result2 := MathUtils.multiplyAndAddModGroupOrder(encoded1, encoded2, encoded3)
 		assert.Equal(t, -1, b1.Cmp(Ed25519Field.P), `MathUtils.toBigInteger(result1).compareTo(Ed25519Field.P) and -1 must by equal !`)
 		assert.Equal(t, 1, b1.Cmp(big.NewInt(-1)), `MathUtils.toBigInteger(result1).compareTo(Newuint64("-1")) and 1 must by equal !`)
-		assert.Equal(t, result1, result2, `result1 and result2 must by equal ! Iter %d`, i)
+		assert.Equal(t, result1.Raw, result2.Raw, `result1 and result2 must by equal ! Iter %d`, i)
 	}
 
 }
@@ -291,7 +293,7 @@ func TestEncodeReturnsCorrectByteArray(t *testing.T) {
 		test := make([]intRaw, 10)
 		for j := uint(0); j < 10; j++ {
 			//random.nextInt(1 << 28) - (1 << 27);
-			test[j] = MathUtils.getRandomIntRaw() - (1 << 27)
+			test[j] = MathUtils.GetRandomIntRaw() - (1 << 27)
 		}
 
 		fieldElement, err := NewEd25519FieldElement(test)
@@ -312,7 +314,7 @@ func TestIsNegativeReturnsCorrectResult(t *testing.T) {
 
 	for i := 0; i < numIter; i++ {
 
-		values := MathUtils.getRandomByteArray(32)
+		values := MathUtils.GetRandomByteArray(32)
 		values[31] &= 0x7F
 		encoded, err := NewEd25519EncodedFieldElement(values)
 		assert.Nil(t, err)
@@ -327,7 +329,7 @@ func TestIsNegativeReturnsCorrectResult(t *testing.T) {
 
 }
 
-func TestEqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
+func TestEncodedFieldElement_EqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
 
 	encoded1 := MathUtils.GetRandomEncodedFieldElement(32)
 	encoded2 := encoded1.Decode().Encode()
@@ -341,11 +343,12 @@ func TestEqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
 }
 func TestEd25519EncodedGroupElement_GetAffineX(t *testing.T) {
 
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
 	for i := 0; i < numIter; i++ {
-		enc, err := MathUtils.GetRandomGroupElement()
-		if err != nil {
-			t.Fatal(err)
-		}
+		enc := MathUtils.GetRandomGroupElement()
 		encoded, err := enc.Encode()
 		if err != nil {
 			t.Fatal(err)
@@ -370,6 +373,10 @@ func TestEd25519EncodedGroupElement_GetAffineX(t *testing.T) {
 }
 func TestSquareReturnsCorrectResult(t *testing.T) {
 
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
 	for i := 0; i < numIter; i++ {
 		f1 := MathUtils.GetRandomFieldElement()
 		b1 := MathUtils.BytesToBigInteger(f1.Encode().Raw)
@@ -380,6 +387,10 @@ func TestSquareReturnsCorrectResult(t *testing.T) {
 }
 func TestSqrtReturnsCorrectResult(t *testing.T) {
 
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
 	for i := 0; i < numIter; i++ {
 		u := MathUtils.GetRandomFieldElement()
 		uSquare := u.square()
@@ -398,6 +409,711 @@ func TestSqrtReturnsCorrectResult(t *testing.T) {
 		break
 	}
 }
+
+//end region
+// region Ed25519GroupElementTest
+func TestCanBeCreatedWithP2Coordinates(t *testing.T) {
+
+	g := NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE())
+
+	assert.Equal(t, g.GetCoordinateSystem(), P2, `g.GetCoordinateSystem() and P2 must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ZERO(), `g.GetX() and Ed25519Field.ZERO must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field.ONE must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ONE(), `g.GetZ() and Ed25519Field.ONE must by equal !`)
+	assert.Nil(t, g.GetT())
+}
+
+// @Test
+func TestCanBeCreatedWithP3Coordinates(t *testing.T) {
+
+	g := NewEd25519GroupElementP3(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+
+	assert.Equal(t, g.GetCoordinateSystem(), P3, `g.GetCoordinateSystem() and P3 must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ZERO(), `g.GetX() and Ed25519Field.ZERO must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field.ONE must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ONE(), `g.GetZ() and Ed25519Field.ONE must by equal !`)
+}
+
+//
+func TestCanBeCreatedWithP1P1Coordinates(t *testing.T) {
+
+	g := NewEd25519GroupElementP1XP1(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ONE())
+
+	assert.Equal(t, g.GetCoordinateSystem(), P1xP1, `g.GetCoordinateSystem() and P1xP1 must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ZERO(), `g.GetX() and Ed25519Field.ZERO must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field.ONE must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ONE(), `g.GetZ() and Ed25519Field.ONE must by equal !`)
+	assert.Equal(t, g.GetT(), Ed25519Field_ONE(), `g.GetT() and Ed25519Field.ONE must by equal !`)
+}
+
+func TestCanBeCreatedWithPrecompCoordinates(t *testing.T) {
+
+	g := NewEd25519GroupElementPrecomputed(Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+
+	assert.Equal(t, g.GetCoordinateSystem(), PRECOMPUTED, `g.GetCoordinateSystem() and PRECOMPUTED must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ONE(), `g.GetX() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ZERO(), `g.GetZ() and Ed25519Field_ZERO() must by equal !`)
+	assert.Nil(t, g.GetT())
+}
+
+// @Test
+func TestCanBeCreatedWithCachedCoordinates(t *testing.T) {
+
+	g := NewEd25519GroupElementCached(Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+
+	assert.Equal(t, g.GetCoordinateSystem(), CACHED, `g.GetCoordinateSystem() and CACHED must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ONE(), `g.GetX() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ONE(), `g.GetZ() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetT(), Ed25519Field_ZERO(), `g.GetT() and Ed25519Field_ZERO() must by equal !`)
+}
+
+func TestCanBeCreatedWithSpecifiedCoordinates(t *testing.T) {
+
+	g := NewEd25519GroupElement(
+		P3,
+		Ed25519Field_ZERO(),
+		Ed25519Field_ONE(),
+		Ed25519Field_ONE(),
+		Ed25519Field_ZERO())
+
+	assert.Equal(t, g.GetCoordinateSystem(), P3, `g.GetCoordinateSystem() and P3 must by equal !`)
+	assert.Equal(t, g.GetX(), Ed25519Field_ZERO(), `g.GetX() and Ed25519Field_ZERO() must by equal !`)
+	assert.Equal(t, g.GetY(), Ed25519Field_ONE(), `g.GetY() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetZ(), Ed25519Field_ONE(), `g.GetZ() and Ed25519Field_ONE() must by equal !`)
+	assert.Equal(t, g.GetT(), Ed25519Field_ZERO(), `g.GetT() and Ed25519Field_ZERO() must by equal !`)
+}
+
+// @Test
+func TestConstructorUsingEncodedGroupElementReturnsExpectedResult(t *testing.T) { /* public  */
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 100; i++ {
+
+		g := MathUtils.GetRandomGroupElement()
+
+		encoded, err := g.Encode() // Ed25519EncodedGroupElement
+		assert.Nil(t, err)
+
+		h1, err := encoded.Decode()
+		assert.Nil(t, err)
+		h2 := MathUtils.ToGroupElement(encoded.Raw)
+
+		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+	}
+}
+func TestEncodeReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 100; i++ {
+
+		g := MathUtils.GetRandomGroupElement()
+		encoded, err := g.Encode() // Ed25519EncodedGroupElement
+		assert.Nil(t, err)
+		bytes := utils.BigIntToByteArray(MathUtils.FieldToBigInteger(g.GetY()), 32)
+
+		b := MathUtils.FieldToBigInteger(g.GetX())
+		if b.Mod(b, big.NewInt(2)).Cmp(MathUtils.FieldToBigInteger(Ed25519Field_ONE())) == 0 {
+			bytes[31] |= 0x80
+		}
+
+		//
+		assert.Equal(t, encoded.Raw, bytes)
+	}
+
+}
+
+//(expected = IllegalArgumentException.class)
+func TestToP2ThrowsIfGroupElementHasPrecompRepresentation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	grEl := MathUtils.GetRandomGroupElement()
+
+	g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
+	assert.Nil(t, err)
+
+	g.toP2()
+}
+
+//(expected = IllegalArgumentException.class)
+func TestToP2ThrowsIfGroupElementHasCachedRepresentation(t *testing.T) { /* public  */
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	grEl := MathUtils.GetRandomGroupElement()
+
+	g, err := MathUtils.ToRepresentation(grEl, CACHED)
+	assert.Nil(t, err)
+
+	g.toP2()
+}
+
+func TestToP2ReturnsExpectedResultIfGroupElementHasP2Representation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 10; i++ {
+
+		grEl := MathUtils.GetRandomGroupElement()
+
+		g, err := MathUtils.ToRepresentation(grEl, P2)
+		assert.Nil(t, err)
+
+		h := g.toP2()
+
+		assert.Equal(t, h, g, `h and g must by equal !`)
+		assert.Equal(t, h.GetCoordinateSystem(), P2, `h.GetCoordinateSystem() and P2 must by equal !`)
+		assert.Equal(t, h.GetX(), g.GetX(), `h.GetX() and g.GetX() must by equal !`)
+		assert.Equal(t, h.GetY(), g.GetY(), `h.GetY() and g.GetY() must by equal !`)
+		assert.Equal(t, h.GetZ(), g.GetZ(), `h.GetZ() and g.GetZ() must by equal !`)
+		assert.Nil(t, h.GetT())
+	}
+
+}
+
+// @Test
+func TestToP2ReturnsExpectedResultIfGroupElementHasP3Representation(t *testing.T) {
+
+	defer testRecover(t)
+	for i := 0; i < 10; i++ {
+
+		g := MathUtils.GetRandomGroupElement()
+
+		h1 := g.toP2()
+		h2, err := MathUtils.ToRepresentation(g, P2)
+		assert.Nil(t, err)
+
+		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+		assert.Equal(t, h1.GetCoordinateSystem(), P2, `h1.GetCoordinateSystem() and P2 must by equal !`)
+		assert.Equal(t, h1.GetX(), g.GetX(), `h1.GetX() and g.GetX() must by equal !`)
+		assert.Equal(t, h1.GetY(), g.GetY(), `h1.GetY() and g.GetY() must by equal !`)
+		assert.Equal(t, h1.GetZ(), g.GetZ(), `h1.GetZ() and g.GetZ() must by equal !`)
+		assert.Nil(t, h1.GetT())
+	}
+}
+
+func testRecover(t *testing.T) {
+	err := recover()
+	switch err.(type) {
+	case error:
+		t.Fatal(err)
+	case nil:
+	default:
+		t.Log(err)
+
+	}
+}
+
+//(expected = IllegalArgumentException.class)
+func TestToCachedThrowsIfGroupElementHasP2Representation(t *testing.T) {
+
+	defer testRecover(t)
+	grEl := MathUtils.GetRandomGroupElement()
+
+	g, err := MathUtils.ToRepresentation(grEl, P2)
+	assert.Nil(t, err)
+	//
+	g.toCached()
+}
+
+// @Test(expected = IllegalArgumentException.class)
+func TestToCachedThrowsIfGroupElementHasPrecompRepresentation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	grEl := MathUtils.GetRandomGroupElement()
+
+	g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
+	assert.Nil(t, err)
+
+	g.toCached()
+}
+
+//(expected = IllegalArgumentException.class)
+func TestToCachedThrowsIfGroupElementHasP1P1Representation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	grEl := MathUtils.GetRandomGroupElement()
+	//
+	g, err := MathUtils.ToRepresentation(grEl, P1xP1)
+	assert.Nil(t, err)
+	//
+	g.toCached()
+}
+
+func TestToCachedReturnsExpectedResultIfGroupElementHasCachedRepresentation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 10; i++ {
+		//
+		grEl := MathUtils.GetRandomGroupElement()
+
+		g, err := MathUtils.ToRepresentation(grEl, CACHED)
+		assert.Nil(t, err)
+		//
+		h := g.toCached()
+		//
+		assert.Equal(t, h, g, `h and g must by equal !`)
+		assert.Equal(t, h.GetCoordinateSystem(), CACHED, `h.GetCoordinateSystem() and CACHED must by equal !`)
+		assert.Equal(t, h, g, `h and g must by equal !`)
+		assert.Equal(t, h.GetX(), g.GetX(), `h.GetX() and g.GetX() must by equal !`)
+		assert.Equal(t, h.GetY(), g.GetY(), `h.GetY() and g.GetY() must by equal !`)
+		assert.Equal(t, h.GetZ(), g.GetZ(), `h.GetZ() and g.GetZ() must by equal !`)
+		assert.Equal(t, h.GetT(), g.GetT(), `h.GetT() and g.GetT() must by equal !`)
+	}
+
+}
+
+// @Test
+func TestToCachedReturnsExpectedResultIfGroupElementHasP3Representation(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 10; i++ {
+		//
+		g := MathUtils.GetRandomGroupElement()
+		//
+		h1 := g.toCached()
+
+		h2, err := MathUtils.ToRepresentation(g, CACHED)
+		assert.Nil(t, err)
+		//
+		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+		assert.Equal(t, h1.GetCoordinateSystem(), CACHED, `h1.GetCoordinateSystem() and CACHED must by equal !`)
+		assert.Equal(t, h1, g, `h1 and g must by equal !`)
+
+		x := g.GetX()
+		assert.Equal(t, h1.GetX(), g.Y.add(*x), `h1.GetX() and g.Y.add(g.GetX()) must by equal !`)
+		assert.Equal(t, h1.GetY(), g.Y.subtract(*x), `h1.GetY() and g.Y.subtract(g.GetX()) must by equal !`)
+		assert.Equal(t, h1.GetZ(), g.GetZ(), `h1.GetZ() and g.GetZ() must by equal !`)
+		assert.Equal(t, h1.GetT(), g.T.multiply(Ed25519Field.D_Times_TWO), `h1.GetT() and g.T.multiply(Ed25519Field.D_Times_TWO) must by equal !`)
+	}
+
+}
+
+func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
+
+	defer testRecover(t)
+	grEl := Ed25519Group.BASE_POINT
+	// Act + Assert:
+	for i := 0; i < 32; i++ {
+		h := grEl
+		for j := 0; j < 8; j++ {
+			g, err := MathUtils.ToRepresentation(h, PRECOMPUTED)
+			assert.Nil(t, err)
+			assert.Equal(t, Ed25519Group.BASE_POINT.getPrecomputedForSingle()[i][j], g)
+			h = MathUtils.AddGroupElements(h, grEl)
+		}
+
+		for k := 0; k < 8; k++ {
+			grEl = MathUtils.AddGroupElements(grEl, grEl)
+		}
+
+	}
+
+}
+
+//
+func TestDblPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
+
+	defer testRecover(t)
+	grEl := Ed25519Group.BASE_POINT
+	h := MathUtils.AddGroupElements(grEl, grEl)
+	// Act + Assert:
+	for i := 0; i < 8; i++ {
+		g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
+		assert.Nil(t, err)
+		assert.Equal(t, Ed25519Group.BASE_POINT.getPrecomputedForDouble()[i], g)
+		grEl = MathUtils.AddGroupElements(grEl, h)
+	}
+
+}
+
+func TestDblReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < numIter; i++ {
+		g := MathUtils.GetRandomGroupElement()
+
+		h1 := g.dbl()
+		h2 := MathUtils.DoubleGroupElement(g)
+		//
+		assert.Equal(t, h2, h1, `h2 and h1 must by equal !`)
+	}
+
+}
+
+//
+func TestAddingNeutralGroupElementDoesNotChangeGroupElement(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	neutral := NewEd25519GroupElementP3(
+		Ed25519Field_ZERO(),
+		Ed25519Field_ONE(),
+		Ed25519Field_ONE(),
+		Ed25519Field_ZERO())
+	for i := 0; i < numIter; i++ {
+		g := MathUtils.GetRandomGroupElement()
+
+		h1 := g.add(neutral.toCached())
+		h2 := neutral.add(g.toCached())
+		//
+		assert.Equal(t, g, h1, `g and h1 must by equal !`)
+		assert.Equal(t, g, h2, `g and h2 must by equal !`)
+	}
+
+}
+
+func TestAddReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < numIter; i++ {
+		//
+		g1 := MathUtils.GetRandomGroupElement()
+		g2 := MathUtils.GetRandomGroupElement()
+		//
+		h1 := g1.add(g2.toCached())
+		h2 := MathUtils.AddGroupElements(g1, g2)
+		//
+		assert.Equal(t, h2, h1, `h2 and h1 must by equal !`)
+	}
+
+}
+
+//
+func TestSubReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < numIter; i++ {
+		//
+		g1 := MathUtils.GetRandomGroupElement()
+		g2 := MathUtils.GetRandomGroupElement()
+		//
+		h1 := g1.subtract(g2.toCached())
+		h2 := MathUtils.AddGroupElements(g1, MathUtils.NegateGroupElement(g2))
+		//
+		assert.Equal(t, h2, h1, `h2 and h1 must by equal !`)
+	}
+
+}
+
+func TestGroupElement_EqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
+
+	defer testRecover(t)
+	g1 := MathUtils.GetRandomGroupElement()
+	g2, err := MathUtils.ToRepresentation(g1, P2)
+	assert.Nil(t, err)
+	g3, err := MathUtils.ToRepresentation(g1, CACHED)
+	assert.Nil(t, err)
+	g4, err := MathUtils.ToRepresentation(g1, P1xP1)
+	assert.Nil(t, err)
+	g5 := MathUtils.GetRandomGroupElement()
+	// Assert
+	assert.Equal(t, g2, g1, `g2 and g1 must by equal !`)
+	assert.Equal(t, g3, g1, `g3 and g1 must by equal !`)
+	assert.Equal(t, g1, g4, `g1 and g4 must by equal !`)
+	assert.Equal(t, g1, g5, `g1 and g5 must by not equal !`)
+	assert.Equal(t, g2, g5, `g2 and g5 must by not equal !`)
+	assert.Equal(t, g3, g5, `g3 and g5 must by not equal !`)
+	assert.Equal(t, g5, g4, `g5 and g4 must by not equal !`)
+}
+
+func TestEd25519GroupElementP3String_ReturnsCorrectRepresentation(t *testing.T) {
+
+	//
+	g := NewEd25519GroupElementP3(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+	//
+	gAsString := g.String()
+	expectedString := fmt.Sprintf("X=%s\nY=%s\nZ=%s\nT=%s\n",
+		"0000000000000000000000000000000000000000000000000000000000000000",
+		"0100000000000000000000000000000000000000000000000000000000000000",
+		"0100000000000000000000000000000000000000000000000000000000000000",
+		"0000000000000000000000000000000000000000000000000000000000000000")
+	//
+	assert.Equal(t, gAsString, expectedString, `gAsString and expectedString must by equal !`)
+}
+
+// endregion
+//
+func TestScalarMultiplyBasePointWithZeroReturnsNeutralElement(t *testing.T) {
+
+	//
+	basePoint := Ed25519Group.BASE_POINT
+	//
+	g, err := basePoint.scalarMultiply(Ed25519Field.ZERO.Encode())
+	assert.Nil(t, err)
+	//
+	assert.Equal(t, Ed25519Group.ZERO_P3, g, `Ed25519Group.ZERO_P3 and g must by equal !`)
+}
+
+func TestScalarMultiplyBasePointReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 100; i++ {
+		//
+		basePoint := Ed25519Group.BASE_POINT
+		f := MathUtils.GetRandomFieldElement()
+		//
+		g, err := basePoint.scalarMultiply(f.Encode())
+		assert.Nil(t, err)
+		h := MathUtils.ScalarMultiplyGroupElement(basePoint, f)
+		//
+		assert.Equal(t, g, h, `g and h must by equal !`)
+	}
+
+}
+
+// This test is slow (~6s) due to math utils using an inferior algorithm to calculate the result.
+//
+func TestDoubleScalarMultiplyVariableTimeReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 50; i++ {
+		//
+		basePoint := Ed25519Group.BASE_POINT
+		g := MathUtils.GetRandomGroupElement()
+		g.PrecomputeForDoubleScalarMultiplication()
+		f1 := MathUtils.GetRandomFieldElement()
+		f2 := MathUtils.GetRandomFieldElement()
+		//
+		h1 := basePoint.doubleScalarMultiplyVariableTime(g, f2.Encode(), f1.Encode())
+		h2 := MathUtils.doubleScalarMultiplyGroupElements(basePoint, f1, g, f2)
+		//
+		assert.Equal(t, h1, h2, `h1 and h2 must by equal !`)
+	}
+
+}
+
+// endregion
+//
+func TestSatisfiesCurveEquationReturnsTrueForPointsOnTheCurve(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 100; i++ {
+		//
+		g := MathUtils.GetRandomGroupElement()
+		assert.Truef(t, g.SatisfiesCurveEquation(), `g.satisfiesCurveEquation() must be true!`)
+	}
+
+}
+
+//
+func TestSatisfiesCurveEquationReturnsFalseForPointsNotOnTheCurve(t *testing.T) {
+
+	defer testRecover(t)
+	for i := 0; i < 100; i++ {
+		//
+		g := MathUtils.GetRandomGroupElement()
+
+		gZ := g.Z.multiply(Ed25519Field.TWO)
+		h := NewEd25519GroupElementP2(g.GetX(), g.GetY(), &gZ)
+		// Assert (can only fail for 5*Z^2=1):
+		assert.False(t, h.SatisfiesCurveEquation(), `h.satisfiesCurveEquation() must be false!`)
+	}
+
+}
+
+//
+func TestScalarMultiplyBasePointWithOneReturnsBasePoint(t *testing.T) {
+
+	defer testRecover(t)
+	basePoint := Ed25519Group.BASE_POINT
+	basePoint, _ = getBasePoint()
+	g, err := basePoint.scalarMultiply(Ed25519Field.ONE.Encode())
+	assert.Nil(t, err)
+	assert.Equal(t, basePoint, g, `basePoint and g must by equal !`)
+}
+
+// endregion
+// region EncodedGroupElement
+
+func TestEd25519EncodedGroupElement_CanBeCreatedFromByteArray(t *testing.T) {
+
+	_, err := NewEd25519EncodedGroupElement(make([]byte, 32))
+	assert.Nil(t, err)
+}
+
+//(expected = IllegalArgumentException.class)
+func TestEd25519EncodedGroupElement_CannotBeCreatedFromArrayWithIncorrectLength(t *testing.T) {
+
+	_, err := NewEd25519EncodedGroupElement(make([]byte, 30))
+	assert.NotNil(t, err)
+}
+
+// region getRaw
+//
+func TestGetRawReturnsUnderlyingArray(t *testing.T) {
+
+	//
+	values := make([]byte, 32) // final
+	values[0] = 5
+	values[6] = 15
+	values[23] = 256 - 67
+	encoded, err := NewEd25519EncodedGroupElement(values) // Ed25519EncodedGroupElement
+	assert.Nil(t, err)
+
+	assert.Equal(t, values, encoded.Raw, `values and encoded.Raw must by equal !`)
+}
+
+//
+func TestDecodePlusEncodeDoesNotAlterTheEncodedGroupElement(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < numIter; i++ {
+		//
+		original := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+		grEl, err := original.Decode()
+		assert.Nil(t, err)
+		encoded, err := grEl.Encode()
+		assert.Equal(t, encoded, original, `encoded and original must by equal !`)
+	}
+
+}
+
+// endregion
+//
+func Test_GetAffineXReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < 1000; i++ {
+		//
+		encoded, err := MathUtils.GetRandomGroupElement().Encode()
+		assert.Nil(t, err)
+		affineX1, err := encoded.GetAffineX() // final
+		assert.Nil(t, err)
+
+		encEl, err := encoded.Decode()
+		assert.Nil(t, err)
+		el, err := MathUtils.ToRepresentation(encEl, AFFINE)
+		affineX2 := el.GetX() // final
+		//
+		assert.Equal(t, affineX1, affineX2, `affineX1 and affineX2 must by equal !`)
+	}
+
+}
+
+//(expected = IllegalArgumentException.class)
+func TestGetAffineXThrowsIfEncodedGroupElementIsInvalid(t *testing.T) {
+
+	//
+	g := NewEd25519GroupElementP2(Ed25519Field_ONE(), &Ed25519Field.D, Ed25519Field_ONE()) // Ed25519GroupElement
+	encoded, err := g.Encode()
+	assert.Nil(t, err)
+	encoded.GetAffineX()
+}
+
+// @Test
+func TestGetAffineYReturnsExpectedResult(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	for i := 0; i < numIter; i++ {
+		//
+		encoded := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+		//
+		affineY1, err := encoded.GetAffineY()
+		assert.Nil(t, err)
+
+		encEl, err := encoded.Decode()
+		assert.Nil(t, err)
+		el, err := MathUtils.ToRepresentation(encEl, AFFINE)
+		assert.Nil(t, err)
+		affineY2 := el.GetY() // final
+		//
+		assert.Equal(t, affineY1, affineY2, `affineY1 and affineY2 must by equal !`)
+	}
+
+}
+
+// region hashCode / equals
+// @Test
+func TestEqualsOnlyReturnsTrueForEquivalentObjects(t *testing.T) {
+
+	defer func() {
+		err := recover()
+		t.Log(err)
+	}()
+	g1 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+	g2Enc, err := g1.Decode()
+	assert.Nil(t, err)
+	g2, err := g2Enc.Encode() // Ed25519EncodedGroupElement
+	assert.Nil(t, err)
+	g3 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+	g4 := MathUtils.GetRandomEncodedGroupElement() // Ed25519EncodedGroupElement
+	// Assert
+	assert.Equal(t, g2, g1, `g2 and g1 must by equal !`)
+	assert.Equal(t, g1, g3, `g1 and g3 must by not equal !`)
+	assert.Equal(t, g2, g4, `g2 and g4 must by not equal !`)
+	assert.Equal(t, g3, g4, `g3 and g4 must by not equal !`)
+}
+
+//
+func TestEd25519GroupP2ElementString_ReturnsCorrectRepresentation(t *testing.T) {
+
+	//
+	encoded, err := NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE()).Encode() // Ed25519EncodedGroupElement
+	assert.Nil(t, err)
+	encodedAsString := encoded.String()
+	expectedString := fmt.Sprintf("x=%s\ny=%s\n",
+		"0000000000000000000000000000000000000000000000000000000000000000",
+		"0100000000000000000000000000000000000000000000000000000000000000")
+	//
+	assert.Equal(t, encodedAsString, expectedString, `encodedAsString and expectedString must by equal !`)
+}
+
+// endregion
 
 func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs ...interface{}) bool {
 
@@ -421,6 +1137,7 @@ func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs .
 	return assert.Equal(t, (&big.Int{}).Mod(b1, Ed25519Field.P), (&big.Int{}).Mod(b2, Ed25519Field.P), args...)
 
 }
+
 func differsOnlyByAFactorOfAFourthRootOfOne(x Ed25519FieldElement, root Ed25519FieldElement) bool {
 
 	rootTimesI := root.multiply(Ed25519Field.I)
