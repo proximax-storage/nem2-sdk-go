@@ -693,10 +693,7 @@ func TestToCachedReturnsExpectedResultIfGroupElementHasCachedRepresentation(t *t
 // @Test
 func TestToCachedReturnsExpectedResultIfGroupElementHasP3Representation(t *testing.T) {
 
-	defer func() {
-		err := recover()
-		t.Log(err)
-	}()
+	defer testRecover(t)
 	for i := 0; i < 10; i++ {
 		//
 		g := MathUtils.GetRandomGroupElement()
@@ -957,8 +954,7 @@ func TestSatisfiesCurveEquationReturnsFalseForPointsNotOnTheCurve(t *testing.T) 
 func TestScalarMultiplyBasePointWithOneReturnsBasePoint(t *testing.T) {
 
 	defer testRecover(t)
-	basePoint := Ed25519Group.BASE_POINT
-	basePoint, _ = getBasePoint()
+	basePoint := Ed25519Group.BASE_POINT.copy()
 	g, err := basePoint.scalarMultiply(Ed25519Field.ONE.Encode())
 	assert.Nil(t, err)
 	assert.Equal(t, basePoint, g, `basePoint and g must by equal !`)
