@@ -128,23 +128,19 @@ func (ref *mathUtils) GetRandomFieldElement() Ed25519FieldElement {
 	return Ed25519FieldElement{t}
 }
 
-/**
- * Scalar multiply the group element by the field element.
- *
- * @param g The group element.
- * @param f The field element.
- * @return The resulting group element.
- */
+// ScalarMultiplyGroupElement scalar multiply the group element by the field element.
+// * @param g The group element.
+// * @param f The field element.
+// * @return The resulting group element.
 func (ref *mathUtils) ScalarMultiplyGroupElement(g *Ed25519GroupElement, f Ed25519FieldElement) *Ed25519GroupElement {
 
 	bytes := f.Encode().Raw
 	h := Ed25519Group.ZERO_P3
-	for i := uint(254); i >= 0; i-- {
+	for i := uint(255); i > 0; i-- {
 		h = ref.DoubleGroupElement(h)
-		if utils.GetBitToBool(bytes, i) {
+		if utils.GetBitToBool(bytes, i-1) {
 			h = ref.AddGroupElements(h, g)
 		}
-
 	}
 
 	return h
@@ -265,20 +261,17 @@ func (ref *mathUtils) getSqrtOfFraction(u *big.Int, v *big.Int) *big.Int { /* pr
 	return x
 }
 
-/**
- * Converts a group element from one coordinate system to another.
- * This method is a helper used to test various methods in Ed25519GroupElement.
- *
- * @param g                   The group element.
- * @param newCoordinateSystem The desired coordinate system.
- * @return The same group element in the new coordinate system.
- */func (ref *mathUtils) ToRepresentation(g *Ed25519GroupElement, newCoorSys CoordinateSystem) (*Ed25519GroupElement, error) {
+//ToRepresentation Converts a group element from one coordinate system to another.
+// * This method is a helper used to test various methods in Ed25519GroupElement.
+// *
+// * @param g                   The group element.
+// * @param newCoordinateSystem The desired coordinate system.
+// * @return The same group element in the new coordinate system.
+func (ref *mathUtils) ToRepresentation(g *Ed25519GroupElement, newCoorSys CoordinateSystem) (*Ed25519GroupElement, error) {
 	gX := ref.BytesToBigInteger(g.X.Encode().Raw)
 	gY := ref.BytesToBigInteger(g.Y.Encode().Raw)
 	gZ := ref.BytesToBigInteger(g.Z.Encode().Raw)
 	var gT *big.Int
-	{
-	}
 	if g.T != nil {
 		gT = ref.BytesToBigInteger(g.T.Encode().Raw)
 	}
@@ -287,28 +280,25 @@ func (ref *mathUtils) getSqrtOfFraction(u *big.Int, v *big.Int) *big.Int { /* pr
 	switch g.coordinateSystem {
 	case AFFINE:
 		return ref.getNeeCoor(gX, gY, newCoorSys)
-	case P2:
-	case P3:
-		x := gX.Mul(gX, (&big.Int{}).ModInverse(gZ, Ed25519Field.P))
-		x = x.Mod(x, Ed25519Field.P)
-		y := gY.Mul(gY, gZ.ModInverse(gZ, Ed25519Field.P))
-		y = y.Mod(y, Ed25519Field.P)
-		return ref.getNeeCoor(x, y, newCoorSys)
+	case P2, P3:
+		x := XMul_YModInverseAndMod_P(gX, gZ)
+		y := XMul_YModInverseAndMod_P(gY, gZ)
+		return ref.getNeeCoor(
+			x,
+			y,
+			newCoorSys)
 	case P1xP1:
-		x := gX.Mul(gX, gZ.ModInverse(gZ, Ed25519Field.P))
-		x = x.Mod(x, Ed25519Field.P)
 		if gT == nil {
 			return nil, errors.New("coordinate T must not nil for P!XP1 ")
 		}
-		y := gY.Mul(gY, gT.ModInverse(gT, Ed25519Field.P))
-		y = y.Mod(y, Ed25519Field.P)
+		x := XMul_YModInverseAndMod_P(gX, gZ)
+		y := XMul_YModInverseAndMod_P(gY, gT)
 		return ref.getNeeCoor(x, y, newCoorSys)
 	case CACHED:
-		x := (&big.Int{}).Sub(gX, gY)
-		x = x.Mul(x, (&big.Int{}).Mul(gZ, big.NewInt(2))).ModInverse(x, Ed25519Field.P).Mod(x, Ed25519Field.P)
+		z := (&big.Int{}).Mul(gZ, big.NewInt(2))
+		x := XMul_YModInverseAndMod_P((&big.Int{}).Sub(gX, gY), z)
+		y := XMul_YModInverseAndMod_P((&big.Int{}).Add(gX, gY), z)
 
-		y := gX.Add(gX, gY)
-		y = y.Mul(y, gZ.Mul(gZ, big.NewInt(2))).ModInverse(y, Ed25519Field.P).Mod(y, Ed25519Field.P)
 		return ref.getNeeCoor(x, y, newCoorSys)
 	case PRECOMPUTED:
 		//safaty gX for next calculation
@@ -320,6 +310,10 @@ func (ref *mathUtils) getSqrtOfFraction(u *big.Int, v *big.Int) *big.Int { /* pr
 		return ref.getNeeCoor(x, y, newCoorSys)
 	}
 	return nil, errors.New("NewUnsupportedOperationException")
+}
+func XMul_YModInverseAndMod_P(x *big.Int, y *big.Int) *big.Int {
+	res := &big.Int{}
+	return res.Mul(x, (&big.Int{}).ModInverse(y, Ed25519Field.P)).Mod(res, Ed25519Field.P)
 }
 func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*Ed25519GroupElement, error) {
 
@@ -340,15 +334,15 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	case P1xP1:
 		return NewEd25519GroupElementP1XP1(x1, y1, Ed25519Field_ONE(), Ed25519Field_ONE()), nil
 	case CACHED:
-		m := y.Add(y, x)
+		m := (&big.Int{}).Add(y, x)
 		x1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
-		m = y.Sub(y, x)
-		y1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
 
-		m = (&big.Int{}).Mul(ref.D, big.NewInt(2))
-		m = m.Mul(m, x)
-		m = m.Mul(m, y)
-		z := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
+		m = m.Sub(y, x).Mod(m, Ed25519Field.P)
+		y1 := ref.ToFieldElement(m)
+
+		//safaty D for next calculation
+		m = (&big.Int{}).Mul(ref.D, big.NewInt(2)).Mul(m, x).Mul(m, y).Mod(m, Ed25519Field.P)
+		z := ref.ToFieldElement(m)
 
 		return NewEd25519GroupElementCached(x1, y1, Ed25519Field_ONE(), z), nil
 	case PRECOMPUTED:
@@ -547,8 +541,8 @@ func (ref *mathUtils) AddGroupElements(g1 *Ed25519GroupElement, g2 *Ed25519Group
 	dx1x2y1y2 := d.Mul(ref.D, g1x).Mul(d, g2x).Mul(d, g1y).Mul(d, g2y).Mod(d, Ed25519Field.P)
 
 	one := BigInteger_ONE()
-	x3 := ref.funcName(*g1x, g2y, g2x, g1y, (&big.Int{}).Add(one, dx1x2y1y2))
-	y3 := ref.funcName(*g1x, g2x, g1y, g2y, (&big.Int{}).Sub(one, dx1x2y1y2))
+	x3 := ref.XMulY_Plus_ZMulT_DelD(*g1x, g2y, g2x, g1y, (&big.Int{}).Add(one, dx1x2y1y2))
+	y3 := ref.XMulY_Plus_ZMulT_DelD(*g1x, g2x, g1y, g2y, (&big.Int{}).Sub(one, dx1x2y1y2))
 	t3 := (&big.Int{}).Mul(x3, y3)
 	t3.Mod(t3, Ed25519Field.P)
 
@@ -559,9 +553,9 @@ func (ref *mathUtils) AddGroupElements(g1 *Ed25519GroupElement, g2 *Ed25519Group
 		ref.ToFieldElement(t3))
 }
 
-func (ref *mathUtils) funcName(sp big.Int, g2y, g2x, g1y, one *big.Int) *big.Int {
-	b := &sp
-	return b.Mul(b, g2y).Add(b, (&big.Int{}).Mul(g2x, g1y)).Mul(b, one.ModInverse(one, Ed25519Field.P)).Mod(b, Ed25519Field.P)
+func (ref *mathUtils) XMulY_Plus_ZMulT_DelD(x big.Int, y, z, t, d *big.Int) *big.Int {
+	b := &x
+	return b.Mul(b, y).Add(b, (&big.Int{}).Mul(z, t)).Mul(b, d.ModInverse(d, Ed25519Field.P)).Mod(b, Ed25519Field.P)
 }
 
 /**

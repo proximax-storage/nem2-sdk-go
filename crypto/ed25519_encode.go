@@ -65,6 +65,7 @@ func Ed25519Field_TWO() *Ed25519FieldElement {
 	return &Ed25519FieldElement{[]intRaw{2, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 }
 
+var Ed25519Field_P = (&big.Int{}).Sub((&big.Int{}).Lsh(big.NewInt(1), 255), big.NewInt(19))
 var Ed25519Field = ed25519Field{
 	(&big.Int{}).Sub((&big.Int{}).Lsh(big.NewInt(1), 255), big.NewInt(19)),
 	*(Ed25519Field_ZERO()),
@@ -98,10 +99,15 @@ func getD() Ed25519FieldElement {
 	return Ed25519FieldElement{[]intRaw{
 		-10913610, 13857413, -15372611, 6949391, 114729, -8787816, -6275908, -3247719, -18696448, -12055116,
 	}}
+	// this calculatios return result as code before
 	//s := big.NewInt(-121665)
-	//d := s.Mod(s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field_P)), Ed25519Field_P).Bytes()
+	//d := utils.BigIntToByteArray(
+	//	s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field_P)).Mod(s, Ed25519Field_P),
+	//	32)
+	//el := *(&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), d}).Decode()
+	//fmt.Printf("%+v", el.Raw)
 	//
-	//return (&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT, d}).Decode()
+	//return el
 }
 
 type intRaw = int64
@@ -928,7 +934,7 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 
 	return ref.Encode().IsNegative()
 }
-func (ref *Ed25519FieldElement) Equals(ge *Ed25519FieldElement) bool { /* public  */
+func (ref *Ed25519FieldElement) Equals(ge *Ed25519FieldElement) bool {
 
 	for i, val := range ref.Raw {
 		if ge.Raw[i] != val {
@@ -2106,13 +2112,14 @@ func NewEd25519GroupElementCached(
 	t *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(CACHED, x, y, z, t)
 }
-func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) bool {
+func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) (res bool) {
 
 	if ref.coordinateSystem != ge.coordinateSystem {
 		defer func() {
 			err := recover()
 			if err != nil {
 				fmt.Println(err)
+				res = false
 			}
 		}()
 		ge = ge.toCoordinateSystem(ref.coordinateSystem)
@@ -2362,9 +2369,9 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 		case P3:
 			return NewEd25519GroupElementP3(ref.X, ref.Y, ref.Z, ref.T)
 		case CACHED:
-			t := ref.T.multiply(Ed25519Field.D_Times_TWO)
 			X := ref.Y.add(*(ref.X))
 			Y := ref.Y.subtract(*(ref.X))
+			t := ref.T.multiply(Ed25519Field.D_Times_TWO)
 			return NewEd25519GroupElementCached(&X, &Y, ref.Z, &t)
 		default:
 			panic("NewIllegalArgumentException()")
@@ -2635,28 +2642,26 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
-/**
- * Ed25519GroupElement addition using the twisted Edwards addition law for extended coordinates.
- * ref must be given in P^3 coordinate system and g in CACHED coordinate system.
- * r = ref + g where ref = (X1 : Y1 : Z1 : T1), g = (g.X, g.Y, g.Z, g.T) = (Y2 + X2, Y2 - X2, Z2, 2 * d * T2)
- * <br>
- * r in P x P coordinate system.:
- * X' = (Y1 + X1) * (Y2 + X2) - (Y1 - X1) * (Y2 - X2)
- * Y' = (Y1 + X1) * (Y2 + X2) + (Y1 - X1) * (Y2 - X2)
- * Z' = 2 * Z1 * Z2 + 2 * d * T1 * T2
- * T' = 2 * Z1 * T2 - 2 * d * T1 * T2
- * <br>
- * Setting A = (Y1 - X1) * (Y2 - X2), B = (Y1 + X1) * (Y2 + X2), C = 2 * d * T1 * T2, D = 2 * Z1 * Z2 we get
- * X' = (B - A)
- * Y' = (B + A)
- * Z' = (D + C)
- * T' = (D - C)
- * <br>
- * Same result as in precomputedAdd() (up to a common factor which does not matter).
- *
- * @param g The group element to add.
- * @return The result in the P x P coordinate system.
- */func (ref *Ed25519GroupElement) add(g *Ed25519GroupElement) *Ed25519GroupElement {
+// add Ed25519GroupElement addition using the twisted Edwards addition law for extended coordinates.
+// * ref must be given in P^3 coordinate system and g in CACHED coordinate system.
+// * r = ref + g where ref = (X1 : Y1 : Z1 : T1), g = (g.X, g.Y, g.Z, g.T) = (Y2 + X2, Y2 - X2, Z2, 2 * d * T2)
+// * <br>
+// * r in P x P coordinate system.:
+// * X' = (Y1 + X1) * (Y2 + X2) - (Y1 - X1) * (Y2 - X2)
+// * Y' = (Y1 + X1) * (Y2 + X2) + (Y1 - X1) * (Y2 - X2)
+// * Z' = 2 * Z1 * Z2 + 2 * d * T1 * T2
+// * T' = 2 * Z1 * T2 - 2 * d * T1 * T2
+// * <br>
+// * Setting A = (Y1 - X1) * (Y2 - X2), B = (Y1 + X1) * (Y2 + X2), C = 2 * d * T1 * T2, D = 2 * Z1 * Z2 we get
+// * X' = (B - A)
+// * Y' = (B + A)
+// * Z' = (D + C)
+// * T' = (D - C)
+// * <br>
+// * Same result as in precomputedAdd() (up to a common factor which does not matter).
+// *
+// * @return The result in the P x P coordinate system.
+func (ref *Ed25519GroupElement) add(g *Ed25519GroupElement) *Ed25519GroupElement {
 	if ref.coordinateSystem != P3 {
 		panic("NewUnsupportedOperationException")
 	}
@@ -2665,15 +2670,21 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		panic("NewIllegalArgumentException")
 	}
 
-	YPlusX := ref.Y.add(*(ref.X))
-	YMinusX := ref.Y.subtract(*(ref.X))
-	A := YPlusX.multiply(*(g.X))
-	B := YMinusX.multiply(*(g.Y))
+	//!!!B = (Y1 + X1) * (Y2 + X2)
+	B := ref.Y.add(*(ref.X)).multiply(*(g.X))
+
+	//!!!A = (Y1 - X1) * (Y2 - X2)
+	A := ref.Y.subtract(*(ref.X)).multiply(*(g.Y))
+
+	//C = (2 * d* T2) * T1
 	C := g.T.multiply(*(ref.T))
+
+	//D = 2 * Z1 * Z2
 	ZSquare := ref.Z.multiply(*(g.Z))
 	D := ZSquare.add(ZSquare)
 
-	x := A.subtract(B)
+	// !!! X' = (B - A)
+	x := B.subtract(A)
 	y := A.add(B)
 	z := D.add(C)
 	t := D.subtract(C)
@@ -2783,14 +2794,13 @@ func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519Gro
  * B is ref point. If its lookup table has not been precomputed, it
  * will be at the start of the method (and cached for later calls).
  * Constant time.
- *
  * @param a The encoded field element.
  * @return The resulting group element.
  */
 func (ref *Ed25519GroupElement) scalarMultiply(a *Ed25519EncodedFieldElement) (*Ed25519GroupElement, error) {
 
 	e := ref.toRadix16(a)
-	h := Ed25519Group.ZERO_P3
+	h := Ed25519Group.ZERO_P3.copy()
 	for i := 1; i < 64; i += 2 {
 		g, err := ref.Select(i/2, int(e[i]))
 		if err != nil {

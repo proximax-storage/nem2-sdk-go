@@ -61,7 +61,7 @@ func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 
 	}
 	id, err := generateMosaicId(parts[0], parts[1])
-	if networkTypeError != nil {
+	if err != nil {
 		return nil, err
 	}
 	return &MosaicId{id, name}, nil
@@ -125,7 +125,7 @@ type MosaicProperties struct {
 	Transferable  bool
 	LevyMutable   bool
 	Divisibility  int64
-	Duration *big.Int
+	Duration      *big.Int
 }
 
 func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration *big.Int) *MosaicProperties {
