@@ -329,11 +329,10 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 	case PRECOMPUTED:
 		m := (&big.Int{}).Add(y, x)
 		x1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
-		m = y.Sub(y, x)
+		m = m.Sub(y, x)
 		y1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
 
-		m = (&big.Int{}).Mul(ref.D, big.NewInt(2))
-		m = m.Mul(m, x).Mul(m, y)
+		m = m.Mul(ref.D, big.NewInt(2)).Mul(m, x).Mul(m, y)
 		z := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
 
 		return NewEd25519GroupElementPrecomputed(x1, y1, z), nil
@@ -353,12 +352,8 @@ func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFi
 	return &Ed25519EncodedFieldElement{zero, bytes}
 }
 
-/**
- * Gets a random group element in P3 coordinates.
- * It's NOT guaranteed that the created group element is a multiple of the base point.
- *
- * @return The group element.
- */
+//GetRandomGroupElement Gets a random group element in P3 coordinates.
+// * It's NOT guaranteed that the created group element is a multiple of the base point.
 func (ref *mathUtils) GetRandomGroupElement() (el *Ed25519GroupElement) {
 	err := ref.tryToCreateObject(func() (err error) {
 

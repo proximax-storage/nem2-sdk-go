@@ -71,14 +71,6 @@ func TestMath_PrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 	for i := 0; i < numIter; i++ {
 		g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
 		assert.Nil(t, err)
-		//grEl.precomputedForSingle[0][0] = &Ed25519GroupElement{
-		//	PRECOMPUTED,
-		//	&Ed25519FieldElement{[]intRaw{25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605}},
-		//	&Ed25519FieldElement{[]intRaw{-12545711, 934262, -2722910, 3049990, -727428, 9406986, 12720692, 5043384, 19500929, -15469378}},
-		//	&Ed25519FieldElement{[]intRaw{-8738181, 4489570, 9688441, -14785194, 10184609, -12363380, 29287919, 11864899, -24514362, -4438546}},
-		//nil,
-		//nil, nil,
-		//}
 		assert.True(t, grEl.precomputedForSingle[0][0].Equals(g), "iter = %d", i)
 	}
 

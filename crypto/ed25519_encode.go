@@ -66,6 +66,15 @@ func Ed25519Field_D_Times_TWO() *Ed25519FieldElement {
 	// return getD().multiply(*(Ed25519Field_TWO())),
 	return &Ed25519FieldElement{[]intRaw{-21827239, -5839606, -30745221, 13898782, 229458, 15978800, -12551817, -6495438, 29715968, 9444199}}
 }
+
+// this method replace on three methods for one base constant
+//func getFieldElement(value intRaw) Ed25519FieldElement {
+//
+//	f := make([]intRaw, 10)
+//	f[0] = value
+//	return Ed25519FieldElement{f}
+//}
+
 func Ed25519Field_ZERO() *Ed25519FieldElement {
 	return &Ed25519FieldElement{[]intRaw{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 }
@@ -101,25 +110,15 @@ var Ed25519Field = ed25519Field{
 	*((&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), utils.MustHexDecodeString(Ed25519FieldI)}).Decode()),
 }
 
-// Ed25519Field
-func getFieldElement(value intRaw) Ed25519FieldElement {
-
-	f := make([]intRaw, 10)
-	f[0] = value
-	return Ed25519FieldElement{f}
-}
-
 type intRaw = int64
 
 const lenEd25519FieldElementRaw = 10
 
 // Ed25519FieldElement Represents a element of the finite field with p=2^255-19 elements.
-//* <p>
-//* Raw[0] ... Raw[9], represent the integer <br>
-//* Raw[0] + 2^26 * Raw[1] + 2^51 * Raw[2] + 2^77 * Raw[3] + 2^102 * Raw[4] + ... + 2^230 * Raw[9]. <br>
-//* Bounds on each Raw[i] vary depending on context.
-//* </p>
-//* This implementation is based on the ref10 implementation of SUPERCOP.
+// Raw[0] ... Raw[9], represent the integer
+// Raw[0] + 2^26 * Raw[1] + 2^51 * Raw[2] + 2^77 * Raw[3] + 2^102 * Raw[4] + ... + 2^230 * Raw[9].
+// Bounds on each Raw[i] vary depending on context.
+// This implementation is based on the ref10 implementation of SUPERCOP.
 type Ed25519FieldElement struct {
 	Raw []intRaw
 }
@@ -133,17 +132,13 @@ func NewEd25519FieldElement(Raw []intRaw) (*Ed25519FieldElement, error) {
 	return &Ed25519FieldElement{Raw}, nil
 }
 
-/**
- * Calculates and returns one of the square roots of u / v.
- * <pre>{@code
- * x = (u * v^3) * (u * v^7)^((p - 5) / 8) ==> x^2 = +-(u / v).
- * }</pre>
- * Note that ref means x can be sqrt(u / v), -sqrt(u / v), +i * sqrt(u / v), -i * sqrt(u / v).
- *
- * @param u The nominator of the fraction.
- * @param v The denominator of the fraction.
- * @return The square root of u / v.
- */
+// Ed25519FieldElementSqrt Calculates and returns one of the square roots of u / v.
+// * x = (u * v^3) * (u * v^7)^((p - 5) / 8) ==> x^2 = +-(u / v).
+// * Note that ref means x can be sqrt(u / v), -sqrt(u / v), +i * sqrt(u / v), -i * sqrt(u / v).
+// *
+// * @param u The nominator of the fraction.
+// * @param v The denominator of the fraction.
+// * @return The square root of u / v.
 func Ed25519FieldElementSqrt(u Ed25519FieldElement, v Ed25519FieldElement) Ed25519FieldElement {
 
 	// v3 = v^3
@@ -178,10 +173,9 @@ func (ref Ed25519FieldElement) IsNonZero() bool {
  * @return The field element ref + val.
  */
 func (ref Ed25519FieldElement) add(g Ed25519FieldElement) Ed25519FieldElement {
-	gRaw := g.Raw
 	h := make([]intRaw, 10)
 	for i := range h {
-		h[i] = ref.Raw[i] + gRaw[i]
+		h[i] = ref.Raw[i] + g.Raw[i]
 	}
 	return Ed25519FieldElement{h}
 }
@@ -200,10 +194,9 @@ func (ref Ed25519FieldElement) add(g Ed25519FieldElement) Ed25519FieldElement {
  * @param g The field element to subtract.
  * @return The field element ref - val.
  */func (ref Ed25519FieldElement) subtract(g Ed25519FieldElement) Ed25519FieldElement {
-	gRaw := g.Raw
 	h := make([]intRaw, 10)
 	for i := range h {
-		h[i] = ref.Raw[i] - gRaw[i]
+		h[i] = ref.Raw[i] - g.Raw[i]
 	}
 
 	return Ed25519FieldElement{h}
@@ -677,11 +670,8 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 	return f1.multiply(f0)
 }
 
-/**
- * Computes ref field element to the power of (2^9) and returns the result.
- *
- * @return This field element to the power of (2^9).
- */func (ref Ed25519FieldElement) pow2to9() Ed25519FieldElement { /* private  */
+//pow2to9 Ccmputes ref field element to the power of (2^9) and returns the result.
+func (ref Ed25519FieldElement) pow2to9() Ed25519FieldElement {
 
 	// 2 == 2 * 1
 	f := ref.square()
@@ -693,12 +683,8 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 	return ref.multiply(f)
 }
 
-/**
- * Computes ref field element to the power of (2^252 - 4) and returns the result.
- * This is a helper function for calculating the square root.
- *
- * @return This field element to the power of (2^252 - 4).
- */func (ref Ed25519FieldElement) pow2to252sub4() Ed25519FieldElement { /* private  */
+//pow2to252sub4 computes ref field element to the power of (2^252 - 4) and returns the result.
+func (ref Ed25519FieldElement) pow2to252sub4() Ed25519FieldElement {
 
 	// 2 == 2 * 1
 	f0 := ref.square()
@@ -810,7 +796,7 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
  * </pre>
  *
  * @return The mod p reduced field element
- */func (ref Ed25519FieldElement) modP() Ed25519FieldElement { /* private  */
+ */func (ref Ed25519FieldElement) modP() Ed25519FieldElement {
 
 	h := []intRaw{
 		ref.Raw[0],
@@ -972,7 +958,7 @@ func (ref *Ed25519EncodedFieldElement) threeBytesToLong(b []byte, offset int) in
 
 func (ref *Ed25519EncodedFieldElement) fourBytesToLong(b []byte, offset int) intRaw {
 
-	return intRaw(int64(b[offset]) | int64(b[offset+1])<<8 | int64(b[offset+2])<<16 | int64(b[offset+2])<<24)
+	return intRaw(int64(b[offset]) | int64(b[offset+1])<<8 | int64(b[offset+2])<<16 | int64(b[offset+3])<<24)
 }
 
 //IsNegative Return true if ref is in {1,3,5,...,q-2}
@@ -2004,8 +1990,8 @@ func getBasePoint() (*Ed25519GroupElement, error) {
 	if err != nil {
 		return nil, err
 	}
-	basePoint.PrecomputeForScalarMultiplication()
-	basePoint.PrecomputeForDoubleScalarMultiplication()
+	basePoint.precomputedForSingle = basePrecSingle
+	basePoint.precomputedForDouble = basePrecDouble
 
 	return basePoint, nil
 }
@@ -2160,28 +2146,39 @@ func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) (res bool) {
 // *
 // * @param encoded The encode field element.
 // * @return 64 bytes, each between -8 and 7
-func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []byte {
+func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []int8 {
 
 	a := encoded.Raw
-	e := make([]byte, 64)
+	e := make([]int8, 64)
 	for i := 0; i < 32; i++ {
-		e[2*i] = (byte)(a[i] & 15)
-		e[2*i+1] = (byte)((a[i] >> 4) & 15)
+		e[2*i] = (int8(a[i]) & 15)
+		e[2*i+1] = ((int8(a[i]) >> 4) & 15)
 	}
 
 	/* each e[i] is between 0 and 15 */
 	/* e[63] is between 0 and 7 */
-	carry := byte(0)
+	carry := 0
 	for i := 0; i < 63; i++ {
-		e[i] += carry
-		carry = e[i] + 8
+		e[i] += int8(carry)
+		carry = int(e[i]) + 8
 		carry >>= 4
-		e[i] -= carry << 4
+		e[i] -= int8(carry) << 4
 	}
 
-	e[63] += carry
+	e[63] += int8(carry)
 	return e
 }
+
+/* each e[i] is between 0 and 15 */
+/* e[63] is between 0 and 7 */
+//int carry = 0;
+//for (i = 0; i < 63; i++) {
+//e[i] += carry;
+//carry = e[i] + 8;
+//carry >>= 4;
+//e[i] -= carry << 4;
+//}
+//e[63] += carry;
 
 /**
  * Calculates a sliding-windows base 2 representation for a given encoded field element a.
@@ -2194,14 +2191,13 @@ func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) [
  *
  * @param encoded The encoded field element.
  * @return The byte array r in the above described form.
- */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []byte {
+ */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []int8 {
 
 	a := encoded.Raw
-	r := make([]byte, 256)
+	r := make([]int8, 256)
 	// Put each bit of 'a' into a separate byte, 0 or 1
 	for i := 0; i < 256; i++ {
-		el := uint(i >> 3)
-		r[i] = (1 & (a[el] >> uint(i&7)))
+		r[i] = (1 & (int8(a[i>>3]) >> uint(i&7)))
 	}
 	//todo: algorimt must be simple!
 	// Note: r[i] will always be odd.
@@ -2214,7 +2210,7 @@ func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) [
 					if r[i]+(r[ib]<<b) <= 15 {
 						r[i] += r[ib] << b
 						r[ib] = 0
-					} else if (r[ib]<<b)-r[i] <= 15 {
+					} else if r[i]-(r[ib]<<b) >= -15 {
 						r[i] -= r[ib] << b
 						for k := ib; k < 256; k++ {
 							if r[k] == 0 {
@@ -2473,26 +2469,26 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 
 }
 
-/**
- * Precomputes the group elements used to speed up a float64 scalar multiplication.
- */func (ref *Ed25519GroupElement) PrecomputeForDoubleScalarMultiplication() {
+//PrecomputeForDoubleScalarMultiplication Precomputes the group elements used to speed up a float64 scalar multiplication.
+func (ref *Ed25519GroupElement) PrecomputeForDoubleScalarMultiplication() {
 
 	if len(ref.precomputedForDouble) > 0 {
 		return
 	}
 
 	ref.precomputedForDouble = make([]*Ed25519GroupElement, 8)
-	for i := 0; i < 8; i++ {
-		inverse := ref.Z.invert()
-		x := ref.X.multiply(inverse)
-		y := ref.Y.multiply(inverse)
+	Bi := ref.copy()
+	for i := range ref.precomputedForDouble {
+		inverse := Bi.Z.invert()
+		x := Bi.X.multiply(inverse)
+		y := Bi.Y.multiply(inverse)
+
 		X := y.add(x)
 		Y := y.subtract(x)
 		Z := x.multiply(y).multiply(Ed25519Field.D_Times_TWO)
 		ref.precomputedForDouble[i] = NewEd25519GroupElementPrecomputed(&X, &Y, &Z)
-		ref.add(ref.add(ref.toCached()).toP3().toCached()).toP3()
+		Bi = ref.add(ref.add(Bi.toCached()).toP3().toCached()).toP3()
 	}
-
 }
 
 /**
@@ -2757,7 +2753,6 @@ func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519Gro
  * Look up 16^i r_i B in the precomputed table.
  * No secret array indices, no secret branching.
  * Constant time.
- * <br>
  * Must have previously precomputed.
  *
  * @param pos = i/2 for i in {0, 2, 4,..., 62}
@@ -2782,10 +2777,6 @@ func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519Gro
 	}
 	// -16^i |r_i| B
 	//noinspection SuspiciousNameCombination
-	//z := t.Z
-	//if z != nil {
-	//	z = z
-	//}
 	z := t.Z.negate()
 	tMinus := NewEd25519GroupElementPrecomputed(t.Y, t.X, &z)
 	// 16^i r_i B
@@ -2851,9 +2842,9 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(
 	r = Ed25519Group.ZERO_P2()
 	flag := false
 	for i := 255; i >= 0; i-- {
-		if flag || (aSlide[i] != 0 || bSlide[i] != 0) {
+		flag = flag || (aSlide[i] != 0) || (bSlide[i] != 0)
+		if flag {
 
-			flag = true
 			t := r.dbl()
 			if aSlide[i] > 0 {
 				t = t.toP3().precomputedSubtract(A.precomputedForDouble[aSlide[i]/2])
@@ -2874,7 +2865,6 @@ func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(
 			}
 
 			r = t.toP2()
-			break
 		}
 
 	}

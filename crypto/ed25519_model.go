@@ -67,7 +67,7 @@ func NewEd25519BlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) *E
 
 //todo: change methods
 // today he use java library - I use dummy struct instead
-func (ref *Ed25519BlockCipher) setupBlockCipher(sharedKey []byte, ivData []byte, forEncryption bool) *BufferedBlockCipher { /* private  */
+func (ref *Ed25519BlockCipher) setupBlockCipher(sharedKey []byte, ivData []byte, forEncryption bool) *BufferedBlockCipher {
 
 	// Setup cipher parameters with key and IV.
 	keyParam := NewKeyParameter(sharedKey) //
@@ -82,7 +82,7 @@ func (ref *Ed25519BlockCipher) setupBlockCipher(sharedKey []byte, ivData []byte,
 	return cipher
 }
 
-func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *PublicKey, salt []byte) ([]byte, error) { /* private  */
+func (ref *Ed25519BlockCipher) GetSharedKey(privateKey *PrivateKey, publicKey *PublicKey, salt []byte) ([]byte, error) {
 
 	grA, err := NewEd25519EncodedGroupElement(publicKey.Raw)
 	if err != nil {
@@ -160,7 +160,7 @@ func (ref *Ed25519BlockCipher) Decrypt(input []byte) []byte {
 	return ref.transform(cipher, encData)
 }
 
-func (ref *Ed25519BlockCipher) transform(cipher *BufferedBlockCipher, data []byte) []byte { /* private  */
+func (ref *Ed25519BlockCipher) transform(cipher *BufferedBlockCipher, data []byte) []byte {
 
 	buf := make([]byte, cipher.GetOutputSize(len(data)))
 	length := cipher.processBytes(data, 0, len(data), buf, 0)

@@ -204,7 +204,7 @@ func TestDecodePlusEncodeDoesNotAlterTheEncodedFieldElement(t *testing.T) {
 	for i := 0; i < numIter; i++ {
 		original := MathUtils.GetRandomEncodedFieldElement(32)
 		encoded := original.Decode().Encode()
-		assert.Equal(t, original, encoded, `encoded and original must by equal !`)
+		assert.True(t, original.Equals(encoded), `encoded and original must by equal !`)
 	}
 
 }
@@ -334,7 +334,7 @@ func TestEncodedFieldElement_EqualsOnlyReturnsTrueForEquivalentObjects(t *testin
 	encoded3 := MathUtils.GetRandomEncodedFieldElement(32)
 	encoded4 := MathUtils.GetRandomEncodedFieldElement(32)
 	// Assert:
-	assert.Equal(t, encoded1, encoded2, `encoded1 and encoded2 must by equal !`)
+	assert.True(t, encoded1.Equals(encoded2), `encoded1 and encoded2 must by equal !`)
 	assert.NotEqual(t, encoded1, encoded3, `encoded1 and encoded3 must by not equal !`)
 	assert.NotEqual(t, encoded1, encoded4, `encoded1 and encoded4 must by not equal !`)
 	assert.NotEqual(t, encoded3, encoded4, `encoded3 and encoded4 must by not equal !`)
@@ -716,7 +716,7 @@ func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 	for i := 0; i < 32; i++ {
 		h := grEl.copy()
 		for j := 0; j < 8; j++ {
-			g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
+			g, err := MathUtils.ToRepresentation(h, PRECOMPUTED)
 			assert.Nil(t, err)
 			assert.True(t, g.Equals(Ed25519Group.BASE_POINT().precomputedForSingle[i][j]), "iter = %d, %d", i, j)
 			h = MathUtils.AddGroupElements(h, grEl)
@@ -887,7 +887,7 @@ func TestDoubleScalarMultiplyVariableTimeReturnsExpectedResult(t *testing.T) {
 		h1, err := basePoint.doubleScalarMultiplyVariableTime(g, f2.Encode(), f1.Encode())
 		assert.Nil(t, err)
 		h2 := MathUtils.doubleScalarMultiplyGroupElements(basePoint, f1, g, f2)
-		assert.True(t, h2.Equals(h1), `h1 and h2 must by equal !`)
+		assert.True(t, h1.Equals(h2), `h1 and h2 must by equal !`)
 	}
 
 }
