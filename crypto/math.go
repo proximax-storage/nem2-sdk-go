@@ -344,7 +344,13 @@ func (ref *mathUtils) GetRandomEncodedFieldElement(length int) *Ed25519EncodedFi
 
 	bytes := ref.GetRandomByteArray(length)
 	bytes[31] &= 0x7f
-	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), bytes}
+	zero := Ed25519Field_ZERO_SHORT()
+	if length == 64 {
+		zero = Ed25519Field_ZERO_LONG()
+	} else if length != 32 {
+		panic(errors.New("wrong lenght bytes!"))
+	}
+	return &Ed25519EncodedFieldElement{zero, bytes}
 }
 
 /**
@@ -448,7 +454,14 @@ func (ref *mathUtils) ReduceModGroupOrder(encoded *Ed25519EncodedFieldElement) *
  */
 func (ref *mathUtils) ToEncodedFieldElement(b *big.Int) *Ed25519EncodedFieldElement {
 
-	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), ref.ToByteArray(b)}
+	bytes := ref.ToByteArray(b)
+	zero := Ed25519Field_ZERO_SHORT()
+	if lenght := len(bytes); lenght == 64 {
+		zero = Ed25519Field_ZERO_LONG()
+	} else if lenght != 32 {
+		panic(errors.New("wrong lenght bytes!"))
+	}
+	return &Ed25519EncodedFieldElement{zero, bytes}
 }
 
 /**

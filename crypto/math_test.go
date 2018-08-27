@@ -75,3 +75,15 @@ func TestMath_PrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 	}
 
 }
+
+func TestMathUtils_ReduceModGroupOrder(t *testing.T) {
+	defer testRecover(t)
+
+	for i := 0; i < numIter; i++ {
+		encoded := MathUtils.GetRandomEncodedFieldElement(64)
+		reduced1 := encoded.modQ()
+		reduced2 := MathUtils.ReduceModGroupOrder(encoded)
+		assert.True(t, reduced2.Equals(reduced1), "iter = %d", i)
+	}
+
+}

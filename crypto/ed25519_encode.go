@@ -1970,14 +1970,12 @@ func init() {
 	 * 2^252 + 27742317777372353535851937790883648493
 	 */
 
-	z := (&big.Int{}).Lsh(big.NewInt(1), 252)
-	rFloat, _, err := big.ParseFloat(ed25519GroupOrder, 10, 0, big.ToZero)
-	if err != nil {
-		panic(err)
-		return
-	}
+	z := (&big.Int{}).Lsh(BigInteger_ONE(), 252)
 
-	rInt, _ := rFloat.Int(nil)
+	rInt, ok := (&big.Int{}).SetString(ed25519GroupOrder, 10)
+	if !ok {
+		panic(errors.New(ed25519GroupOrder + " is wrang value for big.Int!"))
+	}
 	Ed25519Group.GROUP_ORDER = z.Add(z, rInt)
 
 	/**
@@ -1985,6 +1983,7 @@ func init() {
 	 * (x, 4/5); x > 0
 	 * }</pre>
 	 */
+	var err error
 	Ed25519Group.BASE_POINT, err = getBasePoint()
 	if err != nil {
 		panic(err)
