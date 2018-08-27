@@ -41,7 +41,6 @@ func TestNewSigner(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		//sign.MakeSignatureCanonical()
 		res := sign.Verify(testDataForSigner, signature)
 		assert.Truef(t, res, "iter=%d, sign %v", i+1, signature)
 	}

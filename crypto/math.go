@@ -40,10 +40,10 @@ func (ref *mathUtils) random() (random [32]byte) {
 //* @return The BigInteger.
 func (ref *mathUtils) BytesToBigInteger(bytes []byte) *big.Int {
 
-	return utils.BytesToBigInteger(bytes)
+	//return utils.BytesToBigInteger(bytes)
 	b := BigInteger_ZERO()
 	for i, val := range bytes {
-		el := (&big.Int{}).SetUint64(uint64(uint8(val))) // & 0xff)
+		el := (&big.Int{}).SetUint64(uint64(uint8(val)) & 0xff)
 		//one := BigInteger_ONE()
 		//one = one.Mul(one, el)
 		b = b.Add(b, el.Lsh(el, uint(i*8)))
@@ -91,25 +91,6 @@ func (ref *mathUtils) IntsToBigInteger(t []intRaw) *big.Int {
 	return b
 }
 
-var MathUtils mathUtils
-
-func init() {
-	MathUtils.EXPONENTS = []uint{
-		0,
-		26,
-		26 + 25,
-		2*26 + 25,
-		2*26 + 2*25,
-		3*26 + 2*25,
-		3*26 + 3*25,
-		4*26 + 3*25,
-		4*26 + 4*25,
-		5*26 + 4*25,
-	}
-	x := big.NewInt(-121665)
-	x = x.Mul(x, big.NewInt(121666))
-	MathUtils.D = x.Mod(x, Ed25519Field.P)
-}
 func (ref *mathUtils) GetRandomFieldElement() Ed25519FieldElement {
 
 	t := make([]intRaw, 10)
@@ -337,14 +318,14 @@ func (ref *mathUtils) getNeeCoor(x, y *big.Int, newCoorSys CoordinateSystem) (*E
 		m := (&big.Int{}).Add(y, x)
 		x1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
 
-		m = m.Sub(y, x).Mod(m, Ed25519Field.P)
-		y1 := ref.ToFieldElement(m)
+		m = m.Sub(y, x)
+		y1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
 
 		//safaty D for next calculation
-		m = (&big.Int{}).Mul(ref.D, big.NewInt(2)).Mul(m, x).Mul(m, y).Mod(m, Ed25519Field.P)
-		z := ref.ToFieldElement(m)
+		m = (&big.Int{}).Mul(ref.D, big.NewInt(2))
+		t := ref.ToFieldElement(m.Mul(m, x).Mul(m, y).Mod(m, Ed25519Field.P))
 
-		return NewEd25519GroupElementCached(x1, y1, Ed25519Field_ONE(), z), nil
+		return NewEd25519GroupElementCached(x1, y1, Ed25519Field_ONE(), t), nil
 	case PRECOMPUTED:
 		m := (&big.Int{}).Add(y, x)
 		x1 := ref.ToFieldElement(m.Mod(m, Ed25519Field.P))
@@ -616,4 +597,23 @@ func (ref *mathUtils) multiplyAndAddModGroupOrder(
 func (ref *mathUtils) toEncodedFieldElement(b *big.Int) (*Ed25519EncodedFieldElement, error) {
 
 	return NewEd25519EncodedFieldElement(ref.ToByteArray(b))
+}
+
+var MathUtils mathUtils
+
+func init() {
+	MathUtils.EXPONENTS = []uint{
+		0,
+		26,
+		26 + 25,
+		2*26 + 25,
+		2*26 + 2*25,
+		3*26 + 2*25,
+		3*26 + 3*25,
+		4*26 + 3*25,
+		4*26 + 4*25,
+		5*26 + 4*25,
+	}
+	x, y := big.NewInt(-121665), big.NewInt(121666)
+	MathUtils.D = x.Mul(x, y.ModInverse(y, Ed25519Field.P))
 }

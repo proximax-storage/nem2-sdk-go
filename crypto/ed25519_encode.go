@@ -65,9 +65,16 @@ func Ed25519Field_TWO() *Ed25519FieldElement {
 	return &Ed25519FieldElement{[]intRaw{2, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 }
 
-var Ed25519Field_P = (&big.Int{}).Sub((&big.Int{}).Lsh(big.NewInt(1), 255), big.NewInt(19))
+// P: 2^255 - 19
+func Ed25519Field_P() *big.Int {
+	const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
+	p := (&big.Int{}).Lsh(big.NewInt(1), 255)
+	//SetBytes(utils.MustHexDecodeString(Ed25519FieldP))
+	return p.Sub(p, big.NewInt(19))
+}
+
 var Ed25519Field = ed25519Field{
-	(&big.Int{}).Sub((&big.Int{}).Lsh(big.NewInt(1), 255), big.NewInt(19)),
+	Ed25519Field_P(),
 	*(Ed25519Field_ZERO()),
 	*(Ed25519Field_ONE()),
 	*(Ed25519Field_TWO()),
@@ -77,14 +84,6 @@ var Ed25519Field = ed25519Field{
 	Ed25519Field_ZERO_LONG(),
 	// I ^ 2 = -1
 	*((&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), utils.MustHexDecodeString(Ed25519FieldI)}).Decode()),
-}
-
-// P: 2^255 - 19
-func getP() *big.Int {
-	const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
-	p := (&big.Int{}).Lsh(big.NewInt(1), 255)
-	//SetBytes(utils.MustHexDecodeString(Ed25519FieldP))
-	return p.Sub(p, big.NewInt(19))
 }
 
 // Ed25519Field
@@ -936,12 +935,7 @@ func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 }
 func (ref *Ed25519FieldElement) Equals(ge *Ed25519FieldElement) bool {
 
-	for i, val := range ref.Raw {
-		if ge.Raw[i] != val {
-			return false
-		}
-	}
-	return true
+	return ref.Encode().Equals(ge.Encode())
 }
 func (ref *Ed25519FieldElement) String() string {
 
@@ -967,6 +961,9 @@ func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, err
 		return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_LONG(), Raw}, nil
 	}
 	return nil, errors.New("Invalid 2^8 bit representation.")
+}
+func (ref *Ed25519EncodedFieldElement) Equals(ge *Ed25519EncodedFieldElement) bool {
+	return isEqualConstantTime(ref.Raw, ge.Raw)
 }
 func (ref *Ed25519EncodedFieldElement) threeBytesToLong(b []byte, offset int) intRaw {
 
@@ -1915,7 +1912,10 @@ func (ref *Ed25519EncodedGroupElement) GetAffineX() (*Ed25519FieldElement, error
 	}
 	return encoded.Decode(), nil
 }
+func (ref *Ed25519EncodedGroupElement) Equals(ge *Ed25519EncodedGroupElement) bool {
 
+	return isEqualConstantTime(ref.Raw, ge.Raw)
+}
 func (ref *Ed25519EncodedGroupElement) String() string {
 
 	x, err := ref.GetAffineX()
@@ -2118,7 +2118,7 @@ func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) (res bool) {
 		defer func() {
 			err := recover()
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("%v, %d, %d", err, ref.coordinateSystem, ge.coordinateSystem)
 				res = false
 			}
 		}()
@@ -2206,7 +2206,7 @@ func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) [
 		el := uint(i >> 3)
 		r[i] = (1 & (a[el] >> uint(i&7)))
 	}
-	//todo: algorimt nust be simple!
+	//todo: algorimt must be simple!
 	// Note: r[i] will always be odd.
 	for i := uint(0); i < 256; i++ {
 		if r[i] != 0 {
@@ -2359,7 +2359,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 		case P2:
 			return NewEd25519GroupElementP2(ref.X, ref.Y, ref.Z)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P2")
 		}
 
 	case P3:
@@ -2374,7 +2374,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 			t := ref.T.multiply(Ed25519Field.D_Times_TWO)
 			return NewEd25519GroupElementCached(&X, &Y, ref.Z, &t)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P3")
 		}
 
 	case P1xP1:
@@ -2393,7 +2393,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 		case P1xP1:
 			return NewEd25519GroupElementP1XP1(ref.X, ref.Y, ref.Z, ref.T)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P1xP1")
 		}
 
 	case PRECOMPUTED:
@@ -2402,7 +2402,7 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 			//noinspection SuspiciousNameCombination
 			return NewEd25519GroupElementPrecomputed(ref.X, ref.Y, ref.Z)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException PRECOMPUTED")
 		}
 
 	case CACHED:
@@ -2410,11 +2410,11 @@ func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem Coordinat
 		case CACHED:
 			return NewEd25519GroupElementCached(ref.X, ref.Y, ref.Z, ref.T)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException CACHED")
 		}
 
 	default:
-		panic("NewIllegalArgumentException()")
+		panic(fmt.Sprintf("NewIllegalArgumentException(%d)", ref.coordinateSystem))
 	}
 	return nil
 }

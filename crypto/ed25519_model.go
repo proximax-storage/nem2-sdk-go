@@ -5,9 +5,7 @@
 package crypto
 
 import (
-	"bytes"
 	"crypto/rand"
-	"crypto/subtle"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/curve25519"
@@ -251,7 +249,7 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 		return false
 	}
 
-	if b := make([]byte, 32); subtle.ConstantTimeCompare(ref.KeyPair.PublicKey(), b) == 1 {
+	if isEqualConstantTime(ref.KeyPair.PublicKey(), make([]byte, 32)) {
 		return false
 	}
 
@@ -292,7 +290,7 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 		return false
 	}
 
-	return bytes.Equal(encodedCalculatedR.Raw, rawEncodedR)
+	return isEqualConstantTime(encodedCalculatedR.Raw, rawEncodedR)
 }
 
 func (ref *Ed25519DsaSigner) IsCanonicalSignature(signature *Signature) bool {
