@@ -5,7 +5,7 @@ nem2-sdk-go is a Golang client library for [Catapult API](http://docs.nem.ninja/
 ## Usage ##
 
 ```go
-import "github.com/proximax/nem2-go-sdk/sdk"
+import "github.com/proximax-storage/nem2-sdk-go/sdk"
 ```
 
 Create a Catapult network configuration 
