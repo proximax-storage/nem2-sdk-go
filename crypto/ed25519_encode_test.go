@@ -150,8 +150,8 @@ func TestMultiplyReturnsCorrectResult(t *testing.T) {
 		b2 := MathUtils.BytesToBigInteger(f2.Encode().Raw)
 
 		f3 := f1.multiply(f2)
-		if assertEquals(t, f3, (&big.Int{}).Mul(b1, b2)) {
-			t.Log(b1, b2, i)
+		if !assertEquals(t, f3, (&big.Int{}).Mul(b1, b2)) {
+			assert.Equal(t, b1, b2, "iter=%d", i)
 		}
 		f4 := f2.multiply(f1)
 		assert.Equal(t, f3, f4)
@@ -214,7 +214,7 @@ func TestDecodePlusEncodeDoesNotAlterTheEncodedFieldElement(t *testing.T) {
 func TestEd25519EncodedFieldElement_ModQReturnsExpectedResult(t *testing.T) {
 
 	for i := 0; i < numIter; i++ {
-		encoded := &Ed25519EncodedFieldElement{Ed25519Field.ZERO_LONG, MathUtils.GetRandomByteArray(64)}
+		encoded := &Ed25519EncodedFieldElement{Ed25519Field_ZERO_LONG(), MathUtils.GetRandomByteArray(64)}
 		reduced1 := encoded.modQ()
 		b1 := MathUtils.BytesToBigInteger(reduced1.Raw)
 
@@ -711,21 +711,20 @@ func TestToCachedReturnsExpectedResultIfGroupElementHasP3Representation(t *testi
 func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 
 	defer testRecover(t)
-	grEl := Ed25519Group.BASE_POINT.copy()
+	grEl := Ed25519Group.BASE_POINT()
 	// Act + Assert:
 	for i := 0; i < 32; i++ {
 		h := grEl.copy()
 		for j := 0; j < 8; j++ {
-			g, err := MathUtils.ToRepresentation(h, PRECOMPUTED)
+			g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
 			assert.Nil(t, err)
-			assert.True(t, g.Equals(Ed25519Group.BASE_POINT.precomputedForSingle[i][j]), "iter = %d, %d", i, j)
+			assert.True(t, g.Equals(Ed25519Group.BASE_POINT().precomputedForSingle[i][j]), "iter = %d, %d", i, j)
 			h = MathUtils.AddGroupElements(h, grEl)
 		}
 
 		for k := 0; k < 8; k++ {
 			grEl = MathUtils.AddGroupElements(grEl, grEl)
 		}
-
 	}
 
 }
@@ -733,13 +732,13 @@ func TestPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 func TestDblPrecomputedTableContainsExpectedGroupElements(t *testing.T) {
 
 	defer testRecover(t)
-	grEl := Ed25519Group.BASE_POINT
+	grEl := Ed25519Group.BASE_POINT()
 	h := MathUtils.AddGroupElements(grEl, grEl)
 	// Act + Assert:
 	for i := 0; i < 8; i++ {
 		g, err := MathUtils.ToRepresentation(grEl, PRECOMPUTED)
 		assert.Nil(t, err)
-		assert.Equal(t, Ed25519Group.BASE_POINT.precomputedForDouble[i], g)
+		assert.True(t, Ed25519Group.BASE_POINT().precomputedForDouble[i].Equals(g), "iter=%d", i)
 		grEl = MathUtils.AddGroupElements(grEl, h)
 	}
 
@@ -839,27 +838,27 @@ func TestEd25519GroupElementP3String_ReturnsCorrectRepresentation(t *testing.T) 
 //
 func TestScalarMultiplyBasePointWithZeroReturnsNeutralElement(t *testing.T) {
 
-	basePoint := Ed25519Group.BASE_POINT.copy()
+	basePoint := Ed25519Group.BASE_POINT()
 	g, err := basePoint.scalarMultiply(Ed25519Field.ZERO.Encode())
 	assert.Nil(t, err)
 
-	assert.True(t, Ed25519Group.ZERO_P3.Equals(g), `Ed25519Group.ZERO_P3 and g must by equal !`)
+	assert.True(t, Ed25519Group.ZERO_P3().Equals(g), `Ed25519Group.ZERO_P3 and g must by equal !`)
 }
 func TestScalarMultiplyBasePointWithOneReturnsBasePoint(t *testing.T) {
 
 	defer testRecover(t)
-	basePoint := Ed25519Group.BASE_POINT.copy()
+	basePoint := Ed25519Group.BASE_POINT()
 	g, err := basePoint.scalarMultiply(Ed25519Field.ONE.Encode())
 	assert.Nil(t, err)
 
-	assert.Equal(t, basePoint.Equals(g), `basePoint and g must by equal !`)
+	assert.True(t, basePoint.Equals(g), `basePoint and g must by equal !`)
 }
 
 func TestScalarMultiplyBasePointReturnsExpectedResult(t *testing.T) {
 
 	defer testRecover(t)
 	for i := 0; i < 100; i++ {
-		basePoint := Ed25519Group.BASE_POINT.copy()
+		basePoint := Ed25519Group.BASE_POINT()
 		f := MathUtils.GetRandomFieldElement()
 		g, err := basePoint.scalarMultiply(f.Encode())
 		assert.Nil(t, err)
@@ -880,12 +879,13 @@ func TestDoubleScalarMultiplyVariableTimeReturnsExpectedResult(t *testing.T) {
 	defer testRecover(t)
 
 	for i := 0; i < 50; i++ {
-		basePoint := Ed25519Group.BASE_POINT
+		basePoint := Ed25519Group.BASE_POINT()
 		g := MathUtils.GetRandomGroupElement()
 		g.PrecomputeForDoubleScalarMultiplication()
 		f1 := MathUtils.GetRandomFieldElement()
 		f2 := MathUtils.GetRandomFieldElement()
-		h1 := basePoint.doubleScalarMultiplyVariableTime(g, f2.Encode(), f1.Encode())
+		h1, err := basePoint.doubleScalarMultiplyVariableTime(g, f2.Encode(), f1.Encode())
+		assert.Nil(t, err)
 		h2 := MathUtils.doubleScalarMultiplyGroupElements(basePoint, f1, g, f2)
 		assert.True(t, h2.Equals(h1), `h1 and h2 must by equal !`)
 	}

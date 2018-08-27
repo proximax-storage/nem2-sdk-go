@@ -116,7 +116,7 @@ func (ref *mathUtils) GetRandomFieldElement() Ed25519FieldElement {
 func (ref *mathUtils) ScalarMultiplyGroupElement(g *Ed25519GroupElement, f Ed25519FieldElement) *Ed25519GroupElement {
 
 	bytes := f.Encode().Raw
-	h := Ed25519Group.ZERO_P3
+	h := Ed25519Group.ZERO_P3()
 	for i := uint(255); i > 0; i-- {
 		h = ref.DoubleGroupElement(h)
 		if utils.GetBitToBool(bytes, i-1) {

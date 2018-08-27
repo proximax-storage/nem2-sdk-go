@@ -204,7 +204,7 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 	// Reduce size of r since we are calculating mod group order anyway
 	rModQ := r.modQ()
 	// R = rModQ * base point.
-	R, err := Ed25519Group.BASE_POINT.scalarMultiply(rModQ)
+	R, err := Ed25519Group.BASE_POINT().scalarMultiply(rModQ)
 	if err != nil {
 		return nil, err
 	}
@@ -279,10 +279,14 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 	}
 	A.PrecomputeForDoubleScalarMultiplication()
 	// R = encodedS * B - H(encodedR, encodedA, data) * A
-	calculatedR := Ed25519Group.BASE_POINT.doubleScalarMultiplyVariableTime(
+	calculatedR, err := Ed25519Group.BASE_POINT().doubleScalarMultiplyVariableTime(
 		A,
 		hModQ,
 		&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), signature.S})
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 	// Compare calculated R to given R.
 	encodedCalculatedR, err := calculatedR.Encode()
 	if err != nil {
