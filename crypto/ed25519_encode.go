@@ -1,7 +1,3 @@
-// Copyright 2017 Author: Ruslan Bikchentaev. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package crypto
 
 import (
@@ -9,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 )
 
@@ -22,7 +19,7 @@ func PrepareForScalarMultiply(key *PrivateKey) *Ed25519EncodedFieldElement {
 	a[31] &= 0x7F
 	a[31] |= 0x40
 	a[0] &= 0xF8
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, a}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), a}
 }
 
 type Ed25519KeyAnalyzer struct {
@@ -39,117 +36,110 @@ func (ref *Ed25519KeyAnalyzer) IsKeyCompressed(publicKey *PublicKey) bool {
 	return COMPRESSED_KEY_SIZE == len(publicKey.Raw)
 }
 
-/**
- * Represents the underlying finite field for Ed25519.
- * The field has p = 2^255 - 19 elements.
- */type ed25519Field struct {
+// Represents the underlying finite field for Ed25519.
+//  The field has p = 2^255 - 19 elements.
+type ed25519Field struct {
 	P                              *big.Int
-	ZERO, ONE, TWO, D, D_Times_TWO *Ed25519FieldElement
-	ZERO_SHORT                     []byte
-	ZERO_LONG                      []byte
-	I                              *Ed25519FieldElement
+	ZERO, ONE, TWO, D, D_Times_TWO Ed25519FieldElement
+	I                              Ed25519FieldElement
 }
 
-var Ed25519Field = &ed25519Field{}
-
-const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
 const Ed25519FieldI = "b0a00e4a271beec478e42fad0618432fa7d7fb3d99004d2b0bdfc14f8024832b"
 
-func init() {
+func Ed25519Field_D() *Ed25519FieldElement {
 
-	/**
-	 * P: 2^255 - 19
-	 */
-	dst, err := hexDecode([]byte(Ed25519FieldP))
-	if err != nil {
-		fmt.Print(err)
-	} else {
-		Ed25519Field.P = (&big.Int{}).SetBytes(dst)
-	}
-	Ed25519Field.ZERO = getFieldElement(0)
-	Ed25519Field.ONE = getFieldElement(1)
-	Ed25519Field.TWO = getFieldElement(2)
-	Ed25519Field.D = getD()
-	Ed25519Field.D_Times_TWO = Ed25519Field.D.multiply(Ed25519Field.TWO)
-	Ed25519Field.ZERO_SHORT = make([]byte, 32)
-	Ed25519Field.ZERO_LONG = make([]byte, 64)
-	/**
-	 * I ^ 2 = -1
-	 */
-	dst, err = hexDecode([]byte(Ed25519FieldI))
-	if err != nil {
-		fmt.Print(err)
-	} else {
-		efElem, err := NewEd25519EncodedFieldElement(dst)
-		if err != nil {
-			fmt.Print(err)
-		} else {
-			Ed25519Field.I = efElem.Decode()
-		}
-	}
+	return &Ed25519FieldElement{[]intRaw{
+		-10913610, 13857413, -15372611, 6949391, 114729, -8787816, -6275908, -3247719, -18696448, -12055116,
+	}}
+	// this calculatios return result as code before
+	//s := big.NewInt(-121665)
+	//d := utils.BigIntToByteArray(
+	//	s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field_P)).Mod(s, Ed25519Field_P),
+	//	32)
+	//el := *(&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), d}).Decode()
+	//fmt.Printf("%+v", el.Raw)
+	//
+	//return el
 }
 
-// Ed25519Field
-func getFieldElement(value int) *Ed25519FieldElement {
-
-	f := make([]int, 10)
-	f[0] = value
-	return &Ed25519FieldElement{f}
-}
-func getD() *Ed25519FieldElement {
-
-	s := big.NewInt(-121665)
-	d := s.Mod(s.Mul(s, (&big.Int{}).ModInverse(big.NewInt(121666), Ed25519Field.P)), Ed25519Field.P).Bytes()
-
-	efElem, err := NewEd25519EncodedFieldElement(d)
-
-	if err != nil {
-		fmt.Print(err)
-	} else {
-		return efElem.Decode()
-	}
-
-	return nil
+func Ed25519Field_D_Times_TWO() *Ed25519FieldElement {
+	// return getD().multiply(*(Ed25519Field_TWO())),
+	return &Ed25519FieldElement{[]intRaw{-21827239, -5839606, -30745221, 13898782, 229458, 15978800, -12551817, -6495438, 29715968, 9444199}}
 }
 
-/**
- * Represents a element of the finite field with p=2^255-19 elements.
- * <p>
- * Raw[0] ... Raw[9], represent the integer <br>
- * Raw[0] + 2^26 * Raw[1] + 2^51 * Raw[2] + 2^77 * Raw[3] + 2^102 * Raw[4] + ... + 2^230 * Raw[9]. <br>
- * Bounds on each Raw[i] vary depending on context.
- * </p>
- * This implementation is based on the ref10 implementation of SUPERCOP.
- */
-// Ed25519FieldElement
+// this method replace on three methods for one base constant
+//func getFieldElement(value intRaw) Ed25519FieldElement {
+//
+//	f := make([]intRaw, 10)
+//	f[0] = value
+//	return Ed25519FieldElement{f}
+//}
+
+func Ed25519Field_ZERO() *Ed25519FieldElement {
+	return &Ed25519FieldElement{[]intRaw{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+}
+func Ed25519Field_ONE() *Ed25519FieldElement {
+	return &Ed25519FieldElement{[]intRaw{1, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+}
+func Ed25519Field_ZERO_SHORT() []byte {
+	return make([]byte, 32)
+}
+func Ed25519Field_ZERO_LONG() []byte {
+	return make([]byte, 64)
+}
+func Ed25519Field_TWO() *Ed25519FieldElement {
+	return &Ed25519FieldElement{[]intRaw{2, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+}
+
+// P: 2^255 - 19
+func Ed25519Field_P() *big.Int {
+	const Ed25519FieldP = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
+	p := (&big.Int{}).Lsh(big.NewInt(1), 255)
+	//SetBytes(utils.MustHexDecodeString(Ed25519FieldP))
+	return p.Sub(p, big.NewInt(19))
+}
+
+var Ed25519Field = ed25519Field{
+	Ed25519Field_P(),
+	*(Ed25519Field_ZERO()),
+	*(Ed25519Field_ONE()),
+	*(Ed25519Field_TWO()),
+	*(Ed25519Field_D()),
+	*(Ed25519Field_D_Times_TWO()),
+	// I ^ 2 = -1
+	*((&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), utils.MustHexDecodeString(Ed25519FieldI)}).Decode()),
+}
+
+type intRaw = int64
+
+const lenEd25519FieldElementRaw = 10
+
+// Ed25519FieldElement Represents a element of the finite field with p=2^255-19 elements.
+// Raw[0] ... Raw[9], represent the integer
+// Raw[0] + 2^26 * Raw[1] + 2^51 * Raw[2] + 2^77 * Raw[3] + 2^102 * Raw[4] + ... + 2^230 * Raw[9].
+// Bounds on each Raw[i] vary depending on context.
+// This implementation is based on the ref10 implementation of SUPERCOP.
 type Ed25519FieldElement struct {
-	Raw []int
-	/**
-	 * Creates a field element.
-	 *
-	 * @param Raw The 2^25.5 bit representation of the field element.
-	 */
+	Raw []intRaw
 }
 
-func NewEd25519FieldElement(Raw []int) (*Ed25519FieldElement, error) {
-	if len(Raw) != 10 {
+// NewEd25519FieldElement Creates a field element.
+// Raw The 2^25.5 bit representation of the field element.
+func NewEd25519FieldElement(Raw []intRaw) (*Ed25519FieldElement, error) {
+	if len(Raw) != lenEd25519FieldElementRaw {
 		return nil, errors.New("Invalid 2^25.5 bit representation.")
 	}
 	return &Ed25519FieldElement{Raw}, nil
 }
 
-/**
- * Calculates and returns one of the square roots of u / v.
- * <pre>{@code
- * x = (u * v^3) * (u * v^7)^((p - 5) / 8) ==> x^2 = +-(u / v).
- * }</pre>
- * Note that ref means x can be sqrt(u / v), -sqrt(u / v), +i * sqrt(u / v), -i * sqrt(u / v).
- *
- * @param u The nominator of the fraction.
- * @param v The denominator of the fraction.
- * @return The square root of u / v.
- */
-func Ed25519FieldElementSqrt(u *Ed25519FieldElement, v *Ed25519FieldElement) *Ed25519FieldElement {
+// Ed25519FieldElementSqrt Calculates and returns one of the square roots of u / v.
+// * x = (u * v^3) * (u * v^7)^((p - 5) / 8) ==> x^2 = +-(u / v).
+// * Note that ref means x can be sqrt(u / v), -sqrt(u / v), +i * sqrt(u / v), -i * sqrt(u / v).
+// *
+// * @param u The nominator of the fraction.
+// * @param v The denominator of the fraction.
+// * @return The square root of u / v.
+func Ed25519FieldElementSqrt(u Ed25519FieldElement, v Ed25519FieldElement) Ed25519FieldElement {
 
 	// v3 = v^3
 	v3 := v.square().multiply(v)
@@ -162,11 +152,8 @@ func Ed25519FieldElementSqrt(u *Ed25519FieldElement, v *Ed25519FieldElement) *Ed
 	return x
 }
 
-/**
- * Gets a value indicating whether or not the field element is non-zero.
- *
- * @return 1 if it is non-zero, 0 otherwise.
- */func (ref *Ed25519FieldElement) IsNonZero() bool {
+//IsNonZero gets a value indicating whether or not the field element is non-zero.
+func (ref Ed25519FieldElement) IsNonZero() bool {
 
 	return ref.Encode().IsNonZero()
 }
@@ -185,13 +172,12 @@ func Ed25519FieldElementSqrt(u *Ed25519FieldElement, v *Ed25519FieldElement) *Ed
  * @param g The field element to add.
  * @return The field element ref + val.
  */
-func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement {
-	gRaw := g.Raw
-	h := make([]int, 10)
+func (ref Ed25519FieldElement) add(g Ed25519FieldElement) Ed25519FieldElement {
+	h := make([]intRaw, 10)
 	for i := range h {
-		h[i] = ref.Raw[i] + gRaw[i]
+		h[i] = ref.Raw[i] + g.Raw[i]
 	}
-	return &Ed25519FieldElement{h}
+	return Ed25519FieldElement{h}
 }
 
 /**
@@ -207,14 +193,13 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  *
  * @param g The field element to subtract.
  * @return The field element ref - val.
- */func (ref *Ed25519FieldElement) subtract(g *Ed25519FieldElement) *Ed25519FieldElement {
-	gRaw := g.Raw
-	h := make([]int, 10)
+ */func (ref Ed25519FieldElement) subtract(g Ed25519FieldElement) Ed25519FieldElement {
+	h := make([]intRaw, 10)
 	for i := range h {
-		h[i] = ref.Raw[i] - gRaw[i]
+		h[i] = ref.Raw[i] - g.Raw[i]
 	}
 
-	return &Ed25519FieldElement{h}
+	return Ed25519FieldElement{h}
 }
 
 /**
@@ -228,14 +213,14 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * </pre>
  *
  * @return The field element (-1) * ref.
- */func (ref *Ed25519FieldElement) negate() *Ed25519FieldElement {
+ */func (ref Ed25519FieldElement) negate() Ed25519FieldElement {
 
-	h := make([]int, 10)
+	h := make([]intRaw, 10)
 	for i := range h {
 		h[i] = -ref.Raw[i]
 	}
 
-	return &Ed25519FieldElement{h}
+	return Ed25519FieldElement{h}
 }
 
 /**
@@ -268,7 +253,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  *
  * @param g The field element to multiply.
  * @return The (reasonably reduced) field element ref * val.
- */func (ref *Ed25519FieldElement) multiply(g *Ed25519FieldElement) *Ed25519FieldElement {
+ */func (ref Ed25519FieldElement) multiply(g Ed25519FieldElement) Ed25519FieldElement {
 	g1_19 := 19 * g.Raw[1] /* 1.959375*2^29 */
 	g2_19 := 19 * g.Raw[2] /* 1.959375*2^30; still ok */
 	g3_19 := 19 * g.Raw[3]
@@ -385,104 +370,95 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f9g9_38 := f9_2 * g9_19
 	/**
 	 * Remember: 2^255 congruent 19 modulo p.
-	 * h = h0 * 2^0 + h1 * 2^26 + h2 * 2^(26+25) + h3 * 2^(26+25+26) + ... + h9 * 2^(5*26+5*25).
+	 * h = h[0] * 2^0 + h[1] * 2^26 + h[2] * 2^(26+25) + h[3] * 2^(26+25+26) + ... + h[9] * 2^(5*26+5*25).
 	 * So to get the real number we would have to multiply the coefficients with the corresponding powers of 2.
-	 * To get an idea what is going on below, look at the calculation of h0:
-	 * h0 is the coefficient to the power 2^0 so it collects (sums) all products that have the power 2^0.
+	 * To get an idea what is going on below, look at the calculation of h[0]:
+	 * h[0] is the coefficient to the power 2^0 so it collects (sums) all products that have the power 2^0.
 	 * f0 * g0 really is f0 * 2^0 * g0 * 2^0 = (f0 * g0) * 2^0.
 	 * f1 * g9 really is f1 * 2^26 * g9 * 2^230 = f1 * g9 * 2^256 = 2 * f1 * g9 * 2^255 congruent 2 * 19 * f1 * g9 * 2^0 modulo p.
 	 * f2 * g8 really is f2 * 2^51 * g8 * 2^204 = f2 * g8 * 2^255 congruent 19 * f2 * g8 * 2^0 modulo p.
 	 * and so on...
 	 */
-	h0 := f0g0 + f1g9_38 + f2g8_19 + f3g7_38 + f4g6_19 + f5g5_38 + f6g4_19 + f7g3_38 + f8g2_19 + f9g1_38
-	h1 := f0g1 + f1g0 + f2g9_19 + f3g8_19 + f4g7_19 + f5g6_19 + f6g5_19 + f7g4_19 + f8g3_19 + f9g2_19
-	h2 := f0g2 + f1g1_2 + f2g0 + f3g9_38 + f4g8_19 + f5g7_38 + f6g6_19 + f7g5_38 + f8g4_19 + f9g3_38
-	h3 := f0g3 + f1g2 + f2g1 + f3g0 + f4g9_19 + f5g8_19 + f6g7_19 + f7g6_19 + f8g5_19 + f9g4_19
-	h4 := f0g4 + f1g3_2 + f2g2 + f3g1_2 + f4g0 + f5g9_38 + f6g8_19 + f7g7_38 + f8g6_19 + f9g5_38
-	h5 := f0g5 + f1g4 + f2g3 + f3g2 + f4g1 + f5g0 + f6g9_19 + f7g8_19 + f8g7_19 + f9g6_19
-	h6 := f0g6 + f1g5_2 + f2g4 + f3g3_2 + f4g2 + f5g1_2 + f6g0 + f7g9_38 + f8g8_19 + f9g7_38
-	h7 := f0g7 + f1g6 + f2g5 + f3g4 + f4g3 + f5g2 + f6g1 + f7g0 + f8g9_19 + f9g8_19
-	h8 := f0g8 + f1g7_2 + f2g6 + f3g5_2 + f4g4 + f5g3_2 + f6g2 + f7g1_2 + f8g0 + f9g9_38
-	h9 := f0g9 + f1g8 + f2g7 + f3g6 + f4g5 + f5g4 + f6g3 + f7g2 + f8g1 + f9g0
-	/**
-	 * |h0| <= (1.65*1.65*2^52*(1+19+19+19+19)+1.65*1.65*2^50*(38+38+38+38+38))
-	 * i.e. |h0| <= 1.4*2^60; narrower ranges for h2, h4, h6, h8
-	 * |h1| <= (1.65*1.65*2^51*(1+1+19+19+19+19+19+19+19+19))
-	 * i.e. |h1| <= 1.7*2^59; narrower ranges for h3, h5, h7, h9
-	 */
-	carry0 := (h0 + (1 << 25)) >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	carry4 := (h4 + (1 << 25)) >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	/* |h0| <= 2^25 */
-	/* |h4| <= 2^25 */
-	/* |h1| <= 1.71*2^59 */
-	/* |h5| <= 1.71*2^59 */
-	carry1 := (h1 + (1 << 24)) >> 25
-	h2 += carry1
-	h1 -= carry1 << 25
-	carry5 := (h5 + (1 << 24)) >> 25
-	h6 += carry5
-	h5 -= carry5 << 25
-	/* |h1| <= 2^24; from now on fits into int32 */
-	/* |h5| <= 2^24; from now on fits into int32 */
-	/* |h2| <= 1.41*2^60 */
-	/* |h6| <= 1.41*2^60 */
-	carry2 := (h2 + (1 << 25)) >> 26
-	h3 += carry2
-	h2 -= carry2 << 26
-	carry6 := (h6 + (1 << 25)) >> 26
-	h7 += carry6
-	h6 -= carry6 << 26
-	/* |h2| <= 2^25; from now on fits into int32 unchanged */
-	/* |h6| <= 2^25; from now on fits into int32 unchanged */
-	/* |h3| <= 1.71*2^59 */
-	/* |h7| <= 1.71*2^59 */
-	carry3 := (h3 + (1 << 24)) >> 25
-	h4 += carry3
-	h3 -= carry3 << 25
-	carry7 := (h7 + (1 << 24)) >> 25
-	h8 += carry7
-	h7 -= carry7 << 25
-	/* |h3| <= 2^24; from now on fits into int32 unchanged */
-	/* |h7| <= 2^24; from now on fits into int32 unchanged */
-	/* |h4| <= 1.72*2^34 */
-	/* |h8| <= 1.41*2^60 */
-	carry4 = (h4 + (1 << 25)) >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	carry8 := (h8 + (1 << 25)) >> 26
-	h9 += carry8
-	h8 -= carry8 << 26
-	/* |h4| <= 2^25; from now on fits into int32 unchanged */
-	/* |h8| <= 2^25; from now on fits into int32 unchanged */
-	/* |h5| <= 1.01*2^24 */
-	/* |h9| <= 1.71*2^59 */
-	carry9 := (h9 + (1 << 24)) >> 25
-	h0 += carry9 * 19
-	h9 -= carry9 << 25
-	/* |h9| <= 2^24; from now on fits into int32 unchanged */
-	/* |h0| <= 1.1*2^39 */
-	carry0 = (h0 + (1 << 25)) >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	/* |h0| <= 2^25; from now on fits into int32 unchanged */
-	/* |h1| <= 1.01*2^24 */
-	h := []int{
-		h0,
-		h1,
-		h2,
-		h3,
-		h4,
-		h5,
-		h6,
-		h7,
-		h8,
-		h9,
+	h := []intRaw{
+		f0g0 + f1g9_38 + f2g8_19 + f3g7_38 + f4g6_19 + f5g5_38 + f6g4_19 + f7g3_38 + f8g2_19 + f9g1_38,
+		f0g1 + f1g0 + f2g9_19 + f3g8_19 + f4g7_19 + f5g6_19 + f6g5_19 + f7g4_19 + f8g3_19 + f9g2_19,
+		f0g2 + f1g1_2 + f2g0 + f3g9_38 + f4g8_19 + f5g7_38 + f6g6_19 + f7g5_38 + f8g4_19 + f9g3_38,
+		f0g3 + f1g2 + f2g1 + f3g0 + f4g9_19 + f5g8_19 + f6g7_19 + f7g6_19 + f8g5_19 + f9g4_19,
+		f0g4 + f1g3_2 + f2g2 + f3g1_2 + f4g0 + f5g9_38 + f6g8_19 + f7g7_38 + f8g6_19 + f9g5_38,
+		f0g5 + f1g4 + f2g3 + f3g2 + f4g1 + f5g0 + f6g9_19 + f7g8_19 + f8g7_19 + f9g6_19,
+		f0g6 + f1g5_2 + f2g4 + f3g3_2 + f4g2 + f5g1_2 + f6g0 + f7g9_38 + f8g8_19 + f9g7_38,
+		f0g7 + f1g6 + f2g5 + f3g4 + f4g3 + f5g2 + f6g1 + f7g0 + f8g9_19 + f9g8_19,
+		f0g8 + f1g7_2 + f2g6 + f3g5_2 + f4g4 + f5g3_2 + f6g2 + f7g1_2 + f8g0 + f9g9_38,
+		f0g9 + f1g8 + f2g7 + f3g6 + f4g5 + f5g4 + f6g3 + f7g2 + f8g1 + f9g0,
 	}
-	return &Ed25519FieldElement{h}
+	/**
+	 * |h[0]| <= (1.65*1.65*2^52*(1+19+19+19+19)+1.65*1.65*2^50*(38+38+38+38+38))
+	 * i.e. |h[0]| <= 1.4*2^60; narrower ranges for h[2], h[4], h[6], h[8]
+	 * |h[1]| <= (1.65*1.65*2^51*(1+1+19+19+19+19+19+19+19+19))
+	 * i.e. |h[1]| <= 1.7*2^59; narrower ranges for h[3], h[5], h[7], h[9]
+	 */
+	carry0 := (h[0] + (1 << 25)) >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	carry4 := (h[4] + (1 << 25)) >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	/* |h[0]| <= 2^25 */
+	/* |h[4]| <= 2^25 */
+	/* |h[1]| <= 1.71*2^59 */
+	/* |h[5]| <= 1.71*2^59 */
+	carry1 := (h[1] + (1 << 24)) >> 25
+	h[2] += carry1
+	h[1] -= carry1 << 25
+	carry5 := (h[5] + (1 << 24)) >> 25
+	h[6] += carry5
+	h[5] -= carry5 << 25
+	/* |h[1]| <= 2^24; from now on fits into int32 */
+	/* |h[5]| <= 2^24; from now on fits into int32 */
+	/* |h[2]| <= 1.41*2^60 */
+	/* |h[6]| <= 1.41*2^60 */
+	carry2 := (h[2] + (1 << 25)) >> 26
+	h[3] += carry2
+	h[2] -= carry2 << 26
+	carry6 := (h[6] + (1 << 25)) >> 26
+	h[7] += carry6
+	h[6] -= carry6 << 26
+	/* |h[2]| <= 2^25; from now on fits into int32 unchanged */
+	/* |h[6]| <= 2^25; from now on fits into int32 unchanged */
+	/* |h[3]| <= 1.71*2^59 */
+	/* |h[7]| <= 1.71*2^59 */
+	carry3 := (h[3] + (1 << 24)) >> 25
+	h[4] += carry3
+	h[3] -= carry3 << 25
+	carry7 := (h[7] + (1 << 24)) >> 25
+	h[8] += carry7
+	h[7] -= carry7 << 25
+	/* |h[3]| <= 2^24; from now on fits into int32 unchanged */
+	/* |h[7]| <= 2^24; from now on fits into int32 unchanged */
+	/* |h[4]| <= 1.72*2^34 */
+	/* |h[8]| <= 1.41*2^60 */
+	carry4 = (h[4] + (1 << 25)) >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	carry8 := (h[8] + (1 << 25)) >> 26
+	h[9] += carry8
+	h[8] -= carry8 << 26
+	/* |h[4]| <= 2^25; from now on fits into int32 unchanged */
+	/* |h[8]| <= 2^25; from now on fits into int32 unchanged */
+	/* |h[5]| <= 1.01*2^24 */
+	/* |h[9]| <= 1.71*2^59 */
+	carry9 := (h[9] + (1 << 24)) >> 25
+	h[0] += carry9 * 19
+	h[9] -= carry9 << 25
+	/* |h[9]| <= 2^24; from now on fits into int32 unchanged */
+	/* |h[0]| <= 1.1*2^39 */
+	carry0 = (h[0] + (1 << 25)) >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	/* |h[0]| <= 2^25; from now on fits into int32 unchanged */
+	/* |h[1]| <= 1.01*2^24 */
+
+	return Ed25519FieldElement{h}
 }
 
 /**
@@ -497,7 +473,8 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * See multiply for discussion of implementation strategy.
  *
  * @return The square of ref field element.
- */func (ref *Ed25519FieldElement) square() *Ed25519FieldElement {
+ */
+func (ref Ed25519FieldElement) square() Ed25519FieldElement {
 
 	return ref.squareAndOptionalDouble(false)
 }
@@ -514,7 +491,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * See multiply for discussion of implementation strategy.
  *
  * @return The square of ref field element times 2.
- */func (ref *Ed25519FieldElement) squareAndDouble() *Ed25519FieldElement {
+ */func (ref Ed25519FieldElement) squareAndDouble() Ed25519FieldElement {
 
 	return ref.squareAndOptionalDouble(true)
 }
@@ -532,7 +509,8 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * See multiply for discussion of implementation strategy.
  *
  * @return The square of ref field element times 2.
- */func (ref *Ed25519FieldElement) squareAndOptionalDouble(dbl bool) *Ed25519FieldElement { /* private   */
+ */func (ref Ed25519FieldElement) squareAndOptionalDouble(dbl bool) Ed25519FieldElement {
+
 	f0_2 := 2 * ref.Raw[0]
 	f1_2 := 2 * ref.Raw[1]
 	f2_2 := 2 * ref.Raw[2]
@@ -546,6 +524,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f7_38 := 38 * ref.Raw[7] /* 1.959375*2^30 */
 	f8_19 := 19 * ref.Raw[8] /* 1.959375*2^30 */
 	f9_38 := 38 * ref.Raw[9] /* 1.959375*2^30 */
+
 	f0f0 := ref.Raw[0] * ref.Raw[0]
 	f0f1_2 := f0_2 * ref.Raw[1]
 	f0f2_2 := f0_2 * ref.Raw[2]
@@ -556,6 +535,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f0f7_2 := f0_2 * ref.Raw[7]
 	f0f8_2 := f0_2 * ref.Raw[8]
 	f0f9_2 := f0_2 * ref.Raw[9]
+
 	f1f1_2 := f1_2 * ref.Raw[1]
 	f1f2_2 := f1_2 * ref.Raw[2]
 	f1f3_4 := f1_2 * f3_2
@@ -565,6 +545,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f1f7_4 := f1_2 * f7_2
 	f1f8_2 := f1_2 * ref.Raw[8]
 	f1f9_76 := f1_2 * f9_38
+
 	f2f2 := ref.Raw[2] * ref.Raw[2]
 	f2f3_2 := f2_2 * ref.Raw[3]
 	f2f4_2 := f2_2 * ref.Raw[4]
@@ -573,6 +554,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f2f7_2 := f2_2 * ref.Raw[7]
 	f2f8_38 := f2_2 * f8_19
 	f2f9_38 := ref.Raw[2] * f9_38
+
 	f3f3_2 := f3_2 * ref.Raw[3]
 	f3f4_2 := f3_2 * ref.Raw[4]
 	f3f5_4 := f3_2 * f5_2
@@ -580,99 +562,86 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	f3f7_76 := f3_2 * f7_38
 	f3f8_38 := f3_2 * f8_19
 	f3f9_76 := f3_2 * f9_38
+
 	f4f4 := ref.Raw[4] * ref.Raw[4]
 	f4f5_2 := f4_2 * ref.Raw[5]
 	f4f6_38 := f4_2 * f6_19
 	f4f7_38 := ref.Raw[4] * f7_38
 	f4f8_38 := f4_2 * f8_19
 	f4f9_38 := ref.Raw[4] * f9_38
+
 	f5f5_38 := ref.Raw[5] * f5_38
 	f5f6_38 := f5_2 * f6_19
 	f5f7_76 := f5_2 * f7_38
 	f5f8_38 := f5_2 * f8_19
 	f5f9_76 := f5_2 * f9_38
+
 	f6f6_19 := ref.Raw[6] * f6_19
 	f6f7_38 := ref.Raw[6] * f7_38
 	f6f8_38 := f6_2 * f8_19
 	f6f9_38 := ref.Raw[6] * f9_38
+
 	f7f7_38 := ref.Raw[7] * f7_38
 	f7f8_38 := f7_2 * f8_19
 	f7f9_76 := f7_2 * f9_38
 	f8f8_19 := ref.Raw[8] * f8_19
 	f8f9_38 := ref.Raw[8] * f9_38
 	f9f9_38 := ref.Raw[9] * f9_38
-	h0 := f0f0 + f1f9_76 + f2f8_38 + f3f7_76 + f4f6_38 + f5f5_38
-	h1 := f0f1_2 + f2f9_38 + f3f8_38 + f4f7_38 + f5f6_38
-	h2 := f0f2_2 + f1f1_2 + f3f9_76 + f4f8_38 + f5f7_76 + f6f6_19
-	h3 := f0f3_2 + f1f2_2 + f4f9_38 + f5f8_38 + f6f7_38
-	h4 := f0f4_2 + f1f3_4 + f2f2 + f5f9_76 + f6f8_38 + f7f7_38
-	h5 := f0f5_2 + f1f4_2 + f2f3_2 + f6f9_38 + f7f8_38
-	h6 := f0f6_2 + f1f5_4 + f2f4_2 + f3f3_2 + f7f9_76 + f8f8_19
-	h7 := f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38
-	h8 := f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38
-	h9 := f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2
+
+	var h [10]intRaw
+	h[0] = f0f0 + f1f9_76 + f2f8_38 + f3f7_76 + f4f6_38 + f5f5_38
+	h[1] = f0f1_2 + f2f9_38 + f3f8_38 + f4f7_38 + f5f6_38
+	h[2] = f0f2_2 + f1f1_2 + f3f9_76 + f4f8_38 + f5f7_76 + f6f6_19
+	h[3] = f0f3_2 + f1f2_2 + f4f9_38 + f5f8_38 + f6f7_38
+	h[4] = f0f4_2 + f1f3_4 + f2f2 + f5f9_76 + f6f8_38 + f7f7_38
+	h[5] = f0f5_2 + f1f4_2 + f2f3_2 + f6f9_38 + f7f8_38
+	h[6] = f0f6_2 + f1f5_4 + f2f4_2 + f3f3_2 + f7f9_76 + f8f8_19
+	h[7] = f0f7_2 + f1f6_2 + f2f5_2 + f3f4_2 + f8f9_38
+	h[8] = f0f8_2 + f1f7_4 + f2f6_2 + f3f5_4 + f4f4 + f9f9_38
+	h[9] = f0f9_2 + f1f8_2 + f2f7_2 + f3f6_2 + f4f5_2
 	if dbl {
-		h0 += h0
-		h1 += h1
-		h2 += h2
-		h3 += h3
-		h4 += h4
-		h5 += h5
-		h6 += h6
-		h7 += h7
-		h8 += h8
-		h9 += h9
+		for i, val := range h {
+			h[i] += val
+		}
 	}
 
-	carry0 := (h0 + (1 << 25)) >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	carry4 := (h4 + (1 << 25)) >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	carry1 := (h1 + (1 << 24)) >> 25
-	h2 += carry1
-	h1 -= carry1 << 25
-	carry5 := (h5 + (1 << 24)) >> 25
-	h6 += carry5
-	h5 -= carry5 << 25
-	carry2 := (h2 + (1 << 25)) >> 26
-	h3 += carry2
-	h2 -= carry2 << 26
-	carry6 := (h6 + (1 << 25)) >> 26
-	h7 += carry6
-	h6 -= carry6 << 26
-	carry3 := (h3 + (1 << 24)) >> 25
-	h4 += carry3
-	h3 -= carry3 << 25
-	carry7 := (h7 + (1 << 24)) >> 25
-	h8 += carry7
-	h7 -= carry7 << 25
-	carry4 = (h4 + (1 << 25)) >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	carry8 := (h8 + (1 << 25)) >> 26
-	h9 += carry8
-	h8 -= carry8 << 26
-	carry9 := (h9 + (1 << 24)) >> 25
-	h0 += carry9 * 19
-	h9 -= carry9 << 25
-	carry0 = (h0 + (1 << 25)) >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	h := []int{
-		h0,
-		h1,
-		h2,
-		h3,
-		h4,
-		h5,
-		h6,
-		h7,
-		h8,
-		h9,
-	}
-	return &Ed25519FieldElement{h}
+	carry0 := (h[0] + (1 << 25)) >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	carry4 := (h[4] + (1 << 25)) >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	carry1 := (h[1] + (1 << 24)) >> 25
+	h[2] += carry1
+	h[1] -= carry1 << 25
+	carry5 := (h[5] + (1 << 24)) >> 25
+	h[6] += carry5
+	h[5] -= carry5 << 25
+	carry2 := (h[2] + (1 << 25)) >> 26
+	h[3] += carry2
+	h[2] -= carry2 << 26
+	carry6 := (h[6] + (1 << 25)) >> 26
+	h[7] += carry6
+	h[6] -= carry6 << 26
+	carry3 := (h[3] + (1 << 24)) >> 25
+	h[4] += carry3
+	h[3] -= carry3 << 25
+	carry7 := (h[7] + (1 << 24)) >> 25
+	h[8] += carry7
+	h[7] -= carry7 << 25
+	carry4 = (h[4] + (1 << 25)) >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	carry8 := (h[8] + (1 << 25)) >> 26
+	h[9] += carry8
+	h[8] -= carry8 << 26
+	carry9 := (h[9] + (1 << 24)) >> 25
+	h[0] += carry9 * 19
+	h[9] -= carry9 << 25
+	carry0 = (h[0] + (1 << 25)) >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	return Ed25519FieldElement{h[:]}
 }
 
 /**
@@ -681,7 +650,7 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * a^p congruent a mod p and therefore a^(p-2) congruent a^-1 mod p
  *
  * @return The inverse of ref field element.
- */func (ref *Ed25519FieldElement) invert() *Ed25519FieldElement {
+ */func (ref Ed25519FieldElement) invert() Ed25519FieldElement {
 
 	// comments describe how exponent is created
 	// 2 == 2 * 1
@@ -701,11 +670,8 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	return f1.multiply(f0)
 }
 
-/**
- * Computes ref field element to the power of (2^9) and returns the result.
- *
- * @return This field element to the power of (2^9).
- */func (ref *Ed25519FieldElement) pow2to9() *Ed25519FieldElement { /* private  */
+//pow2to9 Ccmputes ref field element to the power of (2^9) and returns the result.
+func (ref Ed25519FieldElement) pow2to9() Ed25519FieldElement {
 
 	// 2 == 2 * 1
 	f := ref.square()
@@ -717,12 +683,8 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
 	return ref.multiply(f)
 }
 
-/**
- * Computes ref field element to the power of (2^252 - 4) and returns the result.
- * This is a helper function for calculating the square root.
- *
- * @return This field element to the power of (2^252 - 4).
- */func (ref *Ed25519FieldElement) pow2to252sub4() *Ed25519FieldElement { /* private  */
+//pow2to252sub4 computes ref field element to the power of (2^252 - 4) and returns the result.
+func (ref Ed25519FieldElement) pow2to252sub4() Ed25519FieldElement {
 
 	// 2 == 2 * 1
 	f0 := ref.square()
@@ -810,99 +772,90 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * {@code
  * Assumption:
  * p = 2^255 - 19
- * h = h0 + 2^25 * h1 + 2^(26+25) * h2 + ... + 2^230 * h9 where 0 <= |hi| < 2^27 for all i=0,...,9.
+ * h = h[0] + 2^25 * h[1] + 2^(26+25) * h[2] + ... + 2^230 * h[9] where 0 <= |hi| < 2^27 for all i=0,...,9.
  * h congruent r modulo p, i.e. h = r + q * p for some suitable 0 <= r < p and an integer q.
  * <br>
- * Then q = [2^-255 * (h + 19 * 2^-25 * h9 + 1/2)] where [x] = floor(x).
+ * Then q = [2^-255 * (h + 19 * 2^-25 * h[9] + 1/2)] where [x] = floor(x).
  * <br>
  * Proof:
  * We begin with some very raw estimation for the bounds of some expressions:
  *     |h| < 2^230 * 2^30 = 2^260 ==> |r + q * p| < 2^260 ==> |q| < 2^10.
  *         ==> -1/4 <= a := 19^2 * 2^-255 * q < 1/4.
- *     |h - 2^230 * h9| = |h0 + ... + 2^204 * h8| < 2^204 * 2^30 = 2^234.
- *         ==> -1/4 <= b := 19 * 2^-255 * (h - 2^230 * h9) < 1/4
+ *     |h - 2^230 * h[9]| = |h[0] + ... + 2^204 * h[8]| < 2^204 * 2^30 = 2^234.
+ *         ==> -1/4 <= b := 19 * 2^-255 * (h - 2^230 * h[9]) < 1/4
  * Therefore 0 < 1/2 - a - b < 1.
  * Set x := r + 19 * 2^-255 * r + 1/2 - a - b then
  *     0 <= x < 255 - 20 + 19 + 1 = 2^255 ==> 0 <= 2^-255 * x < 1. Since q is an integer we have
  *     [q + 2^-255 * x] = q        (1)
  * Have a closer look at x:
- *     x = h - q * (2^255 - 19) + 19 * 2^-255 * (h - q * (2^255 - 19)) + 1/2 - 19^2 * 2^-255 * q - 19 * 2^-255 * (h - 2^230 * h9)
- *       = h - q * 2^255 + 19 * q + 19 * 2^-255 * h - 19 * q + 19^2 * 2^-255 * q + 1/2 - 19^2 * 2^-255 * q - 19 * 2^-255 * h + 19 * 2^-25 * h9
- *       = h + 19 * 2^-25 * h9 + 1/2 - q^255.
+ *     x = h - q * (2^255 - 19) + 19 * 2^-255 * (h - q * (2^255 - 19)) + 1/2 - 19^2 * 2^-255 * q - 19 * 2^-255 * (h - 2^230 * h[9])
+ *       = h - q * 2^255 + 19 * q + 19 * 2^-255 * h - 19 * q + 19^2 * 2^-255 * q + 1/2 - 19^2 * 2^-255 * q - 19 * 2^-255 * h + 19 * 2^-25 * h[9]
+ *       = h + 19 * 2^-25 * h[9] + 1/2 - q^255.
  * Inserting the expression for x into (1) we get the desired expression for q.
  * }
  * </pre>
  *
  * @return The mod p reduced field element
- */func (ref *Ed25519FieldElement) modP() *Ed25519FieldElement { /* private  */
+ */func (ref Ed25519FieldElement) modP() Ed25519FieldElement {
 
-	h0 := ref.Raw[0]
-	h1 := ref.Raw[1]
-	h2 := ref.Raw[2]
-	h3 := ref.Raw[3]
-	h4 := ref.Raw[4]
-	h5 := ref.Raw[5]
-	h6 := ref.Raw[6]
-	h7 := ref.Raw[7]
-	h8 := ref.Raw[8]
-	h9 := ref.Raw[9]
+	h := []intRaw{
+		ref.Raw[0],
+		ref.Raw[1],
+		ref.Raw[2],
+		ref.Raw[3],
+		ref.Raw[4],
+		ref.Raw[5],
+		ref.Raw[6],
+		ref.Raw[7],
+		ref.Raw[8],
+		ref.Raw[9],
+	}
 	// Calculate q
-	q := (19*h9 + (1 << 24)) >> 25
-	q = (h0 + q) >> 26
-	q = (h1 + q) >> 25
-	q = (h2 + q) >> 26
-	q = (h3 + q) >> 25
-	q = (h4 + q) >> 26
-	q = (h5 + q) >> 25
-	q = (h6 + q) >> 26
-	q = (h7 + q) >> 25
-	q = (h8 + q) >> 26
-	q = (h9 + q) >> 25
+	q := (19*h[9] + (1 << 24)) >> 25
+	q = (h[0] + q) >> 26
+	q = (h[1] + q) >> 25
+	q = (h[2] + q) >> 26
+	q = (h[3] + q) >> 25
+	q = (h[4] + q) >> 26
+	q = (h[5] + q) >> 25
+	q = (h[6] + q) >> 26
+	q = (h[7] + q) >> 25
+	q = (h[8] + q) >> 26
+	q = (h[9] + q) >> 25
 	// r = h - q * p = h - 2^255 * q + 19 * q
 	// First add 19 * q then discard the bit 255
-	h0 += 19 * q
-	carry0 := h0 >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	carry1 := h1 >> 25
-	h2 += carry1
-	h1 -= carry1 << 25
-	carry2 := h2 >> 26
-	h3 += carry2
-	h2 -= carry2 << 26
-	carry3 := h3 >> 25
-	h4 += carry3
-	h3 -= carry3 << 25
-	carry4 := h4 >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	carry5 := h5 >> 25
-	h6 += carry5
-	h5 -= carry5 << 25
-	carry6 := h6 >> 26
-	h7 += carry6
-	h6 -= carry6 << 26
-	carry7 := h7 >> 25
-	h8 += carry7
-	h7 -= carry7 << 25
-	carry8 := h8 >> 26
-	h9 += carry8
-	h8 -= carry8 << 26
-	carry9 := h9 >> 25
-	h9 -= carry9 << 25
-	h := []int{
-		h0,
-		h1,
-		h2,
-		h3,
-		h4,
-		h5,
-		h6,
-		h7,
-		h8,
-		h9,
-	}
-	return &Ed25519FieldElement{h}
+	h[0] += 19 * q
+	carry0 := h[0] >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	carry1 := h[1] >> 25
+	h[2] += carry1
+	h[1] -= carry1 << 25
+	carry2 := h[2] >> 26
+	h[3] += carry2
+	h[2] -= carry2 << 26
+	carry3 := h[3] >> 25
+	h[4] += carry3
+	h[3] -= carry3 << 25
+	carry4 := h[4] >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	carry5 := h[5] >> 25
+	h[6] += carry5
+	h[5] -= carry5 << 25
+	carry6 := h[6] >> 26
+	h[7] += carry6
+	h[6] -= carry6 << 26
+	carry7 := h[7] >> 25
+	h[8] += carry7
+	h[7] -= carry7 << 25
+	carry8 := h[8] >> 26
+	h[9] += carry8
+	h[8] -= carry8 << 26
+	carry9 := h[9] >> 25
+	h[9] -= carry9 << 25
+
+	return Ed25519FieldElement{h}
 }
 
 /**
@@ -911,56 +864,46 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * Step 2: Convert the field element to the 32 byte representation.
  *
  * @return Encoded field element (32 bytes).
- */func (ref *Ed25519FieldElement) Encode() *Ed25519EncodedFieldElement {
+ */func (ref Ed25519FieldElement) Encode() *Ed25519EncodedFieldElement {
 
 	// Step 1:
 	g := ref.modP()
-	gRaw := g.Raw
-	h0 := gRaw[0]
-	h1 := gRaw[1]
-	h2 := gRaw[2]
-	h3 := gRaw[3]
-	h4 := gRaw[4]
-	h5 := gRaw[5]
-	h6 := gRaw[6]
-	h7 := gRaw[7]
-	h8 := gRaw[8]
-	h9 := gRaw[9]
+	h := g.Raw
 	// Step 2:
 	s := make([]byte, 32)
-	s[0] = (byte)(h0)
-	s[1] = (byte)(h0 >> 8)
-	s[2] = (byte)(h0 >> 16)
-	s[3] = (byte)((h0 >> 24) | (h1 << 2))
-	s[4] = (byte)(h1 >> 6)
-	s[5] = (byte)(h1 >> 14)
-	s[6] = (byte)((h1 >> 22) | (h2 << 3))
-	s[7] = (byte)(h2 >> 5)
-	s[8] = (byte)(h2 >> 13)
-	s[9] = (byte)((h2 >> 21) | (h3 << 5))
-	s[10] = (byte)(h3 >> 3)
-	s[11] = (byte)(h3 >> 11)
-	s[12] = (byte)((h3 >> 19) | (h4 << 6))
-	s[13] = (byte)(h4 >> 2)
-	s[14] = (byte)(h4 >> 10)
-	s[15] = (byte)(h4 >> 18)
-	s[16] = (byte)(h5)
-	s[17] = (byte)(h5 >> 8)
-	s[18] = (byte)(h5 >> 16)
-	s[19] = (byte)((h5 >> 24) | (h6 << 1))
-	s[20] = (byte)(h6 >> 7)
-	s[21] = (byte)(h6 >> 15)
-	s[22] = (byte)((h6 >> 23) | (h7 << 3))
-	s[23] = (byte)(h7 >> 5)
-	s[24] = (byte)(h7 >> 13)
-	s[25] = (byte)((h7 >> 21) | (h8 << 4))
-	s[26] = (byte)(h8 >> 4)
-	s[27] = (byte)(h8 >> 12)
-	s[28] = (byte)((h8 >> 20) | (h9 << 6))
-	s[29] = (byte)(h9 >> 2)
-	s[30] = (byte)(h9 >> 10)
-	s[31] = (byte)(h9 >> 18)
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, s}
+	s[0] = (byte)(h[0])
+	s[1] = (byte)(h[0] >> 8)
+	s[2] = (byte)(h[0] >> 16)
+	s[3] = (byte)((h[0] >> 24) | (h[1] << 2))
+	s[4] = (byte)(h[1] >> 6)
+	s[5] = (byte)(h[1] >> 14)
+	s[6] = (byte)((h[1] >> 22) | (h[2] << 3))
+	s[7] = (byte)(h[2] >> 5)
+	s[8] = (byte)(h[2] >> 13)
+	s[9] = (byte)((h[2] >> 21) | (h[3] << 5))
+	s[10] = (byte)(h[3] >> 3)
+	s[11] = (byte)(h[3] >> 11)
+	s[12] = (byte)((h[3] >> 19) | (h[4] << 6))
+	s[13] = (byte)(h[4] >> 2)
+	s[14] = (byte)(h[4] >> 10)
+	s[15] = (byte)(h[4] >> 18)
+	s[16] = (byte)(h[5])
+	s[17] = (byte)(h[5] >> 8)
+	s[18] = (byte)(h[5] >> 16)
+	s[19] = (byte)((h[5] >> 24) | (h[6] << 1))
+	s[20] = (byte)(h[6] >> 7)
+	s[21] = (byte)(h[6] >> 15)
+	s[22] = (byte)((h[6] >> 23) | (h[7] << 3))
+	s[23] = (byte)(h[7] >> 5)
+	s[24] = (byte)(h[7] >> 13)
+	s[25] = (byte)((h[7] >> 21) | (h[8] << 4))
+	s[26] = (byte)(h[8] >> 4)
+	s[27] = (byte)(h[8] >> 12)
+	s[28] = (byte)((h[8] >> 20) | (h[9] << 6))
+	s[29] = (byte)(h[9] >> 2)
+	s[30] = (byte)(h[9] >> 10)
+	s[31] = (byte)(h[9] >> 18)
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), s}
 }
 
 /**
@@ -972,66 +915,58 @@ func (ref *Ed25519FieldElement) add(g *Ed25519FieldElement) *Ed25519FieldElement
  * </pre>
  *
  * @return true if ref is in {1,3,5,...,q-2}, false otherwise.
- */func (ref *Ed25519FieldElement) IsNegative() bool {
+ */func (ref Ed25519FieldElement) IsNegative() bool {
 
 	return ref.Encode().IsNegative()
 }
+func (ref *Ed25519FieldElement) Equals(ge *Ed25519FieldElement) bool {
 
+	return ref.Encode().Equals(ge.Encode())
+}
 func (ref *Ed25519FieldElement) String() string {
 
 	return ref.Encode().String()
 }
 
-/**
- * Ed25519EncodedFieldElement Represents a field element of the finite field with p=2^255-19 elements.
- * The value of the field element is held in 2^8 bit representation, i.e. in a byte array.
- * The length of the array must be 32 or 64.
- */type Ed25519EncodedFieldElement struct {
+// Ed25519EncodedFieldElement Represents a field element of the finite field with p=2^255-19 elements.
+// * The value of the field element is held in 2^8 bit representation, i.e. in a byte array.
+// * The length of the array must be 32 or 64.
+type Ed25519EncodedFieldElement struct {
 	zero []byte
 	Raw  []byte
-	/**
-	 * Creates a new encoded field element.
-	 *
-	 * @param Raw The byte array that holds the Raw.
-	 */
 }
 
+//NewEd25519EncodedFieldElement creates a new encoded field element.
+// Raw must to have leght 32 or 64 bytes
 func NewEd25519EncodedFieldElement(Raw []byte) (*Ed25519EncodedFieldElement, error) {
 
 	switch len(Raw) {
 	case 32:
-		return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, Raw}, nil
+		return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), Raw}, nil
 	case 64:
-		return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_LONG, Raw}, nil
+		return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_LONG(), Raw}, nil
 	}
 	return nil, errors.New("Invalid 2^8 bit representation.")
 }
-func (ref *Ed25519EncodedFieldElement) threeBytesToLong(in []byte, offset int) int64 {
+func (ref *Ed25519EncodedFieldElement) Equals(ge *Ed25519EncodedFieldElement) bool {
+	return isEqualConstantTime(ref.Raw, ge.Raw)
+}
+func (ref *Ed25519EncodedFieldElement) threeBytesToLong(b []byte, offset int) intRaw {
 
-	result := in[offset] & 0xff
-	result |= (in[offset+1] & 0xff) << 8
-	result |= (in[offset+2] & 0xff) << 16
-	return int64(result)
+	return intRaw(int64(b[offset]) | int64(b[offset+1])<<8 | int64(b[offset+2])<<16)
 }
 
-func (ref *Ed25519EncodedFieldElement) fourBytesToLong(in []byte, offset int) int64 {
+func (ref *Ed25519EncodedFieldElement) fourBytesToLong(b []byte, offset int) intRaw {
 
-	result := in[offset] & 0xff
-	result |= (in[offset+1] & 0xff) << 8
-	result |= (in[offset+2] & 0xff) << 16
-	result |= in[offset+3] << 24
-	return int64(result) & 0xffffffff //L
+	return intRaw(int64(b[offset]) | int64(b[offset+1])<<8 | int64(b[offset+2])<<16 | int64(b[offset+3])<<24)
 }
 
-/**
- * Return true if ref is in {1,3,5,...,q-2}
- * Return false if ref is in {0,2,4,...,q-1}
- * <br>
- * Preconditions:
- * |x| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
- *
- * @return true if ref is in {1,3,5,...,q-2}, false otherwise.
- */
+//IsNegative Return true if ref is in {1,3,5,...,q-2}
+//  Return false if ref is in {0,2,4,...,q-1}
+//* Preconditions:
+//* |x| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
+//*
+//* @return true if ref is in {1,3,5,...,q-2}, false otherwise.
 func (ref *Ed25519EncodedFieldElement) IsNegative() bool {
 
 	return (ref.Raw[0] & 1) != 0
@@ -1043,7 +978,7 @@ func (ref *Ed25519EncodedFieldElement) IsNegative() bool {
  * @return 1 if it is non-zero, 0 otherwise.
  */func (ref *Ed25519EncodedFieldElement) IsNonZero() bool {
 
-	return !bytes.Equal(ref.Raw, ref.zero)
+	return !isEqualConstantTime(ref.Raw, ref.zero)
 }
 
 /**
@@ -1051,70 +986,59 @@ func (ref *Ed25519EncodedFieldElement) IsNegative() bool {
  * The most significant bit is discarded.
  *
  * @return The field element in its 2^25.5 bit representation.
- */func (ref *Ed25519EncodedFieldElement) Decode() *Ed25519FieldElement {
+ */
+func (ref *Ed25519EncodedFieldElement) Decode() *Ed25519FieldElement {
 
-	h0 := ref.fourBytesToLong(ref.Raw, 0)
-	h1 := ref.threeBytesToLong(ref.Raw, 4) << 6
-	h2 := ref.threeBytesToLong(ref.Raw, 7) << 5
-	h3 := ref.threeBytesToLong(ref.Raw, 10) << 3
-	h4 := ref.threeBytesToLong(ref.Raw, 13) << 2
-	h5 := ref.fourBytesToLong(ref.Raw, 16)
-	h6 := ref.threeBytesToLong(ref.Raw, 20) << 7
-	h7 := ref.threeBytesToLong(ref.Raw, 23) << 5
-	h8 := ref.threeBytesToLong(ref.Raw, 26) << 4
-	h9 := (ref.threeBytesToLong(ref.Raw, 29) & 0x7FFFFF) << 2
+	h := []intRaw{
+		ref.fourBytesToLong(ref.Raw, 0),
+		ref.threeBytesToLong(ref.Raw, 4) << 6,
+		ref.threeBytesToLong(ref.Raw, 7) << 5,
+		ref.threeBytesToLong(ref.Raw, 10) << 3,
+		ref.threeBytesToLong(ref.Raw, 13) << 2,
+		ref.fourBytesToLong(ref.Raw, 16),
+		ref.threeBytesToLong(ref.Raw, 20) << 7,
+		ref.threeBytesToLong(ref.Raw, 23) << 5,
+		ref.threeBytesToLong(ref.Raw, 26) << 4,
+		(ref.threeBytesToLong(ref.Raw, 29) & 0x7FFFFF) << 2,
+	}
 
 	// Remember: 2^255 congruent 19 modulo p
-	carry9 := (h9 + (1 << 24)) >> 25
-	h0 += carry9 * 19
-	h9 -= carry9 << 25
-	carry1 := (h1 + (1 << 24)) >> 25
-	h2 += carry1
-	h1 -= carry1 << 25
-	carry3 := (h3 + (1 << 24)) >> 25
-	h4 += carry3
-	h3 -= carry3 << 25
-	carry5 := (h5 + (1 << 24)) >> 25
-	h6 += carry5
-	h5 -= carry5 << 25
-	carry7 := (h7 + (1 << 24)) >> 25
-	h8 += carry7
-	h7 -= carry7 << 25
-	carry0 := (h0 + (1 << 25)) >> 26
-	h1 += carry0
-	h0 -= carry0 << 26
-	carry2 := (h2 + (1 << 25)) >> 26
-	h3 += carry2
-	h2 -= carry2 << 26
-	carry4 := (h4 + (1 << 25)) >> 26
-	h5 += carry4
-	h4 -= carry4 << 26
-	carry6 := (h6 + (1 << 25)) >> 26
-	h7 += carry6
-	h6 -= carry6 << 26
-	carry8 := (h8 + (1 << 25)) >> 26
-	h9 += carry8
-	h8 -= carry8 << 26
-	h := []int{
-		int(h0),
-		int(h1),
-		int(h2),
-		int(h3),
-		int(h4),
-		int(h5),
-		int(h6),
-		int(h7),
-		int(h8),
-		int(h9),
-	}
+	carry9 := (h[9] + (1 << 24)) >> 25
+	h[0] += carry9 * 19
+	h[9] -= carry9 << 25
+	carry1 := (h[1] + (1 << 24)) >> 25
+	h[2] += carry1
+	h[1] -= carry1 << 25
+	carry3 := (h[3] + (1 << 24)) >> 25
+	h[4] += carry3
+	h[3] -= carry3 << 25
+	carry5 := (h[5] + (1 << 24)) >> 25
+	h[6] += carry5
+	h[5] -= carry5 << 25
+	carry7 := (h[7] + (1 << 24)) >> 25
+	h[8] += carry7
+	h[7] -= carry7 << 25
+	carry0 := (h[0] + (1 << 25)) >> 26
+	h[1] += carry0
+	h[0] -= carry0 << 26
+	carry2 := (h[2] + (1 << 25)) >> 26
+	h[3] += carry2
+	h[2] -= carry2 << 26
+	carry4 := (h[4] + (1 << 25)) >> 26
+	h[5] += carry4
+	h[4] -= carry4 << 26
+	carry6 := (h[6] + (1 << 25)) >> 26
+	h[7] += carry6
+	h[6] -= carry6 << 26
+	carry8 := (h[8] + (1 << 25)) >> 26
+	h[9] += carry8
+	h[8] -= carry8 << 26
+
 	return &Ed25519FieldElement{h}
 }
 
-/**
- * Reduces ref encoded field element (64 bytes) modulo the group order q.
- *
- * @return Encoded field element (32 bytes).
- */
+// modQ Reduces ref encoded field element (64 bytes) modulo the group order q.
+// return Encoded field element (32 bytes).
 func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
 
 	// s0, ..., s22 have 21 bits, s23 has 29 bits
@@ -1431,7 +1355,7 @@ func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
 	result[29] = (byte)(s11 >> 1)
 	result[30] = (byte)(s11 >> 9)
 	result[31] = (byte)(s11 >> 17)
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, result}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), result}
 }
 
 /**
@@ -1444,7 +1368,9 @@ func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
  * @param c The third encoded field element which is added.
  * @return The encoded field element (32 bytes).
  */
-func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedFieldElement, c *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
+func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
+	b *Ed25519EncodedFieldElement,
+	c *Ed25519EncodedFieldElement) *Ed25519EncodedFieldElement {
 	a0 := 0x1FFFFF & ref.threeBytesToLong(ref.Raw, 0)
 
 	a1 := 0x1FFFFF & (ref.fourBytesToLong(ref.Raw, 2) >> 5)
@@ -1540,7 +1466,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedField
 	s20 := a9*b11 + a10*b10 + a11*b9
 	s21 := a10*b11 + a11*b10
 	s22 := a11 * b11
-	s23 := int64(0)
+	s23 := intRaw(0)
 	carry0 := (s0 + (1 << 20)) >> 21
 	s1 += carry0
 	s0 -= carry0 << 21
@@ -1867,19 +1793,12 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(b *Ed25519EncodedField
 	result[29] = (byte)(s11 >> 1)
 	result[30] = (byte)(s11 >> 9)
 	result[31] = (byte)(s11 >> 17)
-	return &Ed25519EncodedFieldElement{Ed25519Field.ZERO_SHORT, result}
+	return &Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), result}
 }
 
 func (ref *Ed25519EncodedFieldElement) String() string {
 
-	b := make([]byte, len(ref.Raw))
-	_, err := hex.Decode(b, ref.Raw)
-	if err != nil {
-		fmt.Print(err)
-		return ""
-	}
-
-	return string(b)
+	return hex.EncodeToString(ref.Raw)
 }
 
 // Ed25519EncodedGroupElement
@@ -1887,47 +1806,41 @@ type Ed25519EncodedGroupElement struct {
 	Raw []byte
 }
 
-//NewEd25519EncodedGroupElement Creates a new encoded group element.
-func NewEd25519EncodedGroupElement(Raw []byte) *Ed25519EncodedGroupElement {
-	ref := &Ed25519EncodedGroupElement{Raw}
-	//todo: add error handling
-	//        if (32 != Raw.length) {
-	//            panic(IllegalArgumentException{"Invalid encoded group element."})
-	//}
-	return ref
+//NewEd25519EncodedGroupElement creates a new encoded group element.
+func NewEd25519EncodedGroupElement(Raw []byte) (*Ed25519EncodedGroupElement, error) {
+	if 32 != len(Raw) {
+		return nil, errors.New("Invalid encoded group element.")
+	}
+
+	return &Ed25519EncodedGroupElement{Raw}, nil
 }
 
-/**
- * Decodes ref encoded group element and returns a new group element in P3 coordinates.
- *
- * @return The group element.
- */
-func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
+//Decode Decodes ref encoded group element and returns a new group element in P3 coordinates.
+func (ref *Ed25519EncodedGroupElement) Decode() (*Ed25519GroupElement, error) {
 
 	x, err := ref.GetAffineX()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	y, err := ref.GetAffineY()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return Ed25519GroupElementP3(x, y, Ed25519Field.ONE, x.multiply(y))
+	t := x.multiply(*y)
+	return NewEd25519GroupElementP3(x, y, Ed25519Field_ONE(), &t), nil
 }
 
-/**
- * Gets the affine x-coordinate.
- * x is recovered in the following way (p = field size):
- * <br>
- * x = sign(x) * sqrt((y^2 - 1) / (d * y^2 + 1)) = sign(x) * sqrt(u / v) with u = y^2 - 1 and v = d * y^2 + 1.
- * Setting ОІ = (u * v^3) * (u * v^7)^((p - 5) / 8) one has ОІ^2 = +-(u / v).
- * If v * ОІ = -u multiply ОІ with i=sqrt(-1).
- * Set x := ОІ.
- * If sign(x) != bit 255 of s then negate x.
- *
- * @return the affine x-coordinate.
- */func (ref *Ed25519EncodedGroupElement) GetAffineX() (*Ed25519FieldElement, error) {
+//GetAffineX gets the affine x-coordinate.
+// * x is recovered in the following way (p = field size):
+// * <br>
+// * x = sign(x) * sqrt((y^2 - 1) / (d * y^2 + 1)) = sign(x) * sqrt(u / v) with u = y^2 - 1 and v = d * y^2 + 1.
+// * Setting ОІ = (u * v^3) * (u * v^7)^((p - 5) / 8) one has ОІ^2 = +-(u / v).
+// * If v * ОІ = -u multiply ОІ with i=sqrt(-1).
+// * Set x := ОІ.
+// * If sign(x) != bit 255 of s then negate x.
+//* @return the affine x-coordinate.
+func (ref *Ed25519EncodedGroupElement) GetAffineX() (*Ed25519FieldElement, error) {
 
 	y, err := ref.GetAffineY()
 	if err != nil {
@@ -1945,18 +1858,17 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 	if checkForZero.IsNonZero() {
 		checkForZero = vxSquare.add(u)
 		if checkForZero.IsNonZero() {
-			return nil, errors.New("not a valid  {ClassName} .")
+			return nil, errors.New("not a valid Ed25519EncodedGroupElement.")
 		}
 
 		x = x.multiply(Ed25519Field.I)
 	}
 
-	if x.IsNegative() {
-		//0) != ArrayUtils.getBit(ref.Raw, 255))
+	if x.IsNegative() != utils.GetBitToBool(ref.Raw, 255) {
 		x = x.negate()
 	}
 
-	return x, nil
+	return &x, nil
 }
 
 /**
@@ -1974,7 +1886,10 @@ func (ref *Ed25519EncodedGroupElement) Decode() *Ed25519GroupElement {
 	}
 	return encoded.Decode(), nil
 }
+func (ref *Ed25519EncodedGroupElement) Equals(ge *Ed25519EncodedGroupElement) bool {
 
+	return isEqualConstantTime(ref.Raw, ge.Raw)
+}
 func (ref *Ed25519EncodedGroupElement) String() string {
 
 	x, err := ref.GetAffineX()
@@ -1993,36 +1908,39 @@ func (ref *Ed25519EncodedGroupElement) String() string {
 type CoordinateSystem int
 
 const (
-	/**
-	 * Affine coordinate system (x, y).
-	 */
+	// Affine coordinate system (x, y).
 	AFFINE CoordinateSystem = iota
-	/**
-	 * Projective coordinate system (X:Y:Z) satisfying x=X/Z, y=Y/Z.
-	 */
+	// Projective coordinate system (X:Y:Z) satisfying x=X/Z, y=Y/Z.
 	P2
-	/**
-	 * Extended projective coordinate system (X:Y:Z:T) satisfying x=X/Z, y=Y/Z, XY=ZT.
-	 */
+	// Extended projective coordinate system (X:Y:Z:T) satisfying x=X/Z, y=Y/Z, XY=ZT.
 	P3
-	/**
-	 * Completed coordinate system ((X:Z), (Y:T)) satisfying x=X/Z, y=Y/T.
-	 */
+	// Completed coordinate system ((X:Z), (Y:T)) satisfying x=X/Z, y=Y/T.
 	P1xP1
-	/**
-	 * Precomputed coordinate system (y+x, y-x, 2dxy).
-	 */
+	// Precomputed coordinate system (y+x, y-x, 2dxy).
 	PRECOMPUTED
-	/**
-	 * Cached coordinate system (Y+X, Y-X, Z, 2dT).
-	 */
+	// Cached coordinate system (Y+X, Y-X, Z, 2dT).
 	CACHED
 )
 
 //ed25519Group Represents the underlying group for Ed25519.
 type ed25519Group struct {
-	GROUP_ORDER                                    *big.Int
-	BASE_POINT, ZERO_P3, ZERO_P2, ZERO_PRECOMPUTED *Ed25519GroupElement
+	GROUP_ORDER *big.Int
+	basePoint   *Ed25519GroupElement
+}
+
+// different representations of zero
+
+func (ref *ed25519Group) BASE_POINT() *Ed25519GroupElement {
+	return ref.basePoint.copy()
+}
+func (ref *ed25519Group) ZERO_P2() *Ed25519GroupElement {
+	return NewEd25519GroupElementP2(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE())
+}
+func (ref *ed25519Group) ZERO_P3() *Ed25519GroupElement {
+	return NewEd25519GroupElementP3(Ed25519Field_ZERO(), Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
+}
+func (ref *ed25519Group) ZERO_PRECOMPUTED() *Ed25519GroupElement {
+	return NewEd25519GroupElementPrecomputed(Ed25519Field_ONE(), Ed25519Field_ONE(), Ed25519Field_ZERO())
 }
 
 //Ed25519Groupp
@@ -2033,40 +1951,49 @@ const ed25519GroupRawElement = "b0a00e4a271beec478e42fad0618432fa7d7fb3d99004d2b
 
 func init() {
 
-	/**
-	 * 2^252 - 27742317777372353535851937790883648493
-	 */
-	dst, err := hexDecode([]byte(ed25519GroupOrder))
-	if err != nil {
-		fmt.Print(err)
-	} else {
-		Ed25519Group.GROUP_ORDER = (&big.Int{}).SetBytes(dst)
+	//Ed25519Group.GROUP_ORDER
+	// 2^252 + 27742317777372353535851937790883648493
+
+	rInt, ok := (&big.Int{}).SetString(ed25519GroupOrder, 10)
+	if !ok {
+		panic(errors.New(ed25519GroupOrder + " is wrang value for big.Int!"))
 	}
+
+	z := (&big.Int{}).Lsh(BigInteger_ONE(), 252)
+	Ed25519Group.GROUP_ORDER = z.Add(z, rInt)
 
 	/**
 	 * <pre>{@code
 	 * (x, 4/5); x > 0
 	 * }</pre>
 	 */
-	Ed25519Group.BASE_POINT = getBasePoint()
-	// different representations of zero
-	Ed25519Group.BASE_POINT = Ed25519GroupElementP3(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO)
-	Ed25519Group.BASE_POINT = Ed25519GroupElementP2(Ed25519Field.ZERO, Ed25519Field.ONE, Ed25519Field.ONE)
-	Ed25519Group.BASE_POINT = Ed25519GroupElementPrecomputed(Ed25519Field.ONE, Ed25519Field.ONE, Ed25519Field.ZERO)
-}
-func getBasePoint() *Ed25519GroupElement {
-
-	rawEncodedGroupElement, err := hexDecode([]byte(ed25519GroupRawElement))
+	var err error
+	Ed25519Group.basePoint, err = getBasePoint()
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
-	basePoint := NewEd25519EncodedGroupElement(rawEncodedGroupElement).Decode()
-	if basePoint == nil {
-		return nil
+}
+
+const ed25519GroupBasePoint = "5866666666666666666666666666666666666666666666666666666666666666"
+
+func getBasePoint() (*Ed25519GroupElement, error) {
+
+	rawEncodedGroupElement, err := hex.DecodeString(ed25519GroupBasePoint)
+	if err != nil {
+		return nil, err
 	}
-	basePoint.PrecomputeForScalarMultiplication()
-	basePoint.PrecomputeForDoubleScalarMultiplication()
-	return basePoint
+	grElem, err := NewEd25519EncodedGroupElement(rawEncodedGroupElement)
+	if err != nil {
+		return nil, err
+	}
+	basePoint, err := grElem.Decode()
+	if err != nil {
+		return nil, err
+	}
+	basePoint.precomputedForSingle = basePrecSingle
+	basePoint.precomputedForDouble = basePrecDouble
+
+	return basePoint, nil
 }
 
 /**
@@ -2084,34 +2011,22 @@ func getBasePoint() *Ed25519GroupElement {
 //Ed25519GroupElement
 type Ed25519GroupElement struct {
 	coordinateSystem CoordinateSystem
-	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
+
 	X *Ed25519FieldElement
-	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
+
 	Y *Ed25519FieldElement
-	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
+
 	Z *Ed25519FieldElement
-	// @SuppressWarnings("NonConstantFieldWithUpperCaseName")
+
 	T *Ed25519FieldElement
-	/**
-	 * Precomputed table for a single scalar multiplication.
-	 */
+	// Precomputed table for a single scalar multiplication.
 	precomputedForSingle [][]*Ed25519GroupElement
-	/**
-	 * Precomputed table for a float64 scalar multiplication
-	 */
+	// Precomputed table for a float64 scalar multiplication
 	precomputedForDouble []*Ed25519GroupElement
 	//region constructors
-	/**
-	 * Creates a group element for a curve.
-	 *
-	 * @param coordinateSystem The coordinate system used for the group element.
-	 * @param X                The X coordinate.
-	 * @param Y                The Y coordinate.
-	 * @param Z                The Z coordinate.
-	 * @param T                The T coordinate.
-	 */
 }
 
+//NewEd25519GroupElement creates a group element for a curve.
 func NewEd25519GroupElement(coordinateSystem CoordinateSystem,
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
@@ -2128,62 +2043,33 @@ func NewEd25519GroupElement(coordinateSystem CoordinateSystem,
 	}
 }
 
-/**
- * Creates a new group element using the AFFINE coordinate system.
- *
- * @param x The x coordinate.
- * @param y The y coordinate.
- * @param Z The Z coordinate.
- * @return The group element using the P2 coordinate system.
- */
-func Ed25519GroupElementAffine(
+//NewEd25519GroupElementAffine creates a new group element using the AFFINE coordinate system.
+func NewEd25519GroupElementAffine(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(AFFINE, x, y, z, nil)
 }
 
-/**
- * Creates a new group element using the P2 coordinate system.
- *
- * @param X The X coordinate.
- * @param Y The Y coordinate.
- * @param Z The Z coordinate.
- * @return The group element using the P2 coordinate system.
- */
-func Ed25519GroupElementP2(
+//NewEd25519GroupElementP2 creates a new group element using the P2 coordinate system.
+func NewEd25519GroupElementP2(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(P2, x, y, z, nil)
 }
 
-/**
- * Creates a new group element using the P3 coordinate system.
- *
- * @param X The X coordinate.
- * @param Y The Y coordinate.
- * @param Z The Z coordinate.
- * @param T The T coordinate.
- * @return The group element using the P3 coordinate system.
- */
-func Ed25519GroupElementP3(
+//NewEd25519GroupElementP3 creates a new group element using the P3 coordinate system.
+func NewEd25519GroupElementP3(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
 	t *Ed25519FieldElement) *Ed25519GroupElement {
-	return NewEd25519GroupElement(P3, x, y, x, t)
+	return NewEd25519GroupElement(P3, x, y, z, t)
 }
 
-/**
- * Creates a new group element using the P1xP1 coordinate system.
- *
- * @param X The X coordinate.
- * @param Y The Y coordinate.
- * @param Z The Z coordinate.
- * @param T The T coordinate.
- * @return The group element using the P1xP1 coordinate system.
- */func Ed25519GroupElementP1XP1(
+//NewEd25519GroupElementP1XP1 Creates a new group element using the P1xP1 coordinate system.
+func NewEd25519GroupElementP1XP1(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
@@ -2191,68 +2077,108 @@ func Ed25519GroupElementP3(
 	return NewEd25519GroupElement(P1xP1, x, y, z, t)
 }
 
-/**
- * Creates a new group element using the PRECOMPUTED coordinate system.
- *
- * @param yPlusx  The y + x value.
- * @param yMinusx The y - x value.
- * @param xy2d    The 2 * d * x * y value.
- * @return The group element using the PRECOMPUTED coordinate system.
- */
-func Ed25519GroupElementPrecomputed(
+//NewEd25519GroupElementPrecomputed сreates a new group element using the PRECOMPUTED coordinate system.
+//(CoordinateSystem.PRECOMPUTED, yPlusx, yMinusx, xy2d, nil)
+func NewEd25519GroupElementPrecomputed(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(PRECOMPUTED, x, y, z, nil)
-	//(CoordinateSystem.PRECOMPUTED, yPlusx, yMinusx, xy2d, nil)
 }
 
-/**
- * Creates a new group element using the CACHED coordinate system.
- *
- * @param YPlusX  The Y + X value.
- * @param YMinusX The Y - X value.
- * @param Z       The Z coordinate.
- * @param T2d     The 2 * d * T value.
- * @return The group element using the CACHED coordinate system.
- */func Ed25519GroupElementCached(
+// NewEd25519GroupElementCached сreates a new group element using the CACHED coordinate system.
+//(CoordinateSystem.CACHED, YPlusX, YMinusX, Z, T2d)
+func NewEd25519GroupElementCached(
 	x *Ed25519FieldElement,
 	y *Ed25519FieldElement,
 	z *Ed25519FieldElement,
 	t *Ed25519FieldElement) *Ed25519GroupElement {
 	return NewEd25519GroupElement(CACHED, x, y, z, t)
-	//(CoordinateSystem.CACHED, YPlusX, YMinusX, Z, T2d)
+}
+func (ref *Ed25519GroupElement) Equals(ge *Ed25519GroupElement) (res bool) {
+
+	if ref.coordinateSystem != ge.coordinateSystem {
+		defer func() {
+			err := recover()
+			if err != nil {
+				fmt.Printf("%v, %d, %d", err, ref.coordinateSystem, ge.coordinateSystem)
+				res = false
+			}
+		}()
+		ge = ge.toCoordinateSystem(ref.coordinateSystem)
+	}
+
+	switch ref.coordinateSystem {
+	case P2, P3:
+		if ref.Z.Equals(ge.Z) {
+			return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y)
+		}
+
+		x1 := ref.X.multiply(*(ge.Z))
+		y1 := ref.Y.multiply(*(ge.Z))
+		x2 := ge.X.multiply(*(ref.Z))
+		y2 := ge.Y.multiply(*(ref.Z))
+		return x1.Equals(&x2) && y1.Equals(&y2)
+	case P1xP1:
+		return ref.toP2().Equals(ge)
+	case PRECOMPUTED:
+		return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y) && ref.Z.Equals(ge.Z)
+	case CACHED:
+		if ref.Z.Equals(ge.Z) {
+			return ref.X.Equals(ge.X) && ref.Y.Equals(ge.Y) && ref.T.Equals(ge.T)
+		}
+
+		x3 := ref.X.multiply(*(ge.Z))
+		y3 := ref.Y.multiply(*(ge.Z))
+		t3 := ref.T.multiply(*(ge.Z))
+		x4 := ge.X.multiply(*(ref.Z))
+		y4 := ge.Y.multiply(*(ref.Z))
+		t4 := ge.T.multiply(*(ref.Z))
+		return x3.Equals(&x4) && y3.Equals(&y4) && t3.Equals(&t4)
+	default:
+		panic(errors.New("not supportet coor type"))
+	}
+	return false
+
 }
 
-//endregion
-//region accessors
-/**
- * Convert a to 2^16 bit representation.
- *
- * @param encoded The encode field element.
- * @return 64 bytes, each between -8 and 7
- */func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []byte {
+// Convert a to 2^16 bit representation.
+// *
+// * @param encoded The encode field element.
+// * @return 64 bytes, each between -8 and 7
+func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) []int8 {
 
 	a := encoded.Raw
-	e := make([]byte, 64)
+	e := make([]int8, 64)
 	for i := 0; i < 32; i++ {
-		e[2*i] = (byte)(a[i] & 15)
-		e[2*i+1] = (byte)((a[i] >> 4) & 15)
+		e[2*i] = (int8(a[i]) & 15)
+		e[2*i+1] = ((int8(a[i]) >> 4) & 15)
 	}
 
 	/* each e[i] is between 0 and 15 */
 	/* e[63] is between 0 and 7 */
-	carry := byte(0)
+	carry := 0
 	for i := 0; i < 63; i++ {
-		e[i] += carry
-		carry = e[i] + 8
+		e[i] += int8(carry)
+		carry = int(e[i]) + 8
 		carry >>= 4
-		e[i] -= carry << 4
+		e[i] -= int8(carry) << 4
 	}
 
-	e[63] += carry
+	e[63] += int8(carry)
 	return e
 }
+
+/* each e[i] is between 0 and 15 */
+/* e[63] is between 0 and 7 */
+//int carry = 0;
+//for (i = 0; i < 63; i++) {
+//e[i] += carry;
+//carry = e[i] + 8;
+//carry >>= 4;
+//e[i] -= carry << 4;
+//}
+//e[63] += carry;
 
 /**
  * Calculates a sliding-windows base 2 representation for a given encoded field element a.
@@ -2265,16 +2191,15 @@ func Ed25519GroupElementPrecomputed(
  *
  * @param encoded The encoded field element.
  * @return The byte array r in the above described form.
- */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []byte {
+ */func (ref *Ed25519GroupElement) slide(encoded *Ed25519EncodedFieldElement) []int8 {
 
 	a := encoded.Raw
-	r := make([]byte, 256)
+	r := make([]int8, 256)
 	// Put each bit of 'a' into a separate byte, 0 or 1
 	for i := 0; i < 256; i++ {
-		el := uint(i >> 3)
-		r[i] = (1 & (a[el] >> uint(i&7)))
+		r[i] = (1 & (int8(a[i>>3]) >> uint(i&7)))
 	}
-	//todo: algorimt nust be simple!
+	//todo: algorimt must be simple!
 	// Note: r[i] will always be odd.
 	for i := uint(0); i < 256; i++ {
 		if r[i] != 0 {
@@ -2285,7 +2210,7 @@ func Ed25519GroupElementPrecomputed(
 					if r[i]+(r[ib]<<b) <= 15 {
 						r[i] += r[ib] << b
 						r[ib] = 0
-					} else if (r[ib]<<b)-r[i] <= 15 {
+					} else if r[i]-(r[ib]<<b) >= -15 {
 						r[i] -= r[ib] << b
 						for k := ib; k < 256; k++ {
 							if r[k] == 0 {
@@ -2371,31 +2296,10 @@ func (ref *Ed25519GroupElement) IsPrecomputedForDoubleScalarMultiplication() boo
 	return nil != ref.precomputedForDouble
 }
 
-//endregion
-/**
- * Gets the table with the precomputed group elements for single scalar multiplication.
- *
- * @return The precomputed table.
- */func (ref *Ed25519GroupElement) getPrecomputedForSingle() [][]*Ed25519GroupElement {
-
-	return ref.precomputedForSingle
-}
-
-/**
- * Gets the table with the precomputed group elements for float64 scalar multiplication.
- *
- * @return The precomputed table.
- */func (ref *Ed25519GroupElement) getPrecomputedForDouble() []*Ed25519GroupElement {
-
-	return ref.precomputedForDouble
-}
-
-/**
- * Converts the group element to an encoded point on the curve.
- *
- * @return The encoded point as byte array.
- */
-func (ref *Ed25519GroupElement) Encode() *Ed25519EncodedGroupElement {
+// Converts the group element to an encoded point on the curve.
+// *
+// * @return The encoded point as byte array.
+func (ref *Ed25519GroupElement) Encode() (*Ed25519EncodedGroupElement, error) {
 
 	switch ref.coordinateSystem {
 	case P2, P3:
@@ -2414,148 +2318,177 @@ func (ref *Ed25519GroupElement) Encode() *Ed25519EncodedGroupElement {
 
 }
 
-/**
- * Converts the group element to the P2 coordinate system.
- *
- * @return The group element in the P2 coordinate system.
- */func (ref *Ed25519GroupElement) toP2() *Ed25519GroupElement {
+// Converts the group element to the P2 coordinate system.
+func (ref *Ed25519GroupElement) toP2() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(P2)
 }
 
-/**
- * Converts the group element to the P3 coordinate system.
- *
- * @return The group element in the P3 coordinate system.
- */func (ref *Ed25519GroupElement) toP3() *Ed25519GroupElement {
+// Converts the group element to the P3 coordinate system.
+func (ref *Ed25519GroupElement) toP3() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(P3)
 }
 
-/**
- * Converts the group element to the CACHED coordinate system.
- *
- * @return The group element in the CACHED coordinate system.
- */func (ref *Ed25519GroupElement) toCached() *Ed25519GroupElement {
+// Converts the group element to the CACHED coordinate system.
+func (ref *Ed25519GroupElement) toCached() *Ed25519GroupElement {
 
 	return ref.toCoordinateSystem(CACHED)
 }
 
-/**
- * Convert a Ed25519GroupElement from one coordinate system to another.
- * <br>
- * Supported conversions:
- * - P3 -> P2
- * - P3 -> CACHED (1 multiply, 1 add, 1 subtract)
- * - P1xP1 -> P2 (3 multiply)
- * - P1xP1 -> P3 (4 multiply)
- *
- * @param newCoordinateSystem The coordinate system to convert to.
- * @return A new group element in the new coordinate system.
- */func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem CoordinateSystem) *Ed25519GroupElement { /* private   */
+// toCoordinateSystem convert a Ed25519GroupElement from one coordinate system to another.
+//* Supported conversions:
+//* - P3 -> P2
+//* - P3 -> CACHED (1 multiply, 1 add, 1 subtract)
+//* - P1xP1 -> P2 (3 multiply)
+//* - P1xP1 -> P3 (4 multiply)
+//*
+//* @param newCoordinateSystem The coordinate system to convert to.
+//* @return A new group element in the new coordinate system.
+func (ref *Ed25519GroupElement) toCoordinateSystem(newCoordinateSystem CoordinateSystem) *Ed25519GroupElement {
 	switch ref.coordinateSystem {
 	case P2:
 		switch newCoordinateSystem {
 		case P2:
-			return Ed25519GroupElementP2(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementP2(ref.X, ref.Y, ref.Z)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P2")
 		}
 
 	case P3:
 		switch newCoordinateSystem {
 		case P2:
-			return Ed25519GroupElementP2(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementP2(ref.X, ref.Y, ref.Z)
 		case P3:
-			return Ed25519GroupElementP3(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementP3(ref.X, ref.Y, ref.Z, ref.T)
 		case CACHED:
-			return Ed25519GroupElementCached(ref.Y.add(ref.X), ref.Y.subtract(ref.X), ref.Z, ref.T.multiply(Ed25519Field.D_Times_TWO))
+			X := ref.Y.add(*(ref.X))
+			Y := ref.Y.subtract(*(ref.X))
+			t := ref.T.multiply(Ed25519Field.D_Times_TWO)
+			return NewEd25519GroupElementCached(&X, &Y, ref.Z, &t)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P3")
 		}
 
 	case P1xP1:
 		switch newCoordinateSystem {
 		case P2:
-			return Ed25519GroupElementP2(ref.X.multiply(ref.T), ref.Y.multiply(ref.Z), ref.Z.multiply(ref.T))
+			x := ref.X.multiply(*(ref.T))
+			y := ref.Y.multiply(*(ref.Z))
+			z := ref.Z.multiply(*(ref.T))
+			return NewEd25519GroupElementP2(&x, &y, &z)
 		case P3:
-			return Ed25519GroupElementP3(ref.X.multiply(ref.T), ref.Y.multiply(ref.Z), ref.Z.multiply(ref.T), ref.X.multiply(ref.Y))
+			x := ref.X.multiply(*(ref.T))
+			y := ref.Y.multiply(*(ref.Z))
+			z := ref.Z.multiply(*(ref.T))
+			t := ref.X.multiply(*(ref.Y))
+			return NewEd25519GroupElementP3(&x, &y, &z, &t)
 		case P1xP1:
-			return Ed25519GroupElementP1XP1(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementP1XP1(ref.X, ref.Y, ref.Z, ref.T)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException P1xP1")
 		}
 
 	case PRECOMPUTED:
 		switch newCoordinateSystem {
 		case PRECOMPUTED:
 			//noinspection SuspiciousNameCombination
-			return Ed25519GroupElementPrecomputed(ref.X, ref.Y, ref.Z)
+			return NewEd25519GroupElementPrecomputed(ref.X, ref.Y, ref.Z)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException PRECOMPUTED")
 		}
 
 	case CACHED:
 		switch newCoordinateSystem {
 		case CACHED:
-			return Ed25519GroupElementCached(ref.X, ref.Y, ref.Z, ref.T)
+			return NewEd25519GroupElementCached(ref.X, ref.Y, ref.Z, ref.T)
 		default:
-			panic("NewIllegalArgumentException()")
+			panic("NewIllegalArgumentException CACHED")
 		}
 
 	default:
-		panic("NewIllegalArgumentException()")
+		panic(fmt.Sprintf("NewIllegalArgumentException(%d)", ref.coordinateSystem))
 	}
 	return nil
 }
 
-/**
- * Precomputes the group elements needed to speed up a scalar multiplication.
- */
+// make copy ref object
+func (ref *Ed25519GroupElement) copy() *Ed25519GroupElement {
+	el := &Ed25519GroupElement{
+		ref.coordinateSystem,
+		ref.X,
+		ref.Y,
+		ref.Z,
+		ref.T,
+		make([][]*Ed25519GroupElement, len(ref.precomputedForSingle)),
+		make([]*Ed25519GroupElement, len(ref.precomputedForDouble)),
+	}
+	for i, val := range ref.precomputedForSingle {
+		el.precomputedForSingle[i] = make([]*Ed25519GroupElement, 8)
+		for j, valElem := range val {
+			el.precomputedForSingle[i][j] = valElem
+		}
+	}
+
+	for i, val := range ref.precomputedForDouble {
+		el.precomputedForDouble[i] = val
+	}
+
+	return el
+}
+
+// PrecomputeForScalarMultiplication precomputes the group elements needed to speed up a scalar multiplication.
 func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 
-	if (ref.precomputedForSingle == nil) || len(ref.precomputedForSingle) > 0 {
+	if (ref.precomputedForSingle != nil) || len(ref.precomputedForSingle) > 0 {
 		return
 	}
 
+	Bi := ref.copy()
 	ref.precomputedForSingle = make([][]*Ed25519GroupElement, 32)
-	for i, Bi := range ref.precomputedForSingle {
-		Bi = make([]*Ed25519GroupElement, 8)
-		for j, Bij := range Bi {
-			inverse := ref.Z.invert()
-			x := ref.X.multiply(inverse)
-			y := ref.Y.multiply(inverse)
-			Bij = Ed25519GroupElementPrecomputed(y.add(x), y.subtract(x), x.multiply(y).multiply(Ed25519Field.D_Times_TWO))
-			Bij = ref.add(ref.toCached()).toP3()
-			ref.precomputedForSingle[i][j] = Bij
-		}
+	for i := range ref.precomputedForSingle {
+		ref.precomputedForSingle[i] = make([]*Ed25519GroupElement, 8)
+		Bij := Bi.copy()
+		for j := range ref.precomputedForSingle[i] {
+			inverse := Bij.Z.invert()
+			x := Bij.X.multiply(inverse)
+			y := Bij.Y.multiply(inverse)
 
+			X := y.add(x)
+			Y := y.subtract(x)
+			Z := x.multiply(y).multiply(Ed25519Field.D_Times_TWO)
+			ref.precomputedForSingle[i][j] = NewEd25519GroupElementPrecomputed(&X, &Y, &Z)
+			Bij = Bij.add(Bi.toCached()).toP3()
+		}
 		// Only every second summand is precomputed (16^2 = 256).
 		for k := 0; k < 8; k++ {
-			ref = ref.add(ref.toCached()).toP3()
+			Bi = Bi.add(Bi.toCached()).toP3()
 		}
 
 	}
 
 }
 
-/**
- * Precomputes the group elements used to speed up a float64 scalar multiplication.
- */func (ref *Ed25519GroupElement) PrecomputeForDoubleScalarMultiplication() {
+//PrecomputeForDoubleScalarMultiplication Precomputes the group elements used to speed up a float64 scalar multiplication.
+func (ref *Ed25519GroupElement) PrecomputeForDoubleScalarMultiplication() {
 
 	if len(ref.precomputedForDouble) > 0 {
 		return
 	}
 
 	ref.precomputedForDouble = make([]*Ed25519GroupElement, 8)
-	for i := 0; i < 8; i++ {
-		inverse := ref.Z.invert()
-		x := ref.X.multiply(inverse)
-		y := ref.Y.multiply(inverse)
-		ref.precomputedForDouble[i] = Ed25519GroupElementPrecomputed(y.add(x), y.subtract(x), x.multiply(y).multiply(Ed25519Field.D_Times_TWO))
-		ref.add(ref.add(ref.toCached()).toP3().toCached()).toP3()
-	}
+	Bi := ref.copy()
+	for i := range ref.precomputedForDouble {
+		inverse := Bi.Z.invert()
+		x := Bi.X.multiply(inverse)
+		y := Bi.Y.multiply(inverse)
 
+		X := y.add(x)
+		Y := y.subtract(x)
+		Z := x.multiply(y).multiply(Ed25519Field.D_Times_TWO)
+		ref.precomputedForDouble[i] = NewEd25519GroupElementPrecomputed(&X, &Y, &Z)
+		Bi = ref.add(ref.add(Bi.toCached()).toP3().toCached()).toP3()
+	}
 }
 
 /**
@@ -2593,11 +2526,13 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		XSquare := ref.X.square()
 		YSquare := ref.Y.square()
 		B := ref.Z.squareAndDouble()
-		A := ref.X.add(ref.Y)
+		A := ref.X.add(*(ref.Y))
 		ASquare := A.square()
 		YSquarePlusXSquare := YSquare.add(XSquare)
 		YSquareMinusXSquare := YSquare.subtract(XSquare)
-		return Ed25519GroupElementP1XP1(ASquare.subtract(YSquarePlusXSquare), YSquarePlusXSquare, YSquareMinusXSquare, B.subtract(YSquareMinusXSquare))
+		X := ASquare.subtract(YSquarePlusXSquare)
+		T := B.subtract(YSquareMinusXSquare)
+		return NewEd25519GroupElementP1XP1(&X, &YSquarePlusXSquare, &YSquareMinusXSquare, &T)
 	default:
 		panic("NewUnsupportedOperationException()")
 	}
@@ -2608,9 +2543,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * Ed25519GroupElement addition using the twisted Edwards addition law for extended coordinates.
  * ref must be given in P^3 coordinate system and g in PRECOMPUTED coordinate system.
  * r = ref + g where ref = (X1 : Y1 : Z1 : T1), g = (g.X, g.Y, g.Z) = (Y2/Z2 + X2/Z2, Y2/Z2 - X2/Z2, 2 * d * X2/Z2 * Y2/Z2)
- * <br>
  * r in P x P coordinate system:
- * <br>
  * r = ((X' : Z'), (Y' : T')) where
  * X' = (Y1 + X1) * g.X - (Y1 - X1) * q.Y = ((Y1 + X1) * (Y2 + X2) - (Y1 - X1) * (Y2 - X2)) * 1/Z2
  * Y' = (Y1 + X1) * g.X + (Y1 - X1) * q.Y = ((Y1 + X1) * (Y2 + X2) + (Y1 - X1) * (Y2 - X2)) * 1/Z2
@@ -2618,21 +2551,18 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * T' = 2 * Z1 - T1 * g.Z = 2 * Z1 - T1 * 2 * d * X2 * Y2 * 1/Z2^2 = (2 * Z1 * Z2 - 2 * d * T1 * T2) * 1/Z2
  * <br>
  * Formula for the P x P coordinate system is in agreement with the formula given in
- * file ge25519.c method add_p1p1() in ref implementation.
+ * file ge25519.c method add_p1p1() in this implementation.
  * Setting A = (Y1 - X1) * (Y2 - X2), B = (Y1 + X1) * (Y2 + X2), C = 2 * d * T1 * T2, D = 2 * Z1 * Z2 we get
  * X' = (B - A) * 1/Z2
  * Y' = (B + A) * 1/Z2
  * Z' = (D + C) * 1/Z2
  * T' = (D - C) * 1/Z2
- * <br>
  * r converted from P x P to P^2 coordinate system:
- * <br>
  * r = (X'' : Y'' : Z'' : T'') where
  * X'' = X' * T' = (B - A) * (D - C) * 1/Z2^2
  * Y'' = Y' * Z' = (B + A) * (D + C) * 1/Z2^2
  * Z'' = Z' * T' = (D + C) * (D - C) * 1/Z2^2
  * T'' = X' * Y' = (B - A) * (B + A) * 1/Z2^2
- * <br>
  * Formula above for the P^2 coordinate system is in agreement with the formula given in [2] page 6
  * (the common factor 1/Z2^2 does not matter)
  * E = B - A, F = D - C, G = D + C, H = B + A
@@ -2643,22 +2573,38 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  *
  * @param g The group element to add.
  * @return The resulting group element in the P x P coordinate system.
- */func (ref *Ed25519GroupElement) precomputedAdd(g *Ed25519GroupElement) *Ed25519GroupElement { /* private   */
+ */func (ref *Ed25519GroupElement) precomputedAdd(g *Ed25519GroupElement) (*Ed25519GroupElement, error) {
 	if ref.coordinateSystem != P3 {
-		panic("NewUnsupportedOperationException(")
+		return nil, errors.New("NewUnsupportedOperationException(")
 	}
 
 	if g.coordinateSystem != PRECOMPUTED {
-		panic("NewIllegalArgumentException(")
+		return nil, errors.New("NewIllegalArgumentException(")
 	}
 
-	YPlusX := ref.Y.add(ref.X)
-	YMinusX := ref.Y.subtract(ref.X)
-	A := YPlusX.multiply(g.X)
-	B := YMinusX.multiply(g.Y)
-	C := g.Z.multiply(ref.T)
-	D := ref.Z.add(ref.Z)
-	return Ed25519GroupElementP1XP1(A.subtract(B), A.add(B), D.add(C), D.subtract(C))
+	YPlusX := ref.Y.add(*(ref.X))
+	YMinusX := ref.Y.subtract(*(ref.X))
+	//A = (Y1 - X1) * (Y2 - X2)
+	A := YMinusX.multiply(*(g.Y))
+
+	//B = (Y1 + X1) * (Y2 + X2)
+	B := YPlusX.multiply(*(g.X))
+
+	//C = 2 * d * T1 * T2
+	C := ref.T.multiply(*(g.Z))
+
+	//D = 2 * Z1 * Z2
+	D := ref.Z.add(*(ref.Z))
+
+	//X' = (Y1 + X1) * g.X - (Y1 - X1) * q.Y
+	x := B.subtract(A)
+	//(Y1 + X1) * g.X + (Y1 - X1) * q.Y
+	y := A.add(B)
+	//2 * Z1 + T1 * g.Z
+	z := D.add(C)
+	t := D.subtract(C)
+
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t), nil
 }
 
 /**
@@ -2671,7 +2617,7 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  *
  * @param g he group element to subtract.
  * @return The result in the P x P coordinate system.
- */func (ref *Ed25519GroupElement) precomputedSubtract(g *Ed25519GroupElement) *Ed25519GroupElement { /* private   */
+ */func (ref Ed25519GroupElement) precomputedSubtract(g *Ed25519GroupElement) *Ed25519GroupElement {
 	if ref.coordinateSystem != P3 {
 		panic("NewUnsupportedOperationException")
 	}
@@ -2680,37 +2626,41 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		panic("NewIllegalArgumentException")
 	}
 
-	YPlusX := ref.Y.add(ref.X)
-	YMinusX := ref.Y.subtract(ref.X)
-	A := YPlusX.multiply(g.Y)
-	B := YMinusX.multiply(g.X)
-	C := g.Z.multiply(ref.T)
-	D := ref.Z.add(ref.Z)
-	return Ed25519GroupElementP1XP1(A.subtract(B), A.add(B), D.subtract(C), D.add(C))
+	YPlusX := ref.Y.add(*(ref.X))
+	YMinusX := ref.Y.subtract(*(ref.X))
+	A := YPlusX.multiply(*(g.Y))
+	B := YMinusX.multiply(*(g.X))
+	C := g.Z.multiply(*(ref.T))
+	D := ref.Z.add(*(ref.Z))
+
+	x := A.subtract(B)
+	y := A.add(B)
+	z := D.subtract(C)
+	t := D.add(C)
+
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
-/**
- * Ed25519GroupElement addition using the twisted Edwards addition law for extended coordinates.
- * ref must be given in P^3 coordinate system and g in CACHED coordinate system.
- * r = ref + g where ref = (X1 : Y1 : Z1 : T1), g = (g.X, g.Y, g.Z, g.T) = (Y2 + X2, Y2 - X2, Z2, 2 * d * T2)
- * <br>
- * r in P x P coordinate system.:
- * X' = (Y1 + X1) * (Y2 + X2) - (Y1 - X1) * (Y2 - X2)
- * Y' = (Y1 + X1) * (Y2 + X2) + (Y1 - X1) * (Y2 - X2)
- * Z' = 2 * Z1 * Z2 + 2 * d * T1 * T2
- * T' = 2 * Z1 * T2 - 2 * d * T1 * T2
- * <br>
- * Setting A = (Y1 - X1) * (Y2 - X2), B = (Y1 + X1) * (Y2 + X2), C = 2 * d * T1 * T2, D = 2 * Z1 * Z2 we get
- * X' = (B - A)
- * Y' = (B + A)
- * Z' = (D + C)
- * T' = (D - C)
- * <br>
- * Same result as in precomputedAdd() (up to a common factor which does not matter).
- *
- * @param g The group element to add.
- * @return The result in the P x P coordinate system.
- */func (ref *Ed25519GroupElement) add(g *Ed25519GroupElement) *Ed25519GroupElement {
+// add Ed25519GroupElement addition using the twisted Edwards addition law for extended coordinates.
+// * ref must be given in P^3 coordinate system and g in CACHED coordinate system.
+// * r = ref + g where ref = (X1 : Y1 : Z1 : T1), g = (g.X, g.Y, g.Z, g.T) = (Y2 + X2, Y2 - X2, Z2, 2 * d * T2)
+// * <br>
+// * r in P x P coordinate system.:
+// * X' = (Y1 + X1) * (Y2 + X2) - (Y1 - X1) * (Y2 - X2)
+// * Y' = (Y1 + X1) * (Y2 + X2) + (Y1 - X1) * (Y2 - X2)
+// * Z' = 2 * Z1 * Z2 + 2 * d * T1 * T2
+// * T' = 2 * Z1 * T2 - 2 * d * T1 * T2
+// * <br>
+// * Setting A = (Y1 - X1) * (Y2 - X2), B = (Y1 + X1) * (Y2 + X2), C = 2 * d * T1 * T2, D = 2 * Z1 * Z2 we get
+// * X' = (B - A)
+// * Y' = (B + A)
+// * Z' = (D + C)
+// * T' = (D - C)
+// * <br>
+// * Same result as in precomputedAdd() (up to a common factor which does not matter).
+// *
+// * @return The result in the P x P coordinate system.
+func (ref *Ed25519GroupElement) add(g *Ed25519GroupElement) *Ed25519GroupElement {
 	if ref.coordinateSystem != P3 {
 		panic("NewUnsupportedOperationException")
 	}
@@ -2719,14 +2669,26 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		panic("NewIllegalArgumentException")
 	}
 
-	YPlusX := ref.Y.add(ref.X)
-	YMinusX := ref.Y.subtract(ref.X)
-	A := YPlusX.multiply(g.X)
-	B := YMinusX.multiply(g.Y)
-	C := g.T.multiply(ref.T)
-	ZSquare := ref.Z.multiply(g.Z)
+	//!!!B = (Y1 + X1) * (Y2 + X2)
+	B := ref.Y.add(*(ref.X)).multiply(*(g.X))
+
+	//!!!A = (Y1 - X1) * (Y2 - X2)
+	A := ref.Y.subtract(*(ref.X)).multiply(*(g.Y))
+
+	//C = (2 * d* T2) * T1
+	C := g.T.multiply(*(ref.T))
+
+	//D = 2 * Z1 * Z2
+	ZSquare := ref.Z.multiply(*(g.Z))
 	D := ZSquare.add(ZSquare)
-	return Ed25519GroupElementP1XP1(A.subtract(B), A.add(B), D.add(C), D.subtract(C))
+
+	// !!! X' = (B - A)
+	x := B.subtract(A)
+	y := A.add(B)
+	z := D.add(C)
+	t := D.subtract(C)
+
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
 /**
@@ -2746,81 +2708,77 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
 		panic("NewIllegalArgumentException")
 	}
 
-	YPlusX := ref.Y.add(ref.X)
-	YMinusX := ref.Y.subtract(ref.X)
-	A := YPlusX.multiply(g.Y)
-	B := YMinusX.multiply(g.X)
-	C := g.T.multiply(ref.T)
-	ZSquare := ref.Z.multiply(g.Z)
+	YPlusX := ref.Y.add(*(ref.X))
+	YMinusX := ref.Y.subtract(*(ref.X))
+	A := YPlusX.multiply(*(g.Y))
+	B := YMinusX.multiply(*(g.X))
+	C := g.T.multiply(*(ref.T))
+	ZSquare := ref.Z.multiply(*(g.Z))
 	D := ZSquare.add(ZSquare)
-	return Ed25519GroupElementP1XP1(A.subtract(B), A.add(B), D.subtract(C), D.add(C))
+
+	x := A.subtract(B)
+	y := A.add(B)
+	z := D.subtract(C)
+	t := D.add(C)
+
+	return NewEd25519GroupElementP1XP1(&x, &y, &z, &t)
 }
 
-/**
- * Negates ref group element by subtracting it from the neutral group element.
- * (only used in MathUtils so it doesn't have to be fast)
- *
- * @return The negative of ref group element.
- */func (ref *Ed25519GroupElement) negate() *Ed25519GroupElement {
+// negate Negates ref group element by subtracting it from the neutral group element.
+// * (only used in MathUtils so it doesn't have to be fast)
+func (ref *Ed25519GroupElement) negate() (*Ed25519GroupElement, error) {
 
 	if ref.coordinateSystem != P3 {
-		panic("NewUnsupportedOperationException")
+		return nil, errors.New("NewUnsupportedOperationException")
 	}
 
-	return Ed25519Group.ZERO_P3.subtract(ref.toCached()).toP3()
+	return Ed25519Group.ZERO_P3().subtract(ref.toCached()).toP3(), nil
 }
 
-/**
- * Constant-time conditional move.
- * Replaces ref with u if b == 1.
- * Replaces ref with ref if b == 0.
- *
- * @param u The group element to return if b == 1.
- * @param b in {0, 1}
- * @return u if b == 1; ref if b == 0; nil otherwise.
- */func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) *Ed25519GroupElement { /* private   */
+// Constant-time conditional move.
+// * @param u The group element to return if b == 1.
+// * @param b in {0, 1}
+// * @return u if b == 1; ref if b == 0; nil otherwise.
+func (ref *Ed25519GroupElement) cmov(u *Ed25519GroupElement, b int) (*Ed25519GroupElement, error) {
 
-	ret := &Ed25519GroupElement{}
-	for i := 0; i < b; i++ {
-		// Only for b == 1
-		ret = u
+	if b == 1 {
+		return u, nil
+	} else if b == 0 {
+		return ref, nil
 	}
-
-	for i := 0; i < 1-b; i++ {
-		// Only for b == 0
-		ret = ref
-	}
-
-	return ret
+	return nil, errors.New("parameter 'b' must by in range {0,1}")
 }
 
 /**
  * Look up 16^i r_i B in the precomputed table.
  * No secret array indices, no secret branching.
  * Constant time.
- * <br>
  * Must have previously precomputed.
  *
  * @param pos = i/2 for i in {0, 2, 4,..., 62}
  * @param b   = r_i
  * @return The Ed25519GroupElement
- */func (ref *Ed25519GroupElement) Select(pos int, b int) *Ed25519GroupElement { /* private   */
+ */func (ref *Ed25519GroupElement) Select(pos int, b int) (*Ed25519GroupElement, error) {
 	// Is r_i negative?
 	bNegative := isNegativeConstantTime(b)
 
 	// |r_i|
 	bAbs := b - (((-bNegative) & b) << 1)
 	// 16^i |r_i| B
-	t := Ed25519Group.ZERO_PRECOMPUTED.cmov(ref.precomputedForSingle[pos][0], IsEqualConstantTime(bAbs, 1)).cmov(ref.precomputedForSingle[pos][1], IsEqualConstantTime(bAbs, 2))
-	t.cmov(ref.precomputedForSingle[pos][2], IsEqualConstantTime(bAbs, 3))
-	t.cmov(ref.precomputedForSingle[pos][3], IsEqualConstantTime(bAbs, 4))
-	t.cmov(ref.precomputedForSingle[pos][4], IsEqualConstantTime(bAbs, 5))
-	t.cmov(ref.precomputedForSingle[pos][5], IsEqualConstantTime(bAbs, 6))
-	t.cmov(ref.precomputedForSingle[pos][6], IsEqualConstantTime(bAbs, 7))
-	t.cmov(ref.precomputedForSingle[pos][7], IsEqualConstantTime(bAbs, 8))
+	t := Ed25519Group.ZERO_PRECOMPUTED()
+	for i, el := range ref.precomputedForSingle[pos] {
+		tt, err := t.cmov(el, IsConstantTimeByteEq(bAbs, i+1))
+		if err != nil {
+			return nil, err
+		} else if tt == nil {
+			return nil, errors.New("get nil object - don't work ")
+		}
+		t = tt
+	}
 	// -16^i |r_i| B
 	//noinspection SuspiciousNameCombination
-	tMinus := Ed25519GroupElementPrecomputed(t.Y, t.X, t.Z.negate())
+	z := t.Z.negate()
+	tMinus := NewEd25519GroupElementPrecomputed(t.Y, t.X, &z)
 	// 16^i r_i B
 	return t.cmov(tMinus, bNegative)
 }
@@ -2830,89 +2788,103 @@ func (ref *Ed25519GroupElement) PrecomputeForScalarMultiplication() {
  * B is ref point. If its lookup table has not been precomputed, it
  * will be at the start of the method (and cached for later calls).
  * Constant time.
- *
  * @param a The encoded field element.
  * @return The resulting group element.
  */
-func (ref *Ed25519GroupElement) scalarMultiply(a *Ed25519EncodedFieldElement) *Ed25519GroupElement {
+func (ref *Ed25519GroupElement) scalarMultiply(a *Ed25519EncodedFieldElement) (*Ed25519GroupElement, error) {
 
 	e := ref.toRadix16(a)
-	h := Ed25519Group.ZERO_P3
+	h := Ed25519Group.ZERO_P3()
 	for i := 1; i < 64; i += 2 {
-		g := ref.Select(i/2, int(e[i]))
-		h = h.precomputedAdd(g).toP3()
+		g, err := ref.Select(i/2, int(e[i]))
+		if err != nil {
+			return nil, err
+		}
+		h, err = h.precomputedAdd(g)
+		if err != nil {
+			return nil, err
+		}
+		h = h.toP3()
 	}
 
 	h = h.dbl().toP2().dbl().toP2().dbl().toP2().dbl().toP3()
 	for i := 0; i < 64; i += 2 {
-		g := ref.Select(i/2, int(e[i]))
-		h = h.precomputedAdd(g).toP3()
+		g, err := ref.Select(i/2, int(e[i]))
+		if err != nil {
+			return nil, err
+		}
+		h, err = h.precomputedAdd(g)
+		if err != nil {
+			return nil, err
+		}
+		h = h.toP3()
 	}
 
-	return h
+	return h, nil
 }
 
-/**
- * r = b * B - a * A  where
- * a and b are encoded field elements and
- * B is ref point.
- * A must have been previously precomputed for float64 scalar multiplication.
- *
- * @param A in P3 coordinate system.
- * @param a = The first encoded field element.
- * @param b = The second encoded field element.
- * @return The resulting group element.
- */
-
-func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(A *Ed25519GroupElement, a *Ed25519EncodedFieldElement, b *Ed25519EncodedFieldElement) *Ed25519GroupElement {
+//doubleScalarMultiplyVariableTime r = b * B - a * A  where
+// * a and b are encoded field elements and
+// * B is ref point.
+// * A must have been previously precomputed for float64 scalar multiplication.
+// *
+// * @param A in P3 coordinate system.
+// * @param a = The first encoded field element.
+// * @param b = The second encoded field element.
+// * @return The resulting group element.
+func (ref *Ed25519GroupElement) doubleScalarMultiplyVariableTime(
+	A *Ed25519GroupElement,
+	a *Ed25519EncodedFieldElement,
+	b *Ed25519EncodedFieldElement) (r *Ed25519GroupElement, err error) {
 	aSlide := ref.slide(a)
 	bSlide := ref.slide(b)
 
-	r := Ed25519Group.ZERO_P2
+	r = Ed25519Group.ZERO_P2()
 	flag := false
 	for i := 255; i >= 0; i-- {
-		if flag || (aSlide[i] != 0 || bSlide[i] != 0) {
+		flag = flag || (aSlide[i] != 0) || (bSlide[i] != 0)
+		if flag {
 
-			flag = true
 			t := r.dbl()
 			if aSlide[i] > 0 {
 				t = t.toP3().precomputedSubtract(A.precomputedForDouble[aSlide[i]/2])
 			} else if aSlide[i] < 0 {
-				t = t.toP3().precomputedAdd(A.precomputedForDouble[(-aSlide[i])/2])
+				t, err = t.toP3().precomputedAdd(A.precomputedForDouble[(-aSlide[i])/2])
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			if bSlide[i] > 0 {
-				t = t.toP3().precomputedAdd(ref.precomputedForDouble[bSlide[i]/2])
+				t, err = t.toP3().precomputedAdd(ref.precomputedForDouble[bSlide[i]/2])
+				if err != nil {
+					return nil, err
+				}
 			} else if bSlide[i] < 0 {
 				t = t.toP3().precomputedSubtract(ref.precomputedForDouble[(-bSlide[i])/2])
 			}
 
 			r = t.toP2()
-			break
 		}
 
 	}
 
-	return r
+	return r, nil
 }
 
-/**
- * Verify that the group element satisfies the curve equation.
- *
- * @return true if the group element satisfies the curve equation, false otherwise.
- */
+// SatisfiesCurveEquation Verify that the group element satisfies the curve equation.
+//* @return true if the group element satisfies the curve equation, false otherwise.
 func (ref *Ed25519GroupElement) SatisfiesCurveEquation() bool {
 
 	switch ref.coordinateSystem {
-	case P2:
-	case P3:
+	case P2, P3:
 		inverse := ref.Z.invert()
 		x := ref.X.multiply(inverse)
 		y := ref.Y.multiply(inverse)
 		xSquare := x.square()
 		ySquare := y.square()
 		dXSquareYSquare := Ed25519Field.D.multiply(xSquare).multiply(ySquare)
-		return bytes.Equal(Ed25519Field.ONE.add(dXSquareYSquare).add(xSquare).Encode().Raw, ySquare.Encode().Raw)
+		return bytes.Equal(Ed25519Field_ONE().add(dXSquareYSquare).add(xSquare).Encode().Raw, ySquare.Encode().Raw)
 	}
 	return ref.toP2().SatisfiesCurveEquation()
 

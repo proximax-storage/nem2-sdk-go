@@ -61,7 +61,7 @@ func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 
 	}
 	id, err := generateMosaicId(parts[0], parts[1])
-	if networkTypeError != nil {
+	if err != nil {
 		return nil, err
 	}
 	return &MosaicId{id, name}, nil
