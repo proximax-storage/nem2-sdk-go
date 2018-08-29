@@ -7,10 +7,17 @@ import (
 
 var testDataForSigner = []byte("abcdefg")
 var (
-	keyPair, _          = NewRandomKeyPair()
-	contextSignature, _ = NewSignatureFromBigInt(BigInteger_ONE(), BigInteger_ONE())
-	contextDsaSigner    = CryptoEngines.DefaultEngine.CreateDsaSigner(keyPair)
+	keyPair          *KeyPair
+	contextSignature *Signature
+	contextDsaSigner DsaSigner
 )
+
+func init() {
+
+	keyPair, _ = NewRandomKeyPair()
+	contextSignature, _ = NewSignatureFromBigInt(BigInteger_ONE(), BigInteger_ONE())
+	contextDsaSigner = CryptoEngines.DefaultEngine.CreateDsaSigner(keyPair)
+}
 
 func TestNewSignerFromKeyPair(t *testing.T) {
 	sign := NewSignerFromKeyPair(keyPair, nil)

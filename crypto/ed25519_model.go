@@ -6,10 +6,9 @@ package crypto
 
 import (
 	"crypto/rand"
+	rand2 "crypto/rand"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/curve25519"
-	"golang.org/x/crypto/ed25519"
 	"io"
 	"math/big"
 )
@@ -215,10 +214,7 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 	// S = (r + H(encodedR, encodedA, data) * a) mod group order where
 	// encodedR and encodedA are the little endian encodings of the group element R and the public key A and
 	// a is the lower 32 bytes of hash after clamping.
-	hashH, err := HashesSha3_512(
-		encodedR.Raw,
-		ref.KeyPair.PublicKey(),
-		mess)
+	hashH, err := HashesSha3_512(encodedR.Raw, ref.KeyPair.PublicKey(), mess)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +223,7 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 		return nil, err
 	}
 	hModQ := h.modQ()
-	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.privateKey),
-		rModQ)
+	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.privateKey), rModQ)
 	// Signature is (encodedR, encodedS)
 	signature, err := NewSignature(encodedR.Raw, encodedS.Raw)
 	if err != nil {
@@ -256,17 +251,14 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 	// h = H(encodedR, encodedA, data).
 	rawEncodedR := signature.R
 	rawEncodedA := ref.KeyPair.PublicKey()
-	hashR, err := HashesSha3_512(
-		rawEncodedR,
-		rawEncodedA,
-		mess)
+	hashR, err := HashesSha3_512(rawEncodedR, rawEncodedA, mess)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return false
 	}
 	h, err := NewEd25519EncodedFieldElement(hashR)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return false
 	}
 	// hReduced = h mod group order
@@ -284,13 +276,13 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 		hModQ,
 		&Ed25519EncodedFieldElement{Ed25519Field_ZERO_SHORT(), signature.S})
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return false
 	}
 	// Compare calculated R to given R.
 	encodedCalculatedR, err := calculatedR.Encode()
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 		return false
 	}
 
@@ -343,13 +335,15 @@ func NewEd25519KeyGenerator() *Ed25519KeyGenerator {
 // GenerateKeyPair generate key pair use ed25519.GenerateKey
 func (ref *Ed25519KeyGenerator) GenerateKeyPair() (*KeyPair, error) {
 
-	//ignore publicKey
-	_, prKey, err := ed25519.GenerateKey(nil)
+	seed := make([]byte, 32)
+	rand := rand2.Reader
+	_, err := io.ReadFull(rand, seed[:])
 	if err != nil {
 		return nil, err
-	}
+	} // seed is the private key.
+
 	// seed is the private key.
-	privateKey := NewPrivateKey(prKey)
+	privateKey := NewPrivateKey(seed)
 	publicKey := ref.DerivePublicKey(privateKey)
 	return NewKeyPair(privateKey, publicKey, CryptoEngines.Ed25519Engine)
 }
@@ -358,11 +352,10 @@ func (ref *Ed25519KeyGenerator) DerivePublicKey(privateKey *PrivateKey) *PublicK
 
 	a := PrepareForScalarMultiply(privateKey)
 	// a * base point is the public key.
-	var pubKey, prKey, base [32]byte
-	copy(prKey[:], privateKey.Raw)
-	copy(base[:], a.Raw)
-	curve25519.ScalarMult(&pubKey, &prKey, &base)
-	// verification of signatures will be about twice as fast when pre-calculating
-	// a suitable table of group elements.
-	return NewPublicKey(pubKey[:])
+	pubKey, err := Ed25519Group.BASE_POINT().scalarMultiply(a)
+	if err != nil {
+		panic(err)
+	}
+	el, _ := pubKey.Encode()
+	return NewPublicKey(el.Raw)
 }
