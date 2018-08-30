@@ -2,13 +2,13 @@ package crypto
 
 import (
 	"encoding/hex"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"strconv"
 )
 
 //KeyAnalyzer Interface to analyze keys.
 type KeyAnalyzer interface {
-
 	// Gets a Value indicating whether or not the public key is compressed.
 	IsKeyCompressed(publicKey *PublicKey) bool
 }
@@ -40,7 +40,7 @@ func NewPrivateKeyfromBigInt(val *big.Int) *PrivateKey {
 
 //PrivatKeyfromHexString creates a private key from a hex strings.
 func NewPrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
-	raw, err := hexDecodeString(sHex)
+	raw, err := utils.HexDecodeStringOdd(sHex)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +75,12 @@ func NewPublicKey(raw []byte) *PublicKey {
 }
 
 func NewPublicKeyfromHex(hStr string) (*PublicKey, error) {
-	raw, err := hexDecodeString(hStr)
+	raw, err := utils.HexDecodeStringOdd(hStr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PublicKey{raw}, nil
+	return NewPublicKey(raw), nil
 }
 
 // Creates a public key from a hex strings.

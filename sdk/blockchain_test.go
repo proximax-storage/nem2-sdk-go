@@ -2,8 +2,10 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+	"time"
 )
 
 // Mock response for TestBlockchainService_GetBlockHeight & GetBlockInfo
@@ -185,8 +187,8 @@ func TestBlockchainService_GetBlockTransactions(t *testing.T) {
 		t.Errorf("Blockchain.GetBlockTransactions returned error: %v", err)
 	} else if validateResp(resp, t) {
 
-		if want := wantBlockTransactions; !reflect.DeepEqual(got, want) {
-			t.Errorf("Blockchain.GetBlockTransactions returned %+v, want %+v", got, want)
+		for key, tranz := range got {
+			assert.Equal(t, wantBlockTransactions[key].String(), tranz.String(), "Blockchain.GetBlockTransactions returned %+v", got)
 		}
 	}
 }
@@ -227,23 +229,28 @@ var wantBlockInfo = &BlockInfo{
 // Expected value for TestBlockchainService_GetBlockHeight
 var wantBlockTransactions = []Transaction{
 	&RegisterNamespaceTransaction{
-		//AbstractTransaction: AbstractTransaction{
-		//	Type:        REGISTER_NAMESPACE,
-		//	Version:     uint64(2),
-		//	NetworkType: MIJIN_TEST,
-		//	Signature:   "AE1558A33F4F595AD5DCEAE4EC11606E815A781E75E3EEC7E9F8BB46BDAF16670C8C36C6815F74FD83487178DDAB8FCE4B4B633875A1549D4FB068ABC5B22A0C",
-		//	Signer:      "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
-		//	Fee:         []uint64{0, 0},
-		//	Deadline:    []uint64{1, 0},
-		//	TransactionInfo: TransactionInfo{
-		//		Height:              []uint64{1, 0},
-		//		Hash:                "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
-		//		MerkleComponentHash: "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
-		//		Index:               0,
-		//		Id:                  "5B55E02EACCB7B00015DB6D2",
-		//	},
-		//},
-		//NamspaceName: "nem",
-		//Duration:     []uint64{0, 0},
+		abstractTransaction: abstractTransaction{
+			Type:        REGISTER_NAMESPACE,
+			Version:     uint64(2),
+			NetworkType: MIJIN_TEST,
+			Signature:   "AE1558A33F4F595AD5DCEAE4EC11606E815A781E75E3EEC7E9F8BB46BDAF16670C8C36C6815F74FD83487178DDAB8FCE4B4B633875A1549D4FB068ABC5B22A0C",
+			Signer:      nil,
+			Fee:         uint64DTO{0, 0}.toBigInt(),
+			Deadline:    &Deadline{time.Unix(uint64DTO{1, 0}.toBigInt().Int64(), int64(time.Millisecond))},
+			TransactionInfo: &TransactionInfo{
+				Height:              uint64DTO{1, 0}.toBigInt(),
+				Hash:                "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+				MerkleComponentHash: "D28F325EDA671D0C98AC9087A8C0568C8C25F75C63F9DBE84EC5FB9F63E82366",
+				Index:               0,
+				Id:                  "5B55E02EACCB7B00015DB6D2",
+			},
+		},
+		NamspaceName: "nem",
+		Duration:     uint64DTO{0, 0}.toBigInt(),
 	},
+}
+
+func init() {
+	pubAcc, _ := NewPublicAccount("321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E", MIJIN_TEST)
+	wantBlockTransactions[0].GetAbstractTransaction().Signer = pubAcc
 }
