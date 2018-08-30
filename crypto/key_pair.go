@@ -4,8 +4,8 @@ import "errors"
 
 // KeyPair represent the pair of keys - private & public
 type KeyPair struct {
-	privateKey *PrivateKey
-	publicKey  *PublicKey
+	*PrivateKey
+	*PublicKey
 }
 
 //NewRandomKeyPair creates a random key pair.
@@ -38,17 +38,5 @@ func NewKeyPairByEngine(engine CryptoEngine) (*KeyPair, error) {
 //HasPrivateKey Determines if the current key pair has a private key.
 func (ref *KeyPair) HasPrivateKey() bool {
 
-	return ref.privateKey != nil
-}
-
-//PrivateKey return raw privatKey for sign operation
-func (ref *KeyPair) PrivateKey() []byte {
-
-	return ref.privateKey.Raw
-}
-
-//PrivateKey return raw privatKey for verify operation
-func (ref *KeyPair) PublicKey() []byte {
-
-	return ref.publicKey.Raw
+	return ref.PrivateKey != nil
 }

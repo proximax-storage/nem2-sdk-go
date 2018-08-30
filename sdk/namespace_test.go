@@ -93,7 +93,7 @@ func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 		t.Error("failed Id data Convertion")
 		result = false
 	}
-	if !(nsInfo.TypeSpace == RootNamespace) {
+	if !(nsInfo.TypeSpace == Root) {
 		t.Error("failed Type data Convertion")
 		result = false
 	}

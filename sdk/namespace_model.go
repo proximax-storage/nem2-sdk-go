@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/json-iterator/go"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"regexp"
@@ -104,8 +105,8 @@ type NamespaceNameDTO struct {
 type NamespaceType uint8
 
 const (
-	RootNamespace NamespaceType = iota
-	SubNamespace
+	Root NamespaceType = iota
+	Sub
 )
 
 // NamespaceInfo contains the state information of a Namespace.
@@ -229,13 +230,23 @@ func generateNamespacePath(name string) ([]*big.Int, error) {
 }
 
 func generateId(name string, parentId *big.Int) (*big.Int, error) {
-	var id big.Int
-	result := sha3.New256()
-	_, err := result.Write(parentId.Bytes())
-	if err == nil {
-		t := result.Sum([]byte(name))
-		return id.SetBytes(t[:8]), nil
-	}
+	pIdB := parentId.Bytes()
+	utils.ReverseByteArray(pIdB)
 
-	return nil, err
+	result := sha3.New256()
+	_, err := result.Write(pIdB)
+	if err != nil {
+		return nil, err
+	}
+	_, err = result.Write([]byte(name))
+	if err != nil {
+		return nil, err
+	}
+	t := result.Sum(nil)
+	l := t[:4]
+	h := t[4:8]
+	utils.ReverseByteArray(l)
+	utils.ReverseByteArray(h)
+
+	return new(big.Int).SetBytes(append(h, l...)), nil
 }

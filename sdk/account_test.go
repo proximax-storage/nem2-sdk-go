@@ -131,7 +131,7 @@ func TestAccountService_Transactions(t *testing.T) {
 	}
 
 	want := []Transaction{
-		testTransaction,
+		transaction,
 	}
 
 	if !reflect.DeepEqual(tx, want) {

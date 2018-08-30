@@ -92,10 +92,10 @@ var registerNamespaceTransactionSchema = &schema{
 	append(
 		abstractTransactionSchemaAttributes,
 		[]schemaAttribute{
-			newArrayAttribute("namespaceType", IntSize),
-			newScalarAttribute("durationParentId", IntSize),
+			newScalarAttribute("namespaceType", ByteSize),
+			newArrayAttribute("durationParentId", IntSize),
 			newArrayAttribute("namespaceId", IntSize),
-			newArrayAttribute("namespaceNameSize", ByteSize),
+			newScalarAttribute("namespaceNameSize", ByteSize),
 			newArrayAttribute("name", ByteSize),
 		}...,
 	),
@@ -108,7 +108,7 @@ var lockFundsTransactionSchema = &schema{
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
-			newArrayAttribute("hash", IntSize),
+			newArrayAttribute("hash", ByteSize),
 		}...,
 	),
 }
@@ -120,9 +120,9 @@ var secretLockTransactionSchema = &schema{
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
-			newScalarAttribute("hashAlgorithm", IntSize),
-			newArrayAttribute("secret", IntSize),
-			newArrayAttribute("recipient", IntSize),
+			newScalarAttribute("hashAlgorithm", ByteSize),
+			newArrayAttribute("secret", ByteSize),
+			newArrayAttribute("recipient", ByteSize),
 		}...,
 	),
 }
