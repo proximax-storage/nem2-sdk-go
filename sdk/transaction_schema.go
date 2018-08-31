@@ -134,7 +134,7 @@ var secretProofTransactionSchema = &schema{
 			newScalarAttribute("hashAlgorithm", ByteSize),
 			newArrayAttribute("secret", ByteSize),
 			newScalarAttribute("proofSize", ShortSize),
-			newArrayAttribute("proof", IntSize),
+			newArrayAttribute("proof", ByteSize),
 		}...,
 	),
 }

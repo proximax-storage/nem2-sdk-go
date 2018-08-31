@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 type schemaAttribute interface {
@@ -17,7 +16,6 @@ func (s *schema) serialize(bytes []byte) []byte {
 	var resultBytes []byte
 	for i, schemaDefinition := range s.schemaDefinition {
 		tmp := schemaDefinition.serialize(bytes, 4+(uint32(i)*2), uint32(bytes[0]))
-		fmt.Println(tmp)
 		resultBytes = append(resultBytes, tmp...)
 	}
 	return resultBytes

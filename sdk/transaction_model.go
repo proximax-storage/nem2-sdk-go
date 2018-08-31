@@ -349,7 +349,7 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaicName string, names
 			NetworkType: networkType,
 		},
 		MosaicName:  mosaicName,
-		NamespaceId: NewNamespaceId(nil, mosaicName),
+		NamespaceId: NewNamespaceId(nil, namespaceName),
 		MosaicId: &MosaicId{
 			Id:       id,
 			FullName: "",
@@ -389,6 +389,7 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 	if tx.MosaicProperties.LevyMutable {
 		f += 4
 	}
+
 	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicId.Id))
 	nV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.NamespaceId.Id))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicProperties.Duration))
@@ -851,7 +852,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 		return nil, errors.New("parentId must not be nil")
 	}
 
-	id, err := generateId(namespaceName, parentId.Id)
+	id, err := generateId(namespaceName, parentId.Id.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -864,7 +865,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 			NetworkType: networkType,
 		},
 		NamspaceName:  namespaceName,
-		NamespaceId:   &NamespaceId{Id: id, FullName: namespaceName},
+		NamespaceId:   &NamespaceId{Id: new(big.Int).SetBytes(id), FullName: namespaceName},
 		NamespaceType: Sub,
 		ParentId:      parentId,
 	}, nil
@@ -1644,9 +1645,9 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 
 	switch t {
 	case AggregateBonded:
-		mapAggregateTransaction(b)
+		return mapAggregateTransaction(b)
 	case AggregateCompleted:
-		mapAggregateTransaction(b)
+		return mapAggregateTransaction(b)
 	case MosaicDefinition:
 		dto := mosaicDefinitionTransactionDTO{}
 

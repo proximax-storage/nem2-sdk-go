@@ -85,7 +85,8 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 		return nil, errors.New(mosaicName + "invalid mosaic name")
 	}
 
-	return generateId(mosaicName, namespacePath[len(namespacePath)-1])
+	b, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
+	return new(big.Int).SetBytes(b), err
 }
 
 // MosaicIds is a list MosaicId

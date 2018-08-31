@@ -193,17 +193,17 @@ func generateNamespaceId(namespaceName string) (*big.Int, error) {
 		return nil, err
 	}
 
-	return list[len(list)-1], nil
+	return new(big.Int).SetBytes(list[len(list)-1]), nil
 }
 
 // regValidNamespace check namespace on valid symbols
 var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
 // generateNamespacePath create list NamespaceId from string
-func generateNamespacePath(name string) ([]*big.Int, error) {
+func generateNamespacePath(name string) ([][]byte, error) {
 
 	parts := strings.Split(name, ".")
-	path := make([]*big.Int, 0)
+	path := make([][]byte, 0)
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace Name")
 	}
@@ -212,14 +212,14 @@ func generateNamespacePath(name string) ([]*big.Int, error) {
 		return nil, errors.New("too many parts")
 	}
 
-	namespaceId := big.NewInt(0)
+	emptyNamespaceId := make([]byte, 8)
 	for i, part := range parts {
 		if !regValidNamespace.MatchString(part) {
 			return nil, errors.New("invalid Namespace name")
 		}
 
 		var err error
-		namespaceId, err = generateId(parts[i], namespaceId)
+		namespaceId, err := generateId(parts[i], emptyNamespaceId)
 		if err != nil {
 			return nil, err
 		}
@@ -229,12 +229,10 @@ func generateNamespacePath(name string) ([]*big.Int, error) {
 	return path, nil
 }
 
-func generateId(name string, parentId *big.Int) (*big.Int, error) {
-	pIdB := parentId.Bytes()
-	utils.ReverseByteArray(pIdB)
-
+func generateId(name string, parentId []byte) ([]byte, error) {
+	utils.ReverseByteArray(parentId)
 	result := sha3.New256()
-	_, err := result.Write(pIdB)
+	_, err := result.Write(parentId)
 	if err != nil {
 		return nil, err
 	}
@@ -247,6 +245,5 @@ func generateId(name string, parentId *big.Int) (*big.Int, error) {
 	h := t[4:8]
 	utils.ReverseByteArray(l)
 	utils.ReverseByteArray(h)
-
-	return new(big.Int).SetBytes(append(h, l...)), nil
+	return append(h, l...), nil
 }

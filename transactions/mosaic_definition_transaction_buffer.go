@@ -1,6 +1,7 @@
 package transactions
 
 import (
+	"fmt"
 	flatbuffers "github.com/google/flatbuffers/go"
 )
 
@@ -291,5 +292,6 @@ func MosaicDefinitionTransactionBufferAddIndicateDuration(builder *flatbuffers.B
 	builder.PrependByteSlot(14, indicateDuration, 0)
 }
 func MosaicDefinitionTransactionBufferAddDuration(builder *flatbuffers.Builder, duration flatbuffers.UOffsetT) {
+	fmt.Println(duration)
 	builder.PrependUOffsetTSlot(15, flatbuffers.UOffsetT(duration), 0)
 }

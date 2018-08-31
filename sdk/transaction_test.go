@@ -278,7 +278,7 @@ func TestMosaicDefinitionTransactionSerialization(t *testing.T) {
 	want := []byte{156, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 77, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 155, 138, 22, 28, 245, 9, 35, 144, 21, 153, 17, 174, 167, 46, 189, 60, 7, 1, 7, 4, 109, 111, 115, 97, 105, 99, 115, 2, 16, 39, 0, 0, 0, 0, 0, 0}
 
-	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, "mosaics", "sname", NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
+	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, "mosaics", "sname", NewMosaicProperties(true, true, true, 4, big.NewInt(167456747700)), MijinTest)
 
 	b, err := tx.generateBytes()
 
