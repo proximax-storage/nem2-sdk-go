@@ -35,7 +35,7 @@ func TestGenerateNamespacePath_GeneratesCorrectWellKnownRootPath(t *testing.T) {
 
 	assert.Equal(t, len(ids), 1, `ids.size() and 1 must by equal !`)
 
-	assert.Equal(t, testIdGenerateNEMBigInt, ids[0])
+	assert.Equal(t, testIdGenerateNEMBigInt.Int64(), ids[0].Int64())
 }
 
 // @Test
@@ -44,7 +44,7 @@ func TestNamespacePath_GeneratesCorrectWellKnownChildPath(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(ids), 2, `ids.size() and 2 must by equal !`)
 
-	assert.Equal(t, testIdGenerateNEMBigInt, ids[0])
+	assert.Equal(t, testIdGenerateNEMBigInt.Int64(), ids[0].Int64())
 	assert.Equal(t, testIdGenerateNEM_XEMBigInt, ids[1], `NewBigInteger(testNewXemBigInt) and ids.get(1) must by equal !`)
 }
 
