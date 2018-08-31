@@ -1,29 +1,31 @@
 package sdk
 
-var abstractTransactionSchemaAttributes = []schemaAttribute{
-	newScalarAttribute("size", IntSize),
-	newArrayAttribute("signature", ByteSize),
-	newArrayAttribute("signer", ByteSize),
-	newScalarAttribute("version", ShortSize),
-	newScalarAttribute("type", ShortSize),
-	newArrayAttribute("fee", IntSize),
-	newArrayAttribute("deadline", IntSize),
-}
-
-var aggregateTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func aggregateTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newScalarAttribute("transactionsSize", IntSize),
 			newArrayAttribute("transactions", ByteSize),
-		}...,
-	),
+		},
+	}
 }
 
-var mosaicDefinitionTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func mosaicDefinitionTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newArrayAttribute("parentId", IntSize),
 			newArrayAttribute("mosaicId", IntSize),
 			newScalarAttribute("mosaicNameLength", ByteSize),
@@ -33,25 +35,37 @@ var mosaicDefinitionTransactionSchema = &schema{
 			newArrayAttribute("mosaicName", ByteSize),
 			newScalarAttribute("indicateDuration", ByteSize),
 			newArrayAttribute("duration", IntSize),
-		}...,
-	),
+		},
+	}
 }
 
-var mosaicSupplyChangeTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func mosaicSupplyChangeTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newArrayAttribute("mosaicId", IntSize),
 			newScalarAttribute("direction", ByteSize),
 			newArrayAttribute("delta", IntSize),
-		}...,
-	),
+		},
+	}
 }
 
-var transferTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func transferTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newArrayAttribute("recipient", ByteSize),
 			newScalarAttribute("messageSize", ShortSize),
 			newScalarAttribute("numMosaics", ByteSize),
@@ -67,14 +81,19 @@ var transferTransactionSchema = &schema{
 					newArrayAttribute("amount", IntSize),
 				},
 			}.schemaDefinition),
-		}...,
-	),
+		},
+	}
 }
-
-var modifyMultisigAccountTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func modifyMultisigAccountTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newScalarAttribute("minRemovalDelta", ByteSize),
 			newScalarAttribute("minApprovalDelta", ByteSize),
 			newScalarAttribute("numModifications", ByteSize),
@@ -84,57 +103,81 @@ var modifyMultisigAccountTransactionSchema = &schema{
 					newArrayAttribute("cosignatoryPublicKey", ByteSize),
 				},
 			}.schemaDefinition),
-		}...,
-	),
+		},
+	}
 }
 
-var registerNamespaceTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func registerNamespaceTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newScalarAttribute("namespaceType", ByteSize),
 			newArrayAttribute("durationParentId", IntSize),
 			newArrayAttribute("namespaceId", IntSize),
 			newScalarAttribute("namespaceNameSize", ByteSize),
 			newArrayAttribute("name", ByteSize),
-		}...,
-	),
+		},
+	}
 }
 
-var lockFundsTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func lockFundsTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
 			newArrayAttribute("hash", ByteSize),
-		}...,
-	),
+		},
+	}
 }
 
-var secretLockTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func secretLockTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newArrayAttribute("mosaicId", IntSize),
 			newArrayAttribute("mosaicAmount", IntSize),
 			newArrayAttribute("duration", IntSize),
 			newScalarAttribute("hashAlgorithm", ByteSize),
 			newArrayAttribute("secret", ByteSize),
 			newArrayAttribute("recipient", ByteSize),
-		}...,
-	),
+		},
+	}
 }
 
-var secretProofTransactionSchema = &schema{
-	append(
-		abstractTransactionSchemaAttributes,
+func secretProofTransactionSchema() *schema {
+	return &schema{
 		[]schemaAttribute{
+			newScalarAttribute("size", IntSize),
+			newArrayAttribute("signature", ByteSize),
+			newArrayAttribute("signer", ByteSize),
+			newScalarAttribute("version", ShortSize),
+			newScalarAttribute("type", ShortSize),
+			newArrayAttribute("fee", IntSize),
+			newArrayAttribute("deadline", IntSize),
 			newScalarAttribute("hashAlgorithm", ByteSize),
 			newArrayAttribute("secret", ByteSize),
 			newScalarAttribute("proofSize", ShortSize),
 			newArrayAttribute("proof", ByteSize),
-		}...,
-	),
+		},
+	}
 }

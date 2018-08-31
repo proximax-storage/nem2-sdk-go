@@ -263,7 +263,7 @@ func (tx *AggregateTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return aggregateTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return aggregateTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type aggregateTransactionDTO struct {
@@ -414,8 +414,7 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 	transactions.MosaicDefinitionTransactionBufferAddDuration(builder, dV)
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
-
-	return mosaicDefinitionTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return mosaicDefinitionTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type mosaicDefinitionTransactionDTO struct {
@@ -520,7 +519,7 @@ func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return mosaicSupplyChangeTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return mosaicSupplyChangeTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type mosaicSupplyChangeTransactionDTO struct {
@@ -649,7 +648,7 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return transferTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return transferTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type transferTransactionDTO struct {
@@ -766,7 +765,7 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return modifyMultisigAccountTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return modifyMultisigAccountTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type modifyMultisigAccountTransactionDTO struct {
@@ -916,7 +915,7 @@ func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return registerNamespaceTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return registerNamespaceTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type registerNamespaceTransactionDTO struct {
@@ -1038,7 +1037,7 @@ func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return lockFundsTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return lockFundsTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type lockFundsTransactionDTO struct {
@@ -1168,7 +1167,7 @@ func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return secretLockTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return secretLockTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type secretLockTransactionDTO struct {
@@ -1288,7 +1287,7 @@ func (tx *SecretProofTransaction) generateBytes() ([]byte, error) {
 	t := transactions.TransactionBufferEnd(builder)
 	builder.Finish(t)
 
-	return secretProofTransactionSchema.serialize(builder.FinishedBytes()), nil
+	return secretProofTransactionSchema().serialize(builder.FinishedBytes()), nil
 }
 
 type secretProofTransactionDTO struct {
