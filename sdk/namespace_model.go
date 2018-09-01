@@ -231,7 +231,7 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 }
 
 func generateId(name string, parentId *big.Int) (*big.Int, error) {
-	parentIdBytes := utils.BigIntToByteArray(parentId, 8) //.Bytes()
+	parentIdBytes := parentId.Bytes()
 	if len(parentIdBytes) > 8 {
 		parentIdBytes = parentIdBytes[:8]
 	} else if len(parentIdBytes) < 8 {

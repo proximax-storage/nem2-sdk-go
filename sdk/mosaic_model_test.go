@@ -9,7 +9,7 @@ func TestNewMosaicId(t *testing.T) {
 	mosaicId, err := NewMosaicId(nil, "nem:xem")
 	assert.Nil(t, err)
 
-	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Bytes(), mosaicId.Id.Bytes())
+	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Int64(), mosaicId.Id.Int64())
 	assert.Equal(t, mosaicId.FullName, "nem:xem")
 }
 

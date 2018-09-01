@@ -45,7 +45,7 @@ func TestNamespacePath_GeneratesCorrectWellKnownChildPath(t *testing.T) {
 	assert.Equal(t, len(ids), 2, `ids.size() and 2 must by equal !`)
 
 	assert.Equal(t, testIdGenerateNEMBigInt.Int64(), ids[0].Int64())
-	assert.Equal(t, testIdGenerateNEM_XEMBigInt, ids[1], `NewBigInteger(testNewXemBigInt) and ids.get(1) must by equal !`)
+	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Int64(), ids[1].Int64(), `NewBigInteger(testNewXemBigInt) and ids.get(1) must by equal !`)
 }
 
 // @Test
@@ -76,7 +76,7 @@ func TestNamespacePathRejectsNamesWithTooManyParts(t *testing.T) {
 func TestMosaicIdGeneratesCorrectWellKnowId(t *testing.T) {
 	id, err := generateMosaicId("nem", "xem")
 	assert.Nil(t, err)
-	assert.Equal(t, testIdGenerateNEM_XEMBigInt, id)
+	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Int64(), id.Int64())
 }
 
 // @Test
