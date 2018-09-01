@@ -3,7 +3,6 @@ package sdk
 import (
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"regexp"
 	"strings"
@@ -184,7 +183,5 @@ func Xem(amount int64) *Mosaic {
 }
 
 func XemRelative(amount int64) *Mosaic {
-	i := big.NewFloat(math.Pow10(6))
-	i2, _ := i.Int64()
-	return Xem(big.NewInt(0).Mul(big.NewInt(i2), big.NewInt(amount)).Int64())
+	return Xem(big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(amount)).Int64())
 }

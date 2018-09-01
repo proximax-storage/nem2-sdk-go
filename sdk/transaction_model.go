@@ -391,8 +391,9 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 	}
 
 	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicId.Id))
-	nV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.NamespaceId.Id))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicProperties.Duration))
+	nV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.NamespaceId.Id))
+
 	n := builder.CreateString(tx.MosaicName)
 
 	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
