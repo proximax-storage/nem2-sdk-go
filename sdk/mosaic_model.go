@@ -75,7 +75,7 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 		return nil, errors.New(mosaicName + " having zero length")
 	}
 
-	namespacePath, err := generateNamespacePath(namespaceName)
+	namespacePath, err := GenerateNamespacePath(namespaceName)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 
 var mosaicTest = MosaicIds{MosaicIds: []string{"d525ad41d95fcf29"}}
 
-const testMosaicID = "d525ad41d95fcf29"
+const testMosaicPathID = "d525ad41d95fcf29"
 const testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
 
 var (
@@ -54,8 +54,8 @@ var (
   }
 }`
 	mscRouters = map[string]sRouting{
-		pathMosaic + testMosaicID: {tplMosaic, nil},
-		pathMosaic:                {"[" + tplMosaic + "]", routeNeedBody},
+		pathMosaic + testMosaicPathID: {tplMosaic, nil},
+		pathMosaic:                    {"[" + tplMosaic + "]", routeNeedBody},
 		pathMosaicNames: {`[
 						  {
 							"mosaicId": [
@@ -112,7 +112,7 @@ func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
 }
 func TestMosaicService_GetMosaic(t *testing.T) {
 
-	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, testMosaicID)
+	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, testMosaicPathID)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
