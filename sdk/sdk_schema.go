@@ -67,14 +67,14 @@ func (s abstractSchemaAttribute) readUint32(offset uint32, buffer []byte) uint32
 	return binary.LittleEndian.Uint32(buffer[offset : offset+4])
 }
 
-func (s abstractSchemaAttribute) readUint16(offset uint32, buffer []byte) uint16 {
-	return binary.LittleEndian.Uint16(buffer[offset : offset+2])
+func (s abstractSchemaAttribute) readUint16(offset uint32, buffer []byte) uint32 {
+	return uint32(binary.LittleEndian.Uint16(buffer[offset : offset+2]))
 }
 
 func (s abstractSchemaAttribute) offset(innerObjectPosition uint32, position uint32, buffer []byte) uint32 {
 	vtable := innerObjectPosition - s.readUint32(innerObjectPosition, buffer)
-	if uint16(position) < s.readUint16(vtable, buffer) {
-		return uint32(s.readUint16(vtable+position, buffer))
+	if position < s.readUint16(vtable, buffer) {
+		return s.readUint16(vtable+position, buffer)
 	}
 	return 0
 }
@@ -160,7 +160,7 @@ func (s tableAttribute) serialize(buffer []byte, position uint32, innerObjectPos
 	return resultBytes
 }
 
-type VarSize uint
+type VarSize uint32
 
 const (
 	ByteSize  VarSize = 1
