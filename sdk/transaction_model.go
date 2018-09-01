@@ -461,7 +461,7 @@ func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaicId *MosaicId, su
 	if mosaicId == nil {
 		return nil, errors.New("mosaicId must not be nil")
 	}
-	if !(supplyType != Increase || supplyType != Decrease) {
+	if !(supplyType == Increase || supplyType == Decrease) {
 		return nil, errors.New("supplyType must not be nil")
 	}
 	if delta == nil {
