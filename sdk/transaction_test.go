@@ -207,7 +207,9 @@ func TestAggregateTransactionSerialization(t *testing.T) {
 		NewPlainMessage(""),
 		MijinTest,
 	)
+
 	ttx.Signer = p
+
 	atx, err := NewCompleteAggregateTransaction(fakeDeadline, []Transaction{ttx}, MijinTest)
 
 	b, err := atx.generateBytes()
@@ -229,6 +231,7 @@ func TestAggregateTransactionSigningWithMultipleCosignatures(t *testing.T) {
 		NewPlainMessage("test-message"),
 		MijinTest,
 	)
+
 	ttx.Signer = p
 
 	atx, err := NewCompleteAggregateTransaction(fakeDeadline, []Transaction{ttx}, MijinTest)
@@ -480,6 +483,31 @@ func TestLockFundsTransactionSerialization(t *testing.T) {
 	}
 }
 
+func TestLockFundsTransactionToAggregate(t *testing.T) {
+	want1 := []int16{96, 0, 0, 0, -102, 73, 54, 100, 6, -84, -87, 82, -72, -117, -83, -11, -15, -23, -66, 108, -28, -106, -127,
+		65, 3, 90, 96, -66, 80, 50, 115, -22, 101, 69, 107, 36, 3, 144, 76, 65, 41, 207, 95,
+		217, 65, 173, 37, 213, 128, 150, 152, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 132,
+		152, 179, 141, 137, 193, 220, 138, 68, 142, 165, 130, 73,
+		56, 255, 130, 137, 38, 205, 159, 119, 71, 177, 132, 75, 89, 180, 182,
+		128, 126, 135, 139}
+	want := make([]byte, len(want1))
+	for i, w := range want1 {
+		want[i] = byte(w)
+	}
+	p, err := NewPublicAccount("9A49366406ACA952B88BADF5F1E9BE6CE4968141035A60BE503273EA65456B24", MijinTest)
+	stx := &SignedTransaction{AggregateBonded, "payload", "8498B38D89C1DC8A448EA5824938FF828926CD9F7747B1844B59B4B6807E878B"}
+	tx, err := NewLockFundsTransaction(fakeDeadline, XemRelative(10), big.NewInt(100), stx, MijinTest)
+	tx.Signer = p
+	b, err := toAggregateTransactionBytes(tx)
+	if err != nil {
+		t.Errorf("LockFundsTransaction toAggregate returned error: %s", err)
+	}
+
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("LockFundsTransaction toAggregate returned wrong result: \n %+v, want: \n %+v", b, want)
+	}
+}
+
 func TestLockFundsTransactionSigning(t *testing.T) {
 	want := "B0000000D079047B87DCEDA0DE68558C1322A453D55D52BDA2778D66C5344BF79EE9E946C731F9ED565E5A854AFC0A1E1476B571940F920F33ADD9BAC245DB46A59794051026D70E1954775749C6811084D6450A3184D977383F0E4282CD47118AF3775503904C410000000000000000010000000000000029CF5FD941AD25D5809698000000000064000000000000008498B38D89C1DC8A448EA5824938FF828926CD9F7747B1844B59B4B6807E878B"
 
@@ -523,6 +551,33 @@ func TestSecretLockTransactionSerialization(t *testing.T) {
 	}
 }
 
+func TestSecretLockTransactionToAggregate(t *testing.T) {
+	want1 := []int16{-102, 0, 0, 0, -102, 73, 54, 100, 6, -84, -87, 82, -72, -117, -83, -11, -15, -23, -66, 108, -28, -106, -127,
+		65, 3, 90, 96, -66, 80, 50, 115, -22, 101, 69, 107, 36, 3, 144, 76, 66, 41, 207,
+		95, 217, 65, 173, 37, 213, 128, 150, 152, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 183, 120,
+		163, 154, 54, 99, 113, 157, 252, 94, 72, 201, 215, 132, 49, 177, 228, 92, 42, 249, 223, 83, 135, 130, 191, 25, 156, 24,
+		157, 171, 234, 199, 104, 10, 218, 87, 220, 236, 142, 238, 145, 196, 227, 191, 59, 250, 154, 246, 255,
+		222, 144, 205, 29, 36, 157, 28, 97, 33, 215, 183, 89, 160, 1, 177, 144, 232, 254, 189, 103, 29, 212, 27, 238, 148,
+		236, 59, 165, 131, 28, 182, 8, 163, 18, 194, 242, 3, 186, 132, 172}
+	want := make([]byte, len(want1))
+	for i, w := range want1 {
+		want[i] = byte(w)
+	}
+	p, err := NewPublicAccount("9A49366406ACA952B88BADF5F1E9BE6CE4968141035A60BE503273EA65456B24", MijinTest)
+	ad, err := NewAddressFromRaw("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM")
+	s := "b778a39a3663719dfc5e48c9d78431b1e45c2af9df538782bf199c189dabeac7680ada57dcec8eee91c4e3bf3bfa9af6ffde90cd1d249d1c6121d7b759a001b1"
+	tx, err := NewSecretLockTransaction(fakeDeadline, XemRelative(10), big.NewInt(100), SHA3_512, s, ad, MijinTest)
+	tx.Signer = p
+	b, err := toAggregateTransactionBytes(tx)
+	if err != nil {
+		t.Errorf("SecretLockTransaction toAggregate returned error: %s", err)
+	}
+
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("SecretLockTransaction toAggregate returned wrong result: \n %+v, want: \n %+v", b, want)
+	}
+}
+
 func TestSecretLockTransactionSigning(t *testing.T) {
 	want := "EA0000005A3B75AE172855381353250EA9A1DFEB86E9280C0006B8FD997C2FCECF211C9A260E76CB704A22EAD4648F18E6931381921A4EDC7D309C32275D0147E9BAD3051026D70E1954775749C6811084D6450A3184D977383F0E4282CD47118AF3775503904C420000000000000000010000000000000029CF5FD941AD25D58096980000000000640000000000000000B778A39A3663719DFC5E48C9D78431B1E45C2AF9DF538782BF199C189DABEAC7680ADA57DCEC8EEE91C4E3BF3BFA9AF6FFDE90CD1D249D1C6121D7B759A001B190E8FEBD671DD41BEE94EC3BA5831CB608A312C2F203BA84AC"
 	s := "b778a39a3663719dfc5e48c9d78431b1e45c2af9df538782bf199c189dabeac7680ada57dcec8eee91c4e3bf3bfa9af6ffde90cd1d249d1c6121d7b759a001b1"
@@ -551,7 +606,6 @@ func TestSecretProofTransactionSerialization(t *testing.T) {
 		10, 218, 87, 220, 236, 142, 238, 145, 196, 227, 191, 59, 250,
 		154, 246, 255, 222, 144, 205, 29, 36, 157, 28, 97, 33, 215, 183, 89,
 		160, 1, 177, 4, 0, 154, 73, 54, 100}
-	//acc, err := NewAccount("787225aaff3d2c71f4ffa32d4f19ec4922f3cd869747f267378f81f8e3fcb12d", MijinTest)
 	s := "b778a39a3663719dfc5e48c9d78431b1e45c2af9df538782bf199c189dabeac7680ada57dcec8eee91c4e3bf3bfa9af6ffde90cd1d249d1c6121d7b759a001b1"
 	ss := "9a493664"
 
@@ -568,6 +622,33 @@ func TestSecretProofTransactionSerialization(t *testing.T) {
 
 }
 
+func TestSecretProofTransactionToAggregate(t *testing.T) {
+	want1 := []int16{111, 0, 0, 0, -102, 73, 54, 100, 6, -84, -87, 82, -72, -117, -83, -11, -15, -23, -66, 108, -28, -106, -127,
+		65, 3, 90, 96, -66, 80, 50, 115, -22, 101, 69, 107, 36, 3, 144, 76, 67, 0, 183, 120, 163, 154, 54,
+		99, 113, 157, 252, 94, 72, 201, 215, 132, 49, 177, 228, 92, 42, 249,
+		223, 83, 135, 130, 191, 25, 156, 24, 157, 171, 234, 199, 104,
+		10, 218, 87, 220, 236, 142, 238, 145, 196, 227, 191, 59, 250,
+		154, 246, 255, 222, 144, 205, 29, 36, 157, 28, 97, 33, 215, 183, 89,
+		160, 1, 177, 4, 0, 154, 73, 54, 100}
+	want := make([]byte, len(want1))
+	for i, w := range want1 {
+		want[i] = byte(w)
+	}
+	p, err := NewPublicAccount("9A49366406ACA952B88BADF5F1E9BE6CE4968141035A60BE503273EA65456B24", MijinTest)
+	s := "b778a39a3663719dfc5e48c9d78431b1e45c2af9df538782bf199c189dabeac7680ada57dcec8eee91c4e3bf3bfa9af6ffde90cd1d249d1c6121d7b759a001b1"
+	ss := "9a493664"
+	tx, err := NewSecretProofTransaction(fakeDeadline, SHA3_512, s, ss, MijinTest)
+	tx.Signer = p
+	b, err := toAggregateTransactionBytes(tx)
+	if err != nil {
+		t.Errorf("SecretProofTransaction toAggregate returned error: %s", err)
+	}
+
+	if !reflect.DeepEqual(b, want) {
+		t.Errorf("SecretProofTransaction toAggregate returned wrong result: \n %+v, want: \n %+v", b, want)
+	}
+}
+
 func TestSecretProofTransactionSigning(t *testing.T) {
 	want := "BF000000147827E5FDAB2201ABD3663964B0493166DA7DD18497718F53DF09AAFC55271B57A9E81B4E2F627FD19E9E9B77283D1620FB8E9E32BAC5AC265EB0B43C75B4071026D70E1954775749C6811084D6450A3184D977383F0E4282CD47118AF3775503904C430000000000000000010000000000000000B778A39A3663719DFC5E48C9D78431B1E45C2AF9DF538782BF199C189DABEAC7680ADA57DCEC8EEE91C4E3BF3BFA9AF6FFDE90CD1D249D1C6121D7B759A001B104009A493664"
 	acc, err := NewAccount("787225aaff3d2c71f4ffa32d4f19ec4922f3cd869747f267378f81f8e3fcb12d", MijinTest)
@@ -582,7 +663,6 @@ func TestSecretProofTransactionSigning(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(b.Payload, want) {
-		t.Errorf("ecretProofkTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
+		t.Errorf("SecretProofTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
 	}
-
 }

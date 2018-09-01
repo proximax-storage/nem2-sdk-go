@@ -38,6 +38,22 @@ type abstractTransaction struct {
 	Signer    *PublicAccount
 }
 
+func (tx *abstractTransaction) IsUnconfirmed() bool {
+	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() == 0 && tx.TransactionInfo.Hash == tx.TransactionInfo.MerkleComponentHash
+}
+
+func (tx *abstractTransaction) IsConfirmed() bool {
+	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() > 0
+}
+
+func (tx *abstractTransaction) HasMissingSignatures() bool {
+	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() == 0 && tx.TransactionInfo.Hash != tx.TransactionInfo.MerkleComponentHash
+}
+
+func (tx *abstractTransaction) IsUnannounced() bool {
+	return tx.TransactionInfo == nil
+}
+
 func (tx *abstractTransaction) String() string {
 	return fmt.Sprintf(
 		`
