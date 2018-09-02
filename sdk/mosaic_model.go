@@ -79,12 +79,13 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 	if err != nil {
 		return nil, err
 	}
-	namespaceId := namespacePath[len(namespacePath)-1]
+
 	if !regValidMosaicName.MatchString(mosaicName) {
 		return nil, errors.New(mosaicName + "invalid mosaic name")
 	}
 
-	return generateId(mosaicName, namespaceId)
+	b, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
+	return new(big.Int).SetBytes(b), err
 }
 
 // MosaicIds is a list MosaicId
@@ -155,14 +156,14 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
-//MosaicSupplyType mosaic supply type :
+// MosaicSupplyType mosaic supply type :
 // Decrease the supply - DECREASE.
-//Increase the supply - INCREASE.
+// Increase the supply - INCREASE.
 type MosaicSupplyType uint8
 
 const (
-	DECREASE MosaicSupplyType = iota
-	INCREASE
+	Decrease MosaicSupplyType = iota
+	Increase
 )
 
 func (tx MosaicSupplyType) String() string {
@@ -173,4 +174,14 @@ type MosaicName struct {
 	MosaicId *MosaicId
 	Name     string
 	ParentId *NamespaceId
+}
+
+var XemMosaicId, _ = NewMosaicId(nil, "nem:xem") // NewMosaicId(big.NewInt(0).SetBytes([]byte{213, 37, 173, 65, 217, 95, 207, 41}), "")
+
+func Xem(amount int64) *Mosaic {
+	return &Mosaic{XemMosaicId, big.NewInt(amount)}
+}
+
+func XemRelative(amount int64) *Mosaic {
+	return Xem(big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(amount)).Int64())
 }

@@ -1,7 +1,7 @@
 package transactions
 
 import (
-	flatbuffers "github.com/google/flatbuffers/go"
+	"github.com/google/flatbuffers/go"
 )
 
 type MosaicDefinitionTransactionBuffer struct {

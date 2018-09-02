@@ -109,7 +109,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 	return tss, resp, nil
 }
 
-func (txs *TransactionService) announceTransaction(ctx context.Context, tx Signed, path string) (string, *http.Response, error) {
+func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, *http.Response, error) {
 	var m string
 	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, m)
 	if err != nil {

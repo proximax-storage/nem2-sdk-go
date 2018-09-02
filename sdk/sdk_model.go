@@ -28,7 +28,9 @@ func fromBigInt(int *big.Int) []uint32 {
 	if ln < 4 {
 		s = ln
 	}
-	l = binary.LittleEndian.Uint32(b[:s])
+	lb := make([]byte, 4)
+	copy(lb[:s], b[:s])
+	l = binary.LittleEndian.Uint32(lb)
 	if ln > 4 {
 		if ln-4 < 4 {
 			s = ln - 4
@@ -38,6 +40,11 @@ func fromBigInt(int *big.Int) []uint32 {
 		h = binary.LittleEndian.Uint32(hb)
 	}
 	return []uint32{l, h}
+}
+
+func bytesToBigInt(b []byte) *big.Int {
+	utils.ReverseByteArray(b)
+	return big.NewInt(0).SetBytes(b)
 }
 
 type AccountTransactionsOption struct {

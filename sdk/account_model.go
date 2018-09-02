@@ -17,6 +17,18 @@ type Account struct {
 	*crypto.KeyPair
 }
 
+func (a *Account) Sign(tx Transaction) (*SignedTransaction, error) {
+	return signTransactionWith(tx, a)
+}
+
+func (a *Account) SignWithCosignatures(tx *AggregateTransaction, cosignatories []*Account) (*SignedTransaction, error) {
+	return signTransactionWithCosignatures(tx, a, cosignatories)
+}
+
+func (a *Account) SignCosignatureTransaction(tx *CosignatureTransaction) (*CosignatureSignedTransaction, error) {
+	return signCosignatureTransaction(a, tx)
+}
+
 type PublicAccount struct {
 	Address   *Address
 	PublicKey string
@@ -230,6 +242,25 @@ func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*Mult
 
 var addressError = errors.New("wrong address")
 
+func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
+	k, err := crypto.NewPrivateKeyfromHexString(pKey)
+	if err != nil {
+		return nil, err
+	}
+
+	kp, err := crypto.NewKeyPair(k, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	pa, err := NewPublicAccount(kp.PublicKey.String(), networkType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Account{pa, kp}, nil
+}
+
 func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, error) {
 	ad, err := NewAddressFromPublicKey(pKey, networkType)
 	if err != nil {
@@ -245,10 +276,10 @@ func NewAddress(address string, networkType NetworkType) *Address {
 }
 
 var addressNet = map[uint8]NetworkType{
-	'N': MAIN_NET,
-	'T': TEST_NET,
-	'M': MIJIN,
-	'S': MIJIN_TEST,
+	'N': MainNet,
+	'T': TestNet,
+	'M': Mijin,
+	'S': MijinTest,
 }
 
 func NewAddressFromRaw(address string) (*Address, error) {

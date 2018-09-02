@@ -59,7 +59,7 @@ func NewEd25519BlockCipher(senderKeyPair *KeyPair, recipientKeyPair *KeyPair) *E
 	ref := &Ed25519BlockCipher{
 		senderKeyPair,
 		recipientKeyPair,
-		len(recipientKeyPair.publicKey.Raw),
+		len(recipientKeyPair.PublicKey.Raw),
 	}
 	return ref
 }
@@ -116,7 +116,7 @@ func (ref *Ed25519BlockCipher) Encrypt(input []byte) []byte {
 		return nil
 	}
 	// Derive shared key.
-	sharedKey, err := ref.GetSharedKey(ref.senderKeyPair.privateKey, ref.recipientKeyPair.publicKey, salt)
+	sharedKey, err := ref.GetSharedKey(ref.senderKeyPair.PrivateKey, ref.recipientKeyPair.PublicKey, salt)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -149,7 +149,7 @@ func (ref *Ed25519BlockCipher) Decrypt(input []byte) []byte {
 	ivData := input[ref.keyLength:48]
 	encData := input[48:]
 	// Derive shared key.
-	sharedKey, err := ref.GetSharedKey(ref.recipientKeyPair.privateKey, ref.senderKeyPair.publicKey, salt)
+	sharedKey, err := ref.GetSharedKey(ref.recipientKeyPair.PrivateKey, ref.senderKeyPair.PublicKey, salt)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -185,7 +185,7 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 	}
 
 	// Hash the private key to improve randomness.
-	hash, err := HashesSha3_512(ref.KeyPair.PrivateKey())
+	hash, err := HashesSha3_512(ref.KeyPair.PrivateKey.Raw)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,10 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 	// S = (r + H(encodedR, encodedA, data) * a) mod group order where
 	// encodedR and encodedA are the little endian encodings of the group element R and the public key A and
 	// a is the lower 32 bytes of hash after clamping.
-	hashH, err := HashesSha3_512(encodedR.Raw, ref.KeyPair.PublicKey(), mess)
+	hashH, err := HashesSha3_512(
+		encodedR.Raw,
+		ref.KeyPair.PublicKey.Raw,
+		mess)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +226,8 @@ func (ref *Ed25519DsaSigner) Sign(mess []byte) (*Signature, error) {
 		return nil, err
 	}
 	hModQ := h.modQ()
-	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.privateKey), rModQ)
+	encodedS := hModQ.multiplyAndAddModQ(PrepareForScalarMultiply(ref.KeyPair.PrivateKey),
+		rModQ)
 	// Signature is (encodedR, encodedS)
 	signature, err := NewSignature(encodedR.Raw, encodedS.Raw)
 	if err != nil {
@@ -244,14 +248,17 @@ func (ref *Ed25519DsaSigner) Verify(mess []byte, signature *Signature) (res bool
 		return false
 	}
 
-	if isEqualConstantTime(ref.KeyPair.PublicKey(), make([]byte, 32)) {
+	if isEqualConstantTime(ref.KeyPair.PublicKey.Raw, make([]byte, 32)) {
 		return false
 	}
 
 	// h = H(encodedR, encodedA, data).
 	rawEncodedR := signature.R
-	rawEncodedA := ref.KeyPair.PublicKey()
-	hashR, err := HashesSha3_512(rawEncodedR, rawEncodedA, mess)
+	rawEncodedA := ref.KeyPair.PublicKey.Raw
+	hashR, err := HashesSha3_512(
+		rawEncodedR,
+		rawEncodedA,
+		mess)
 	if err != nil {
 		panic(err)
 		return false

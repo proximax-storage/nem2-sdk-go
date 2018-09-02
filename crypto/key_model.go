@@ -39,7 +39,7 @@ func NewPrivateKeyfromBigInt(val *big.Int) *PrivateKey {
 }
 
 //PrivatKeyfromHexString creates a private key from a hex strings.
-func NewPrivatKeyfromHexString(sHex string) (*PrivateKey, error) {
+func NewPrivateKeyfromHexString(sHex string) (*PrivateKey, error) {
 	raw, err := utils.HexDecodeStringOdd(sHex)
 	if err != nil {
 		return nil, err

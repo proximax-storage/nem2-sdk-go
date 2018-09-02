@@ -105,8 +105,8 @@ type NamespaceNameDTO struct {
 type NamespaceType uint8
 
 const (
-	RootNamespace NamespaceType = iota
-	SubNamespace
+	Root NamespaceType = iota
+	Sub
 )
 
 // NamespaceInfo contains the state information of a Namespace.
@@ -193,7 +193,7 @@ func generateNamespaceId(namespaceName string) (*big.Int, error) {
 		return nil, err
 	}
 
-	return list[len(list)-1], nil
+	return new(big.Int).SetBytes(list[len(list)-1]), nil
 }
 
 // regValidNamespace check namespace on valid symbols
@@ -202,9 +202,8 @@ var errNamespaceToManyPart = errors.New("too many parts")
 
 // GenerateNamespacePath create list NamespaceId from string
 func GenerateNamespacePath(name string) ([]*big.Int, error) {
-
 	parts := strings.Split(name, ".")
-	path := make([]*big.Int, 0)
+	path := make([][]byte, 0)
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace Name")
 	}
@@ -213,14 +212,14 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 		return nil, errNamespaceToManyPart
 	}
 
-	namespaceId := big.NewInt(0)
+	emptyNamespaceId := make([]byte, 8)
 	for i, part := range parts {
 		if !regValidNamespace.MatchString(part) {
 			return nil, errors.New("invalid Namespace name")
 		}
 
 		var err error
-		namespaceId, err = generateId(parts[i], namespaceId)
+		namespaceId, err := generateId(parts[i], emptyNamespaceId)
 		if err != nil {
 			return nil, err
 		}
@@ -230,32 +229,21 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 	return path, nil
 }
 
-func generateId(name string, parentId *big.Int) (*big.Int, error) {
-	parentIdBytes := parentId.Bytes()
-	if len(parentIdBytes) > 8 {
-		parentIdBytes = parentIdBytes[:8]
-	} else if len(parentIdBytes) < 8 {
-		parentIdBytes = append(parentIdBytes, make([]byte, 8-len(parentIdBytes))...)
-	}
-	utils.ReverseByteArray(parentIdBytes)
-
+func generateId(name string, parentId []byte) ([]byte, error) {
+	utils.ReverseByteArray(parentId)
 	result := sha3.New256()
-	_, err := result.Write(parentIdBytes)
+	_, err := result.Write(parentId)
 	if err != nil {
 		return nil, err
 	}
-
 	_, err = result.Write([]byte(name))
 	if err != nil {
 		return nil, err
 	}
 	t := result.Sum(nil)
-	b := t[:4]
-	utils.ReverseByteArray(b)
-	c := t[4:8]
-	utils.ReverseByteArray(c)
-	c = append(c, b...)
-
-	return (&big.Int{}).SetBytes(c), nil
-
+	l := t[:4]
+	h := t[4:8]
+	utils.ReverseByteArray(l)
+	utils.ReverseByteArray(h)
+	return append(h, l...), nil
 }
