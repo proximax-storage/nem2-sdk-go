@@ -188,7 +188,7 @@ type ListNamespaceInfo struct {
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*big.Int, error) {
 
-	list, err := generateNamespacePath(namespaceName)
+	list, err := GenerateNamespacePath(namespaceName)
 	if err != nil {
 		return nil, err
 	}
@@ -198,10 +198,10 @@ func generateNamespaceId(namespaceName string) (*big.Int, error) {
 
 // regValidNamespace check namespace on valid symbols
 var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+var errNamespaceToManyPart = errors.New("too many parts")
 
-// generateNamespacePath create list NamespaceId from string
-func generateNamespacePath(name string) ([][]byte, error) {
-
+// GenerateNamespacePath create list NamespaceId from string
+func GenerateNamespacePath(name string) ([]*big.Int, error) {
 	parts := strings.Split(name, ".")
 	path := make([][]byte, 0)
 	if len(parts) == 0 {
@@ -209,7 +209,7 @@ func generateNamespacePath(name string) ([][]byte, error) {
 	}
 
 	if len(parts) > 3 {
-		return nil, errors.New("too many parts")
+		return nil, errNamespaceToManyPart
 	}
 
 	emptyNamespaceId := make([]byte, 8)

@@ -7,13 +7,17 @@ import (
 )
 
 var (
-	testBytesOdd = []byte("ABCD")
-	wantBytesOdd = []byte("DCBA")
+	testBytesOdd  = []byte("AB0CD")
+	wantBytesOdd  = []byte("DC0BA")
+	testBytesOdd1 = []byte("AB0CD1")
+	wantBytesOdd1 = []byte("1DC0BA")
 )
 
 func TestReverseByteArray(t *testing.T) {
 	ReverseByteArray(testBytesOdd)
 	assert.Equal(t, wantBytesOdd, testBytesOdd)
+	ReverseByteArray(testBytesOdd1)
+	assert.Equal(t, wantBytesOdd1, testBytesOdd1)
 }
 
 func TestBigIntToByteArray(t *testing.T) {
