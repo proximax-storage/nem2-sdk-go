@@ -1,41 +1,18 @@
 package sdk
 
 import (
-	"errors"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 )
 
-const (
-	testNewXemBigInt = "-3087871471161192663"
-	testMosaicNEMId  = "-8884663987180930485"
-)
-
-var (
-	testIdGenerateNEMBigInt     *big.Int
-	testIdGenerateNEM_XEMBigInt *big.Int
-)
-
-func init() {
-	ok := false
-	testIdGenerateNEMBigInt, ok = (&big.Int{}).SetString(testMosaicNEMId, 10)
-	if !ok {
-		panic(errors.New("wrong bigInt string = " + testMosaicNEMId))
-	}
-
-	testIdGenerateNEM_XEMBigInt, ok = (&big.Int{}).SetString(testNewXemBigInt, 10)
-	if !ok {
-		panic(errors.New("wrong bigInt string = " + testNewXemBigInt))
-	}
-}
 func TestGenerateNamespacePath_GeneratesCorrectWellKnownRootPath(t *testing.T) {
 	ids, err := GenerateNamespacePath("nem")
 	assert.Nil(t, err)
 
 	assert.Equal(t, len(ids), 1, `ids.size() and 1 must by equal !`)
 
-	assert.Equal(t, testIdGenerateNEMBigInt.Int64(), ids[0].Int64())
+	assert.Equal(t, big.NewInt(-8884663987180930485).Int64(), ids[0].Int64())
 }
 
 // @Test
@@ -44,8 +21,8 @@ func TestNamespacePath_GeneratesCorrectWellKnownChildPath(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(ids), 2, `ids.size() and 2 must by equal !`)
 
-	assert.Equal(t, testIdGenerateNEMBigInt.Int64(), ids[0].Int64())
-	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Int64(), ids[1].Int64(), `NewBigInteger(testNewXemBigInt) and ids.get(1) must by equal !`)
+	assert.Equal(t, big.NewInt(-8884663987180930485).Int64(), ids[0].Int64())
+	assert.Equal(t, big.NewInt(-3087871471161192663).Int64(), ids[1].Int64(), `NewBigInteger(testNewXemBigInt) and ids.get(1) must by equal !`)
 }
 
 // @Test
@@ -76,7 +53,7 @@ func TestNamespacePathRejectsNamesWithTooManyParts(t *testing.T) {
 func TestMosaicIdGeneratesCorrectWellKnowId(t *testing.T) {
 	id, err := generateMosaicId("nem", "xem")
 	assert.Nil(t, err)
-	assert.Equal(t, testIdGenerateNEM_XEMBigInt.Int64(), id.Int64())
+	assert.Equal(t, big.NewInt(-3087871471161192663).Int64(), id.Int64())
 }
 
 // @Test
@@ -92,5 +69,5 @@ func TestMosaicIdSupportMultiLevelMosaics(t *testing.T) {
 	ids[3], err = generateId("tokens", ids[2])
 	assert.Nil(t, err)
 	ids1, err := generateMosaicId("foo.bar.baz", "tokens")
-	assert.Equal(t, ids1, ids[3], `GenerateMosaicId("foo.bar.baz" and "tokens" must by equal !`)
+	assert.Equal(t, ids1.Int64(), ids[3].Int64(), `GenerateMosaicId("foo.bar.baz" and "tokens" must by equal !`)
 }

@@ -42,11 +42,6 @@ func fromBigInt(int *big.Int) []uint32 {
 	return []uint32{l, h}
 }
 
-func bytesToBigInt(b []byte) *big.Int {
-	utils.ReverseByteArray(b)
-	return big.NewInt(0).SetBytes(b)
-}
-
 type AccountTransactionsOption struct {
 	PageSize int    `url:"pageSize,omitempty"`
 	Id       string `url:"id,omitempty"`

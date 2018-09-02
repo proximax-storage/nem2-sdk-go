@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/json-iterator/go"
@@ -193,7 +194,7 @@ func generateNamespaceId(namespaceName string) (*big.Int, error) {
 		return nil, err
 	}
 
-	return new(big.Int).SetBytes(list[len(list)-1]), nil
+	return list[len(list)-1], nil
 }
 
 // regValidNamespace check namespace on valid symbols
@@ -203,7 +204,7 @@ var errNamespaceToManyPart = errors.New("too many parts")
 // GenerateNamespacePath create list NamespaceId from string
 func GenerateNamespacePath(name string) ([]*big.Int, error) {
 	parts := strings.Split(name, ".")
-	path := make([][]byte, 0)
+	path := make([]*big.Int, 0)
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace Name")
 	}
@@ -212,14 +213,14 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 		return nil, errNamespaceToManyPart
 	}
 
-	emptyNamespaceId := make([]byte, 8)
-	for i, part := range parts {
+	namespaceId := big.NewInt(0)
+	for _, part := range parts {
 		if !regValidNamespace.MatchString(part) {
 			return nil, errors.New("invalid Namespace name")
 		}
 
 		var err error
-		namespaceId, err := generateId(parts[i], emptyNamespaceId)
+		namespaceId, err = generateId(part, namespaceId)
 		if err != nil {
 			return nil, err
 		}
@@ -229,10 +230,15 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 	return path, nil
 }
 
-func generateId(name string, parentId []byte) ([]byte, error) {
-	utils.ReverseByteArray(parentId)
+func generateId(name string, parentId *big.Int) (*big.Int, error) {
+	b := make([]byte, 8)
+	if parentId.Int64() != 0 {
+		b = parentId.Bytes()
+	}
+	utils.ReverseByteArray(b)
+
 	result := sha3.New256()
-	_, err := result.Write(parentId)
+	_, err := result.Write(b)
 	if err != nil {
 		return nil, err
 	}
@@ -241,9 +247,6 @@ func generateId(name string, parentId []byte) ([]byte, error) {
 		return nil, err
 	}
 	t := result.Sum(nil)
-	l := t[:4]
-	h := t[4:8]
-	utils.ReverseByteArray(l)
-	utils.ReverseByteArray(h)
-	return append(h, l...), nil
+
+	return uint64DTO{binary.LittleEndian.Uint32(t[0:4]), binary.LittleEndian.Uint32(t[4:8])}.toBigInt(), nil
 }

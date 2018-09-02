@@ -868,7 +868,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 		return nil, errors.New("parentId must not be nil")
 	}
 
-	id, err := generateId(namespaceName, parentId.Id.Bytes())
+	id, err := generateId(namespaceName, parentId.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -881,7 +881,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 			NetworkType: networkType,
 		},
 		NamspaceName:  namespaceName,
-		NamespaceId:   &NamespaceId{Id: new(big.Int).SetBytes(id), FullName: namespaceName},
+		NamespaceId:   &NamespaceId{Id: id, FullName: namespaceName},
 		NamespaceType: Sub,
 		ParentId:      parentId,
 	}, nil
