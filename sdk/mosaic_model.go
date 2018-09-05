@@ -85,7 +85,7 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 	}
 
 	b, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
-	return new(big.Int).SetBytes(b), err
+	return b, err
 }
 
 // MosaicIds is a list MosaicId
@@ -176,7 +176,7 @@ type MosaicName struct {
 	ParentId *NamespaceId
 }
 
-var XemMosaicId, _ = NewMosaicId(nil, "nem:xem") // NewMosaicId(big.NewInt(0).SetBytes([]byte{213, 37, 173, 65, 217, 95, 207, 41}), "")
+var XemMosaicId, _ = NewMosaicId(nil, "nem:xem")
 
 func Xem(amount int64) *Mosaic {
 	return &Mosaic{XemMosaicId, big.NewInt(amount)}

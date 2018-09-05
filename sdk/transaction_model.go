@@ -412,14 +412,14 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 
 	n := builder.CreateString(tx.MosaicName)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.MosaicDefinitionTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 149+len(tx.MosaicName))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.MosaicDefinitionTransactionBufferAddMosaicId(builder, mV)
 	transactions.MosaicDefinitionTransactionBufferAddParentId(builder, nV)
 	transactions.MosaicDefinitionTransactionBufferAddMosaicNameLength(builder, len(tx.MosaicName))
@@ -522,14 +522,14 @@ func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicId.Id))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Delta))
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.MosaicSupplyChangeTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 137)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.MosaicSupplyChangeTransactionBufferAddMosaicId(builder, mV)
 	transactions.MosaicSupplyChangeTransactionBufferAddDirection(builder, uint8(tx.MosaicSupplyType))
 	transactions.MosaicSupplyChangeTransactionBufferAddDelta(builder, dV)
@@ -649,14 +649,14 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	rV := transactions.TransactionBufferCreateByteVector(builder, r)
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, mb)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.TransferTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 149+(16*ml)+pl)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.TransferTransactionBufferAddRecipient(builder, rV)
 	transactions.TransferTransactionBufferAddNumMosaics(builder, ml)
 	transactions.TransferTransactionBufferAddMessageSize(builder, pl+1)
@@ -767,14 +767,14 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, msb)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.ModifyMultisigAccountTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 123+(33*len(tx.Modifications)))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.ModifyMultisigAccountTransactionBufferAddMinApprovalDelta(builder, tx.MinApprovalDelta)
 	transactions.ModifyMultisigAccountTransactionBufferAddMinRemovalDelta(builder, tx.MinRemovalDelta)
 	transactions.ModifyMultisigAccountTransactionBufferAddNumModifications(builder, len(tx.Modifications))
@@ -868,7 +868,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 		return nil, errors.New("parentId must not be nil")
 	}
 
-	id, err := generateId(namespaceName, parentId.Id.Bytes())
+	id, err := generateId(namespaceName, parentId.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -881,7 +881,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string
 			NetworkType: networkType,
 		},
 		NamspaceName:  namespaceName,
-		NamespaceId:   &NamespaceId{Id: new(big.Int).SetBytes(id), FullName: namespaceName},
+		NamespaceId:   &NamespaceId{Id: id, FullName: namespaceName},
 		NamespaceType: Sub,
 		ParentId:      parentId,
 	}, nil
@@ -916,14 +916,14 @@ func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	}
 	n := builder.CreateString(tx.NamspaceName)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.RegisterNamespaceTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 138+len(tx.NamspaceName))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.RegisterNamespaceTransactionBufferAddNamespaceType(builder, uint8(tx.NamespaceType))
 	transactions.RegisterNamespaceTransactionBufferAddDurationParentId(builder, dV)
 	transactions.RegisterNamespaceTransactionBufferAddNamespaceId(builder, nV)
@@ -1039,14 +1039,14 @@ func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	}
 	hV := transactions.TransactionBufferCreateByteVector(builder, h)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.LockFundsTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 176)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.LockFundsTransactionBufferAddMosaicId(builder, mv)
 	transactions.LockFundsTransactionBufferAddMosaicAmount(builder, maV)
 	transactions.LockFundsTransactionBufferAddDuration(builder, dV)
@@ -1167,14 +1167,14 @@ func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	}
 	rV := transactions.TransactionBufferCreateByteVector(builder, addr)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.SecretLockTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 234)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.SecretLockTransactionBufferAddMosaicId(builder, mV)
 	transactions.SecretLockTransactionBufferAddMosaicAmount(builder, maV)
 	transactions.SecretLockTransactionBufferAddDuration(builder, dV)
@@ -1289,14 +1289,14 @@ func (tx *SecretProofTransaction) generateBytes() ([]byte, error) {
 	}
 	pV := transactions.TransactionBufferCreateByteVector(builder, p)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.SecretProofTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 187+len(p))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.SecretProofTransactionBufferAddHashAlgorithm(builder, byte(tx.HashType))
 	transactions.SecretProofTransactionBufferAddSecret(builder, sV)
 	transactions.SecretProofTransactionBufferAddProofSize(builder, len(p))
