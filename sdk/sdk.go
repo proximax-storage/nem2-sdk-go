@@ -3,22 +3,21 @@ package sdk
 
 import (
 	"bytes"
-	"encoding/json"
+	"github.com/google/go-querystring/query"
+	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 )
 
-const (
-	Testnet = byte(0x98)
-	Mainnet = byte(0x68)
-)
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // Provides service configuration
 type Config struct {
 	BaseURL *url.URL
-	Network byte
+	NetworkType
 }
 
 // Mainnet config default
@@ -28,7 +27,7 @@ func LoadMainnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, Network: Mainnet}
+	c := &Config{BaseURL: u, NetworkType: MainNet}
 
 	return c, nil
 }
@@ -40,7 +39,7 @@ func LoadTestnetConfig(baseUrl string) (*Config, error) {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, Network: Testnet}
+	c := &Config{BaseURL: u, NetworkType: TestNet}
 
 	return c, nil
 }
@@ -51,7 +50,12 @@ type Client struct {
 	config *Config
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 	// Services for communicating to the Catapult REST APIs
-	Blockchain *BlockchainService
+	Blockchain  *BlockchainService
+	Mosaic      *MosaicService
+	Namespace   *NamespaceService
+	Network     *NetworkService
+	Transaction *TransactionService
+	Account     *AccountService
 }
 
 type service struct {
@@ -68,8 +72,26 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 	c := &Client{client: httpClient, config: conf}
 	c.common.client = c
 	c.Blockchain = (*BlockchainService)(&c.common)
+	c.Mosaic = (*MosaicService)(&c.common)
+	c.Namespace = (*NamespaceService)(&c.common)
+	c.Network = (*NetworkService)(&c.common)
+	c.Transaction = (*TransactionService)(&c.common)
+	c.Account = (*AccountService)(&c.common)
 
 	return c
+}
+
+// DoNewRequest creates new request, Do it & return result in V
+func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
+	req, err := s.NewRequest(method, path, body)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.Do(ctx, req, v)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 // Do sends an API Request and returns a parsed response
@@ -92,6 +114,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return resp, err
+	}
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
 			io.Copy(w, resp.Body)
@@ -109,7 +134,6 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
-// Creates a NewRequest
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 
 	u, err := c.config.BaseURL.Parse(urlStr)
@@ -138,4 +162,24 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	}
 
 	return req, nil
+}
+
+func addOptions(s string, opt interface{}) (string, error) {
+	v := reflect.ValueOf(opt)
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return s, nil
+	}
+
+	u, err := url.Parse(s)
+	if err != nil {
+		return s, err
+	}
+
+	qs, err := query.Values(opt)
+	if err != nil {
+		return s, err
+	}
+
+	u.RawQuery = qs.Encode()
+	return u.String(), nil
 }
