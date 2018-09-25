@@ -15,16 +15,19 @@ type servicews struct {
 
 // Catapult Websocket Client configuration
 type ClientWs struct {
-	client    *websocket.Conn
-	Uid       string
-	config    *Config
-	common    servicews // Reuse a single struct instead of allocating one for each service on the heap.
-	Subscribe *SubscribeService
+	client        *websocket.Conn
+	Uid           string
+	config        *Config
+	common        servicews // Reuse a single struct instead of allocating one for each service on the heap.
+	Subscribe     *SubscribeService
+	subscriptions map[string]chan<- []byte
 }
 
-type SubscribeMsg struct {
+type Subscribe struct {
 	UID       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
+	ChIn      chan []byte
+	conn      *websocket.Conn
 }
 
 func (c *ClientWs) changeURLPort() {
@@ -33,26 +36,31 @@ func (c *ClientWs) changeURLPort() {
 	c.config.BaseURL.Host = strings.Join([]string{host, port}, ":")
 }
 
-func NewClientWs(websocketClient *websocket.Conn, conf *Config) *ClientWs {
-	if websocketClient == nil {
-		//panic("ws cannot be nil")
-	}
-
-	c := &ClientWs{client: websocketClient, config: conf}
+func NewConnectWs(conf *Config) (*ClientWs, error) {
+	c := &ClientWs{config: conf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
+	c.subscriptions = make(map[string]chan<- []byte)
 
-	return c
+	err := c.wsconnect()
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
-func (c *ClientWs) BuildSubscribe(destination string) (*SubscribeMsg, error) {
-	var b SubscribeMsg
+func (c *ClientWs) BuildSubscribe(destination string) *Subscribe {
+	b := new(Subscribe)
+	b.ChIn = make(chan []byte)
+	subName := strings.Split(destination, "/")[0]
+	c.subscriptions[subName] = b.ChIn
 	b.UID = c.Uid
 	b.Subscribe = destination
-	return &b, nil
+	b.conn = c.client
+	return b
 }
 
-func (c *ClientWs) WsConnect() error {
+func (c *ClientWs) wsconnect() error {
 	c.config.BaseURL.Scheme = "ws"
 	c.config.BaseURL.Path = "/ws"
 	c.changeURLPort()
@@ -68,7 +76,7 @@ func (c *ClientWs) WsConnect() error {
 		return err
 	}
 
-	Parser, err := msgParser(msg)
+	imsg, err := msgparser(msg)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -76,14 +84,20 @@ func (c *ClientWs) WsConnect() error {
 	if err != nil {
 		return err
 	}
-	c.Uid = Parser.UID
+	c.Uid = imsg.UID
 
 	return nil
 }
 
-func (c *ClientWs) Subs(msg *SubscribeMsg, out chan []byte) (chan []byte, error) {
-	if err := websocket.JSON.Send(c.client, msg); err != nil {
-		return nil, err
+func (c *ClientWs) SubsChannel(msg *Subscribe) error {
+	if err := websocket.JSON.Send(c.client, struct {
+		UID       string `json:"uid"`
+		Subscribe string `json:"subscribe"`
+	}{
+		UID:       msg.UID,
+		Subscribe: msg.Subscribe,
+	}); err != nil {
+		return err
 	}
 
 	var e error
@@ -92,11 +106,17 @@ func (c *ClientWs) Subs(msg *SubscribeMsg, out chan []byte) (chan []byte, error)
 
 		for {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
-				err = c.WsConnect()
+				err = c.wsconnect()
 				if err != nil {
 					return
 				}
-				if err = websocket.JSON.Send(c.client, msg); err != nil {
+				if err = websocket.JSON.Send(c.client, struct {
+					UID       string `json:"uid"`
+					Subscribe string `json:"subscribe"`
+				}{
+					UID:       msg.UID,
+					Subscribe: msg.Subscribe,
+				}); err != nil {
 					return
 				}
 				continue
@@ -104,21 +124,15 @@ func (c *ClientWs) Subs(msg *SubscribeMsg, out chan []byte) (chan []byte, error)
 				e = errors.Wrap(err, "Error occurred while trying to receive message")
 			}
 
-			SubName, _ := restParser(resp)
-
-			if msg.Subscribe == SubName && SubName == "block" {
-				out <- resp
-				continue
-			} else if SubName == strings.Split(msg.Subscribe, "/")[0] {
-				out <- resp
-			}
+			subName, _ := restparser(resp)
+			c.subscriptions[subName] <- resp
 		}
 	}()
-	return out, e
+	return e
 }
 
-func msgParser(msg []byte) (*SubscribeMsg, error) {
-	var message SubscribeMsg
+func msgparser(msg []byte) (*Subscribe, error) {
+	var message Subscribe
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		return nil, err
@@ -126,7 +140,7 @@ func msgParser(msg []byte) (*SubscribeMsg, error) {
 	return &message, nil
 }
 
-func restParser(data []byte) (string, error) {
+func restparser(data []byte) (string, error) {
 	var raw []j.RawMessage
 	err := json.Unmarshal([]byte(fmt.Sprintf("[%v]", string(data))), &raw)
 	if err != nil {
