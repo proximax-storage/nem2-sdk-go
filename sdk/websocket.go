@@ -31,6 +31,8 @@ type Subscribe struct {
 }
 
 func (c *ClientWs) changeURLPort() {
+	c.config.BaseURL.Scheme = "ws"
+	c.config.BaseURL.Path = "/ws"
 	split := strings.Split(c.config.BaseURL.Host, ":")
 	host, port := split[0], "3000"
 	c.config.BaseURL.Host = strings.Join([]string{host, port}, ":")
@@ -61,8 +63,6 @@ func (c *ClientWs) BuildSubscribe(destination string) *Subscribe {
 }
 
 func (c *ClientWs) wsconnect() error {
-	c.config.BaseURL.Scheme = "ws"
-	c.config.BaseURL.Path = "/ws"
 	c.changeURLPort()
 	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *ClientWs) wsconnect() error {
 	return nil
 }
 
-func (c *ClientWs) SubsChannel(msg *Subscribe) error {
+func (c *ClientWs) subsChannel(msg *Subscribe) error {
 	if err := websocket.JSON.Send(c.client, struct {
 		UID       string `json:"uid"`
 		Subscribe string `json:"subscribe"`
