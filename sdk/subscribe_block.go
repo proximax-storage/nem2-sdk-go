@@ -16,7 +16,7 @@ const (
 )
 
 func (c *SubscribeService) Block() (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathBlock)
+	subMsg := c.client.buildSubscribe(pathBlock)
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func (c *SubscribeService) Block() (*Subscribe, error) {
 }
 
 func (c *SubscribeService) ConfirmedAdded(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathconfirmedAdded + "/" + add)
+	subMsg := c.client.buildSubscribe(pathconfirmedAdded + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -35,7 +35,7 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) UnconfirmedAdded(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathunconfirmedAdded + "/" + add)
+	subMsg := c.client.buildSubscribe(pathunconfirmedAdded + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -45,7 +45,7 @@ func (c *SubscribeService) UnconfirmedAdded(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) UnconfirmedRemoved(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathunconfirmedRemoved + "/" + add)
+	subMsg := c.client.buildSubscribe(pathunconfirmedRemoved + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -55,7 +55,7 @@ func (c *SubscribeService) UnconfirmedRemoved(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) Status(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathstatus + "/" + add)
+	subMsg := c.client.buildSubscribe(pathstatus + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *SubscribeService) Status(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) PartialAdded(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathpartialAdded + "/" + add)
+	subMsg := c.client.buildSubscribe(pathpartialAdded + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *SubscribeService) PartialAdded(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) PartialRemoved(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathpartialRemoved + "/" + add)
+	subMsg := c.client.buildSubscribe(pathpartialRemoved + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {
@@ -85,7 +85,7 @@ func (c *SubscribeService) PartialRemoved(add string) (*Subscribe, error) {
 }
 
 func (c *SubscribeService) Cosignature(add string) (*Subscribe, error) {
-	subMsg := c.client.BuildSubscribe(pathcosignature + "/" + add)
+	subMsg := c.client.buildSubscribe(pathcosignature + "/" + add)
 
 	err := c.client.subsChannel(subMsg)
 	if err != nil {

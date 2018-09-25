@@ -51,7 +51,7 @@ func NewConnectWs(conf *Config) (*ClientWs, error) {
 	return c, nil
 }
 
-func (c *ClientWs) BuildSubscribe(destination string) *Subscribe {
+func (c *ClientWs) buildSubscribe(destination string) *Subscribe {
 	b := new(Subscribe)
 	b.ChIn = make(chan []byte)
 	subName := strings.Split(destination, "/")[0]
