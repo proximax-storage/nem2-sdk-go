@@ -66,7 +66,6 @@ func (c *ClientWs) wsconnect() error {
 	c.changeURLPort()
 	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
 	if err != nil {
-		panic(err)
 		return err
 	}
 	c.client = conn
