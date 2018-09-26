@@ -20,15 +20,15 @@ type BlockInfo struct {
 
 // Block
 type Block struct {
-	Signature             *string  `json:"signature"`
-	Signer                *string  `json:"signer"`
-	Version               *uint64  `json:"version"`
-	Type                  *uint64  `json:"type"`
+	Signature             string   `json:"signature"`
+	Signer                string   `json:"signer"`
+	Version               uint64   `json:"version"`
+	Type                  uint64   `json:"type"`
 	Height                []uint64 `json:"height"`
 	Timestamp             []uint64 `json:"timestamp"`
 	Difficulty            []uint64 `json:"difficulty"`
-	PreviousBlockHash     *string  `json:"previousBlockHash"`
-	BlockTransactionsHash *string  `json:"blockTransactionsHash"`
+	PreviousBlockHash     string   `json:"previousBlockHash"`
+	BlockTransactionsHash string   `json:"blockTransactionsHash"`
 }
 
 // Block Meta
