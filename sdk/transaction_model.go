@@ -1481,7 +1481,7 @@ type TransactionHashesDTO struct {
 	Hashes []string `json:"hashes"`
 }
 
-var TimestampNemesisBlock = time.Unix(0, 1459468800*int64(time.Millisecond))
+var TimestampNemesisBlock = time.Unix(1459468800, 0)
 
 // Deadline
 type Deadline struct {
