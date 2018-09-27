@@ -38,7 +38,7 @@ var transaction = &TransferTransaction{
 	Message:   &Message{Type: 0, Payload: ""},
 }
 
-var fakeDeadline = &Deadline{time.Unix(0, 1459468801*int64(time.Millisecond))}
+var fakeDeadline = &Deadline{time.Unix(1459468800, 1000000)}
 
 const transactionJson = `
 {
@@ -664,5 +664,17 @@ func TestSecretProofTransactionSigning(t *testing.T) {
 
 	if !reflect.DeepEqual(b.Payload, want) {
 		t.Errorf("SecretProofTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
+	}
+}
+
+func TestDeadline(t *testing.T) {
+	if !time.Now().Before(NewDeadline(time.Hour * 2).Time) {
+		t.Error("now is before deadline localtime")
+	}
+	if !time.Now().Add(time.Hour * 2).Add(-time.Second).Before(NewDeadline(time.Hour * 2).Time) {
+		t.Error("now plus 2 hours is before deadline localtime")
+	}
+	if !time.Now().Add(time.Hour * 2).Add(time.Second * 2).After(NewDeadline(time.Hour * 2).Time) {
+		t.Error("now plus 2 hours and 2 seconds is after deadline localtime")
 	}
 }
