@@ -12,14 +12,12 @@ import (
 // The notification is received in real time without having to poll the API waiting for a reply.
 func main() {
 
-	host := "http://52.221.231.207:3000"
+	host := "http://190.216.224.11:3000"
 
 	conf, err := sdk.LoadTestnetConfig(host)
 	if err != nil {
 		panic(err)
 	}
-
-	deadline := sdk.NewDeadline(0)
 
 	p, err := sdk.NewAccount("0F3CC33190A49ABB32E7172E348EA927F975F8829107AAA3D6349BB10797D4F6", sdk.MijinTest)
 
@@ -74,7 +72,7 @@ func main() {
 	client := sdk.NewClient(nil, conf)
 
 	ttx, err := sdk.NewTransferTransaction(
-		deadline,
+		sdk.NewDeadline(time.Hour*1),
 		sdk.NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", sdk.MijinTest),
 		sdk.Mosaics{sdk.Xem(10000000)},
 		sdk.NewPlainMessage(""),
