@@ -55,6 +55,11 @@ type Subscribe struct {
 	conn      *websocket.Conn
 }
 
+type sendJson struct {
+	UID       string `json:"uid"`
+	Subscribe string `json:"subscribe"`
+}
+
 func (c *ClientWs) changeURLPort() {
 	c.config.BaseURL.Scheme = "ws"
 	c.config.BaseURL.Path = "/ws"
@@ -74,7 +79,7 @@ func NewConnectWs(host string) (*ClientWs, error) {
 	c.Subscribe = (*SubscribeService)(&c.common)
 	c.subscriptions = make(map[string]chan<- interface{})
 
-	err = c.wsconnect()
+	err = c.wsConnect()
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +97,7 @@ func (c *ClientWs) buildSubscribe(destination string) *Subscribe {
 	return b
 }
 
-func (c *ClientWs) wsconnect() error {
+func (c *ClientWs) wsConnect() error {
 	c.changeURLPort()
 	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
 	if err != nil {
@@ -105,7 +110,7 @@ func (c *ClientWs) wsconnect() error {
 		return err
 	}
 
-	imsg, err := msgparser(msg)
+	imsg, err := msgParser(msg)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -119,10 +124,7 @@ func (c *ClientWs) wsconnect() error {
 }
 
 func (c *ClientWs) subsChannel(msg *Subscribe) error {
-	if err := websocket.JSON.Send(c.client, struct {
-		UID       string `json:"uid"`
-		Subscribe string `json:"subscribe"`
-	}{
+	if err := websocket.JSON.Send(c.client, sendJson{
 		UID:       msg.UID,
 		Subscribe: msg.Subscribe,
 	}); err != nil {
@@ -135,14 +137,11 @@ func (c *ClientWs) subsChannel(msg *Subscribe) error {
 
 		for {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
-				err = c.wsconnect()
+				err = c.wsConnect()
 				if err != nil {
 					return
 				}
-				if err = websocket.JSON.Send(c.client, struct {
-					UID       string `json:"uid"`
-					Subscribe string `json:"subscribe"`
-				}{
+				if err = websocket.JSON.Send(c.client, sendJson{
 					UID:       msg.UID,
 					Subscribe: msg.Subscribe,
 				}); err != nil {
@@ -153,14 +152,14 @@ func (c *ClientWs) subsChannel(msg *Subscribe) error {
 				e = errors.Wrap(err, "Error occurred while trying to receive message")
 			}
 
-			subName, _ := restparser(resp)
-			c.buildtype(subName, resp)
+			subName, _ := restParser(resp)
+			e = c.buildType(subName, resp)
 		}
 	}()
 	return e
 }
 
-func msgparser(msg []byte) (*Subscribe, error) {
+func msgParser(msg []byte) (*Subscribe, error) {
 	var message Subscribe
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
@@ -169,13 +168,14 @@ func msgparser(msg []byte) (*Subscribe, error) {
 	return &message, nil
 }
 
-func restparser(data []byte) (string, error) {
+func restParser(data []byte) (string, error) {
 	var raw []j.RawMessage
 	err := json.Unmarshal([]byte(fmt.Sprintf("[%v]", string(data))), &raw)
 	if err != nil {
 		return "", err
 	}
 
+	var subscribe string
 	for _, r := range raw {
 		var obj map[string]interface{}
 		err := json.Unmarshal(r, &obj)
@@ -183,7 +183,6 @@ func restparser(data []byte) (string, error) {
 			return "", err
 		}
 
-		var subscribe string
 		if _, ok := obj["block"]; ok {
 			subscribe = "block"
 		} else if _, ok := obj["status"]; ok {
@@ -191,39 +190,57 @@ func restparser(data []byte) (string, error) {
 		} else if v, ok := obj["meta"]; ok {
 			channelName := v.(map[string]interface{})
 			subscribe = fmt.Sprintf("%v", channelName["channelName"])
+		} else {
+			subscribe = "none"
 		}
-		return subscribe, nil
 	}
-	return "", nil
+	return subscribe, nil
 }
 
-func (c *ClientWs) buildtype(name string, t []byte) {
+func (c *ClientWs) buildType(name string, t []byte) error {
 	switch name {
 	case "block":
 		var data BlockInfo
-		json.Unmarshal(t, &data)
+		err := json.Unmarshal(t, &data)
+		if err != nil {
+			return err
+		}
 		c.subscriptions[name] <- data
+		return nil
 
 	case "status":
 		var data StatusInfo
-		json.Unmarshal(t, &data)
+		err := json.Unmarshal(t, &data)
+		if err != nil {
+			return err
+		}
 		c.subscriptions[name] <- data
+		return nil
 
 	case "unconfirmedRemoved":
 		var data SubscribeHash
-		json.Unmarshal(t, &data)
+		err := json.Unmarshal(t, &data)
+		if err != nil {
+			return err
+		}
 		c.subscriptions[name] <- data
+		return nil
 
 	case "partialRemoved":
 		var data SubscribeHash
-		json.Unmarshal(t, &data)
+		err := json.Unmarshal(t, &data)
+		if err != nil {
+			return err
+		}
 		c.subscriptions[name] <- data
+		return nil
 
 	default:
 		data, err := MapTransaction(bytes.NewBuffer([]byte(t)))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		c.subscriptions[name] <- data
+		return nil
 	}
 }
