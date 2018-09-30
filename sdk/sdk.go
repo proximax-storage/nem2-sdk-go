@@ -40,7 +40,6 @@ func LoadTestnetConfig(baseUrl string) (*Config, error) {
 	}
 
 	c := &Config{BaseURL: u, NetworkType: TestNet}
-
 	return c, nil
 }
 
