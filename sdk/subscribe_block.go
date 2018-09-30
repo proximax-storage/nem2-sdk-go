@@ -2,6 +2,7 @@ package sdk
 
 import "golang.org/x/net/websocket"
 
+// structure for Subscribe status
 type SubscribeHash struct {
 	Hash string `json:"hash"`
 }
@@ -86,6 +87,9 @@ func (c *Subscribe) Unsubscribe() error {
 	return nil
 }
 
+// Generate a new channel and subscribe to the websocket.
+// param route A subscription channel route.
+// return A pointer Subscribe struct or an error.
 func (c *SubscribeService) newChannel(route string) (*Subscribe, error) {
 	subMsg := c.client.buildSubscribe(route)
 
