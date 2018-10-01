@@ -148,7 +148,7 @@ func init() {
 }
 
 func TestBlockchainService_GetBlockchainInfo(t *testing.T) {
-	bcInfo, resp, err := serv.Blockchain.GetBlockchainInfo(ctx, testHeight, testLimit, MijinTest)
+	bcInfo, resp, err := serv.Blockchain.GetBlockchainInfo(ctx, testHeight, testLimit)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateBlockInfo(bcInfo, t) {
@@ -195,7 +195,7 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockByHeight(ctx, testHeight, MijinTest)
+	got, resp, err := serv.Blockchain.GetBlockByHeight(ctx, testHeight)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockByHeight returned error: %v", err)
 	} else if validateResp(resp, t) {
