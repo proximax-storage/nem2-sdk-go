@@ -79,7 +79,7 @@ func (c *SubscribeService) Cosignature(add string) (*Subscribe, error) {
 // It does not have any specific param.
 func (c *Subscribe) Unsubscribe() error {
 	if err := websocket.JSON.Send(c.conn, sendJson{
-		UID:       c.UID,
+		Uid:       c.Uid,
 		Subscribe: c.Subscribe,
 	}); err != nil {
 		return err

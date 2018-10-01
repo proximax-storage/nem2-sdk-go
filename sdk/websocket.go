@@ -31,14 +31,14 @@ type ClientWs struct {
 }
 
 type Subscribe struct {
-	UID       string `json:"uid"`
+	Uid       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
 	ChIn      chan interface{}
 	conn      *websocket.Conn
 }
 
 type sendJson struct {
-	UID       string `json:"uid"`
+	Uid       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
 }
 
@@ -73,7 +73,7 @@ func (c *ClientWs) buildSubscribe(destination string) *Subscribe {
 	b.ChIn = make(chan interface{})
 	subName := strings.Split(destination, "/")[0]
 	c.subscriptions[subName] = b.ChIn
-	b.UID = c.Uid
+	b.Uid = c.Uid
 	b.Subscribe = destination
 	b.conn = c.client
 	return b
@@ -100,14 +100,14 @@ func (c *ClientWs) wsConnect() error {
 	if err != nil {
 		return err
 	}
-	c.Uid = imsg.UID
+	c.Uid = imsg.Uid
 
 	return nil
 }
 
 func (c *ClientWs) subsChannel(msg *Subscribe) error {
 	if err := websocket.JSON.Send(c.client, sendJson{
-		UID:       msg.UID,
+		Uid:       msg.Uid,
 		Subscribe: msg.Subscribe,
 	}); err != nil {
 		return err
@@ -124,7 +124,7 @@ func (c *ClientWs) subsChannel(msg *Subscribe) error {
 					return
 				}
 				if err = websocket.JSON.Send(c.client, sendJson{
-					UID:       msg.UID,
+					Uid:       msg.Uid,
 					Subscribe: msg.Subscribe,
 				}); err != nil {
 					return
