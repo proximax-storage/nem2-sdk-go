@@ -7,7 +7,7 @@ type SubscribeHash struct {
 	Hash string `json:"hash"`
 }
 
-type SubscribeService servicews
+type SubscribeService serviceWs
 
 // const routers path for methods SubscribeService
 const (

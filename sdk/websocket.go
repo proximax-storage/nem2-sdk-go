@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type servicews struct {
+type serviceWs struct {
 	client *ClientWs
 }
 
@@ -25,7 +25,7 @@ type ClientWs struct {
 	client        *websocket.Conn
 	Uid           string
 	config        *Config
-	common        servicews // Reuse a single struct instead of allocating one for each service on the heap.
+	common        serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
 	Subscribe     *SubscribeService
 	subscriptions map[string]chan<- interface{}
 }
