@@ -11,24 +11,6 @@ import (
 	"strings"
 )
 
-type TransactionWs struct {
-	Transaction struct {
-		abstractTransactionDTO
-		Recipient string   `json:"recipient"`
-		Message   *Message `json:"message"`
-		Mosaics   []struct {
-			ID     []int64 `json:"id"`
-			Amount []int64 `json:"amount"`
-		} `json:"mosaics"`
-	} `json:"transaction"`
-	Meta struct {
-		Hash                string   `json:"hash"`
-		MerkleComponentHash string   `json:"merkleComponentHash"`
-		Height              []uint64 `json:"height"`
-		ChannelName         string   `json:"channelName"`
-	} `json:"meta"`
-}
-
 type servicews struct {
 	client *ClientWs
 }
