@@ -121,12 +121,14 @@ func (c *ClientWs) subsChannel(msg *Subscribe) error {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
 				err = c.wsConnect()
 				if err != nil {
+					fmt.Println(err)
 					return
 				}
 				if err = websocket.JSON.Send(c.client, sendJson{
 					Uid:       msg.Uid,
 					Subscribe: msg.Subscribe,
 				}); err != nil {
+					fmt.Println(err)
 					return
 				}
 				continue
