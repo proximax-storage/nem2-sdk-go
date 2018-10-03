@@ -101,7 +101,7 @@ func (ad *Address) Pretty() string {
 }
 
 type Addresses struct {
-	list []*Address
+	List []*Address
 	lock sync.RWMutex
 }
 
@@ -109,30 +109,30 @@ func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
 
-	ref.list = append(ref.list, address)
+	ref.List = append(ref.List, address)
 }
 func (ref *Addresses) GetAddress(i int) (*Address, error) {
 
-	if (i >= 0) && (i < len(ref.list)) {
+	if (i >= 0) && (i < len(ref.List)) {
 		ref.lock.RLock()
 		defer ref.lock.RUnlock()
-		return ref.list[i], nil
+		return ref.List[i], nil
 	}
 
 	return nil, errors.New("index out of range - " + strconv.Itoa(i))
 
 }
 func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
-	buf = []byte(`{"addresses":[`)
-	for i, address := range ref.list {
+	buf = []byte(`{"addresses":["`)
+	for i, address := range ref.List {
 		b := []byte(address.Address)
 		if i > 0 {
-			buf = append(buf, ',')
+			buf = append(buf, '"', ',', '"')
 		}
 		buf = append(buf, b...)
 	}
 
-	buf = append(buf, ']', '}')
+	buf = append(buf, '"', ']', '}')
 	return
 }
 func (ref *Addresses) UnmarshalJSON(buf []byte) error {
