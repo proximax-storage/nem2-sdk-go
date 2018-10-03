@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"fmt"
 	"math/big"
 )
 
@@ -21,6 +22,41 @@ type BlockInfo struct {
 	Difficulty            *big.Int
 	PreviousBlockHash     string
 	BlockTransactionsHash string
+}
+
+func (b *BlockInfo) String() string {
+	return fmt.Sprintf(
+		`
+			"NetworkType:" %d,
+			"Hash": %s,
+			"GenerationHash": %s,
+			"TotalFee": %s,
+			"NumTransactions": %d,
+			"Signature": %s,
+			"Signer": %s,
+			"Version": %d,
+			"Type": %d,
+			"Height": %s,
+			"Timestamp": %s,
+			"Difficulty": %s,
+			"PreviousBlockHash": %s,
+			"BlockTransactionHash": %s
+		`,
+		b.NetworkType,
+		b.Hash,
+		b.GenerationHash,
+		b.TotalFee,
+		b.NumTransactions,
+		b.Signature,
+		b.Signer,
+		b.Version,
+		b.Type,
+		b.Height,
+		b.Timestamp,
+		b.Difficulty,
+		b.PreviousBlockHash,
+		b.BlockTransactionsHash,
+	)
 }
 
 type blockInfoDTO struct {
