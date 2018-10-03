@@ -123,16 +123,16 @@ func (ref *Addresses) GetAddress(i int) (*Address, error) {
 
 }
 func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
-	buf = []byte(`{"addresses":["`)
+	buf = []byte(`{"addresses":[`)
 	for i, address := range ref.List {
-		b := []byte(address.Address)
+		b := []byte(`"` + address.Address + `"`)
 		if i > 0 {
-			buf = append(buf, '"', ',', '"')
+			buf = append(buf, ',')
 		}
 		buf = append(buf, b...)
 	}
 
-	buf = append(buf, '"', ']', '}')
+	buf = append(buf, ']', '}')
 	return
 }
 func (ref *Addresses) UnmarshalJSON(buf []byte) error {
