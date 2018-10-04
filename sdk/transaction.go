@@ -110,11 +110,14 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 }
 
 func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, *http.Response, error) {
-	var m string
+	m := struct {
+		Message string `json:"message"`
+	}{}
+
 	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, m)
 	if err != nil {
 		return "", resp, err
 	}
 
-	return m, resp, nil
+	return m.Message, resp, nil
 }

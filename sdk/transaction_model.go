@@ -113,7 +113,7 @@ func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*abstractTr
 
 	nt := ExtractNetworkType(dto.Version)
 
-	tv, err := ExtractTransactionVersion(dto.Version)
+	tv, err := ExtractVersion(dto.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -1481,7 +1481,7 @@ type TransactionHashesDTO struct {
 	Hashes []string `json:"hashes"`
 }
 
-var TimestampNemesisBlock = time.Unix(0, 1459468800*int64(time.Millisecond))
+var TimestampNemesisBlock = time.Unix(1459468800, 0)
 
 // Deadline
 type Deadline struct {
@@ -1599,7 +1599,7 @@ func (ht HashType) String() string {
 
 const SHA3_512 HashType = 0
 
-func ExtractTransactionVersion(version uint64) (uint64, error) {
+func ExtractVersion(version uint64) (uint64, error) {
 	res, err := strconv.ParseUint(strconv.FormatUint(version, 16)[2:4], 16, 32)
 	if err != nil {
 		return 0, err
