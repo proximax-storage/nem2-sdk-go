@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"io/ioutil"
 	"net/http"
@@ -171,11 +172,10 @@ func NewMockServer() *mockService {
 }
 
 func validateResp(resp *http.Response, t *testing.T) bool {
-	if resp == nil {
+	if !assert.NotNil(t, resp) {
 		return false
 	}
-	if resp.StatusCode != 200 {
-		t.Error(resp.Status)
+	if !assert.Equal(t, 200, resp.StatusCode) {
 		t.Logf("%#v", resp.Body)
 		return false
 	}
