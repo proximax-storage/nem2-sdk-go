@@ -12,7 +12,7 @@ import (
 // The notification is received in real time without having to poll the API waiting for a reply.
 func main() {
 
-	host := "http://192.168.10.38:3000"
+	host := "http://http://catapult.internal.proximax.io:3000"
 
 	conf, err := sdk.LoadTestnetConfig(host)
 	if err != nil {
