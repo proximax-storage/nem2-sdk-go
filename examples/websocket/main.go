@@ -91,6 +91,7 @@ func main() {
 	}
 	txJson, _ := json.Marshal(restTx)
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
+	fmt.Println("Transaction Hash:", stx.Hash)
 	fmt.Printf("%s\n\n", string(txJson))
 
 	// The block channel notifies for every new block.
