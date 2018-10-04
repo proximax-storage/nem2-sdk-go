@@ -12,7 +12,7 @@ import (
 // The notification is received in real time without having to poll the API waiting for a reply.
 func main() {
 
-	host := "http://190.216.224.11:3000"
+	host := "http://192.168.10.38:3000"
 
 	conf, err := sdk.LoadTestnetConfig(host)
 	if err != nil {
@@ -99,7 +99,7 @@ func main() {
 
 	for {
 		data := <-d.ChIn
-		ch := data.(sdk.BlockInfo)
-		fmt.Printf("Block received with height: %v \n", ch.Block.Height)
+		ch := data.(*sdk.BlockInfo)
+		fmt.Printf("Block received with height: %v \n", ch.Height)
 	}
 }
