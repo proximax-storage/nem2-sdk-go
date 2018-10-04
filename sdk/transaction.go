@@ -114,7 +114,7 @@ func (txs *TransactionService) announceTransaction(ctx context.Context, tx inter
 		Message string `json:"message"`
 	}{}
 
-	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, m)
+	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, &m)
 	if err != nil {
 		return "", resp, err
 	}
