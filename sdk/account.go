@@ -41,12 +41,12 @@ func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses []*Addre
 	for i, ad := range addresses {
 		ads[i] = ad.Address
 	}
-	addressesStr := &Addresses{
-		list: addresses,
-	}
+	addrs := struct {
+		Messages []string `json:"addresses"`
+	}{ads}
 
 	dtos := make([]*accountInfoDTO, len(addresses))
-	resp, err := a.client.DoNewRequest(ctx, "POST", mainAccountRoute, addressesStr, &dtos)
+	resp, err := a.client.DoNewRequest(ctx, "POST", mainAccountRoute, addrs, &dtos)
 	if err != nil {
 		return nil, resp, err
 	}

@@ -283,7 +283,6 @@ var addressNet = map[uint8]NetworkType{
 }
 
 func NewAddressFromRaw(address string) (*Address, error) {
-
 	if nType, ok := addressNet[address[0]]; ok {
 		return NewAddress(address, nType), nil
 	}

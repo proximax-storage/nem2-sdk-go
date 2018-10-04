@@ -3,6 +3,7 @@ package sdk
 
 import (
 	"bytes"
+	"errors"
 	"github.com/google/go-querystring/query"
 	"github.com/json-iterator/go"
 	"golang.org/x/net/context"
@@ -86,10 +87,12 @@ func (s *Client) DoNewRequest(ctx context.Context, method string, path string, b
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := s.Do(ctx, req, v)
 	if err != nil {
 		return nil, err
 	}
+
 	return resp, nil
 }
 
@@ -114,7 +117,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return resp, err
+		return resp, errors.New(resp.Status)
 	}
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
