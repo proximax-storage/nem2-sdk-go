@@ -116,7 +116,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode > 226 || resp.StatusCode < 200 {
 		return resp, errors.New(resp.Status)
 	}
 	if v != nil {

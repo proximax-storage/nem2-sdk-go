@@ -57,6 +57,32 @@ func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height *bi
 	return tx, resp, nil
 }
 
+// GetBlocksByHeightWithLimit Returns blocks information for a given block height and limit
+func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, height, limit *big.Int) ([]*BlockInfo, *http.Response, error) {
+	if (height.Int64() < 0) || (limit.Int64() < 0) {
+		return nil, nil, errors.New("bad parameters - height, limit must be more then 0")
+	}
+
+	url := fmt.Sprintf(pathBlockInfo, height.String(), limit.String())
+
+	var bDtos []blockInfoDTO
+
+	resp, err := b.client.DoNewRequest(ctx, "GET", url, nil, &bDtos)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bInfos := make([]*BlockInfo, limit.Int64())
+	for i, bDto := range bDtos {
+		bInfos[i], err = bDto.toStruct()
+	}
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return bInfos, resp, nil
+}
+
 // Get the Chain Height
 func (b *BlockchainService) GetBlockchainHeight(ctx context.Context) (*big.Int, *http.Response, error) {
 	bh := &struct {
@@ -90,27 +116,4 @@ func (b *BlockchainService) GetBlockchainStorage(ctx context.Context) (*Blockcha
 	}
 
 	return bstorage, resp, nil
-}
-
-// GetBlockchainInfo Returns blocks information for a given block height and limit
-func (b *BlockchainService) GetBlockchainInfo(ctx context.Context, height, limit *big.Int) (*BlockInfo, *http.Response, error) {
-
-	if (height.Int64() < 0) || (limit.Int64() < 0) {
-		return nil, nil, errors.New("bad parameters - height, limit must be more then 0")
-	}
-
-	url := fmt.Sprintf(pathBlockInfo, height.String(), limit.String())
-	bDto := &blockInfoDTO{}
-
-	resp, err := b.client.DoNewRequest(ctx, "GET", url, nil, &bDto)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bInfo, err := bDto.toStruct()
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return bInfo, resp, nil
 }
