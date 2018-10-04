@@ -14,7 +14,7 @@ type MosaicService service
 const (
 	pathMosaic              = "/mosaic/"
 	pathMosaicNames         = "/mosaic/names"
-	pathMosaicFromNamespace = "/namespaces/%s/mosaic/"
+	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
 )
 
 type mosaicPropertiesDTO []uint64DTO
@@ -173,7 +173,7 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 	url, comma := "", "?"
 
 	if mosaicId > "" {
-		url = comma + "id=" + namespaceId
+		url = comma + "id=" + mosaicId
 		comma = "&"
 	}
 
