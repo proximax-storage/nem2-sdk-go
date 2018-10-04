@@ -59,7 +59,7 @@ func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height *bi
 
 // GetBlocksByHeightWithLimit Returns blocks information for a given block height and limit
 func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, height, limit *big.Int) ([]*BlockInfo, *http.Response, error) {
-	if (height.Int64() < 0) || (limit.Int64() < 0) {
+	if (height.Int64() == 0) || (limit.Int64() == 0) {
 		return nil, nil, errors.New("bad parameters - height, limit must be more then 0")
 	}
 
@@ -69,7 +69,7 @@ func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, heig
 
 	resp, err := b.client.DoNewRequest(ctx, "GET", url, nil, &bDtos)
 	if err != nil {
-		return nil, nil, err
+		return nil, resp, err
 	}
 
 	bInfos := make([]*BlockInfo, limit.Int64())
