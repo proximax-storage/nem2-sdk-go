@@ -159,8 +159,8 @@ type multisigAccountInfoDTO struct {
 
 func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigAccountInfo, error) {
 	var wg sync.WaitGroup
-	var cs []*PublicAccount
-	var ms []*PublicAccount
+	cs := make([]*PublicAccount, len(dto.Multisig.Cosignatories))
+	ms := make([]*PublicAccount, len(dto.Multisig.MultisigAccounts))
 
 	acc, err := NewPublicAccount(dto.Multisig.Account, networkType)
 	if err != nil {
