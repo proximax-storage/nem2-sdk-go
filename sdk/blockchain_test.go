@@ -89,7 +89,7 @@ var (
 )
 
 var bcRouters = map[string]sRouting{
-	fmt.Sprintf(pathBlockInfo, testHeight, testLimit):         {blockInfoJSON, nil},
+	fmt.Sprintf(pathBlockInfo, testHeight, testLimit):         {"[" + blockInfoJSON + "]", nil},
 	fmt.Sprintf(pathBlockGetTransaction, testHeight.String()): {blockTransactionsJSON, nil},
 	fmt.Sprintf(pathBlockByHeight, testHeight.String()):       {blockInfoJSON, nil},
 	pathBlockHeight:                                           {`{"height":[11235,0]}`, nil},
@@ -147,11 +147,11 @@ func init() {
 	})
 }
 
-func TestBlockchainService_GetBlockchainInfo(t *testing.T) {
-	bcInfo, resp, err := serv.Blockchain.GetBlockchainInfo(ctx, testHeight, testLimit)
+func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
+	bcInfo, resp, err := serv.Blockchain.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
 	if err != nil {
 		t.Error(err)
-	} else if validateResp(resp, t) && validateBlockInfo(bcInfo, t) {
+	} else if validateResp(resp, t) && validateBlockInfo(bcInfo[0], t) {
 		t.Logf("%#v", bcInfo)
 	}
 }

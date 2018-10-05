@@ -184,8 +184,12 @@ func restParser(data []byte) (string, error) {
 func (c *ClientWs) buildType(name string, t []byte) error {
 	switch name {
 	case "block":
-		var data BlockInfo
-		err := json.Unmarshal(t, &data)
+		var b blockInfoDTO
+		err := json.Unmarshal(t, &b)
+		if err != nil {
+			return err
+		}
+		data, err := b.toStruct()
 		if err != nil {
 			return err
 		}

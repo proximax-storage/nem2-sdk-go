@@ -7,10 +7,12 @@ import (
 	"math/big"
 )
 
+const baseUrl = "http://catapult.internal.proximax.io:3000"
+
 // Simple Blockchain API request
 func main() {
 
-	conf, err := sdk.LoadTestnetConfig("http://190.216.224.11:3000")
+	conf, err := sdk.LoadTestnetConfig(baseUrl)
 	if err != nil {
 		panic(err)
 	}
