@@ -105,6 +105,28 @@ type Addresses struct {
 	lock sync.RWMutex
 }
 
+func (tx *AccountInfo) String() string {
+
+	return fmt.Sprintf(
+		`
+			"Address": %s,
+			"AddressHeight": %s,
+			"Mosaics": %s,
+			"PublicKey": %s,
+			"Importance": %d,
+			"ImportanceHeight": %d,
+			"PublicKeyHeight": %s,
+		`,
+		tx.Address,
+		tx.AddressHeight,
+		tx.Mosaics,
+		tx.PublicKey,
+		tx.Importance,
+		tx.ImportanceHeight,
+		tx.PublicKeyHeight,
+	)
+}
+
 func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
