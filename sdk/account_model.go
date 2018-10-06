@@ -38,6 +38,20 @@ func (ref *PublicAccount) String() string {
 	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
 }
 
+func (ref *MultisigAccountInfo) String() string {
+	return fmt.Sprintf(
+		`Account: %s,
+				MinApproval: %d,
+				MinRemoval: %d,
+				MultisigAccounts: %v,
+				Cosignatories:  %v`,
+		ref.Account,
+		ref.MinApproval,
+		ref.MinRemoval,
+		ref.MultisigAccounts,
+		ref.Cosignatories)
+}
+
 type AccountInfo struct {
 	Address          *Address
 	AddressHeight    *big.Int
