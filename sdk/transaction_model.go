@@ -188,8 +188,12 @@ type transactionInfoDTO struct {
 }
 
 func (dto *transactionInfoDTO) toStruct() *TransactionInfo {
+	height := big.NewInt(0)
+	if dto.Height != nil {
+		height = dto.Height.toBigInt()
+	}
 	return &TransactionInfo{
-		dto.Height.toBigInt(),
+		height,
 		dto.Index,
 		dto.Id,
 		dto.Hash,
