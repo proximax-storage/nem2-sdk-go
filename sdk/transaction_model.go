@@ -608,6 +608,12 @@ func (tx *TransferTransaction) GetAbstractTransaction() *abstractTransaction {
 	return &tx.abstractTransaction
 }
 
+// Convert an aggregate transaction to an inner transaction including transaction signer
+func (tx *TransferTransaction) ToAggregate(publicAccount *PublicAccount) *abstractTransaction {
+	tx.Signer = publicAccount
+	return &tx.abstractTransaction
+}
+
 func (tx *TransferTransaction) String() string {
 	return fmt.Sprintf(
 		`
