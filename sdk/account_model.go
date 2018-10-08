@@ -38,6 +38,20 @@ func (ref *PublicAccount) String() string {
 	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
 }
 
+func (ref *MultisigAccountInfo) String() string {
+	return fmt.Sprintf(
+		`Account: %s,
+				MinApproval: %d,
+				MinRemoval: %d,
+				MultisigAccounts: %v,
+				Cosignatories:  %v`,
+		ref.Account,
+		ref.MinApproval,
+		ref.MinRemoval,
+		ref.MultisigAccounts,
+		ref.Cosignatories)
+}
+
 type AccountInfo struct {
 	Address          *Address
 	AddressHeight    *big.Int
@@ -103,6 +117,28 @@ func (ad *Address) Pretty() string {
 type Addresses struct {
 	List []*Address
 	lock sync.RWMutex
+}
+
+func (tx *AccountInfo) String() string {
+
+	return fmt.Sprintf(
+		`
+			"Address": %s,
+			"AddressHeight": %s,
+			"Mosaics": %s,
+			"PublicKey": %s,
+			"Importance": %d,
+			"ImportanceHeight": %d,
+			"PublicKeyHeight": %s,
+		`,
+		tx.Address,
+		tx.AddressHeight,
+		tx.Mosaics,
+		tx.PublicKey,
+		tx.Importance,
+		tx.ImportanceHeight,
+		tx.PublicKeyHeight,
+	)
 }
 
 func (ref *Addresses) AddAddress(address *Address) {
