@@ -15,7 +15,7 @@ const (
 	incomingTransactionsRoute     = "transactions/incoming"
 	outgoingTransactionsRoute     = "transactions/outgoing"
 	unconfirmedTransactionsRoute  = "transactions/unconfirmed"
-	aggregateTransactionsRoute    = "transactions/aggregateBondedTransactions"
+	aggregateTransactionsRoute    = "transactions/partial"
 	multisigAccountInfoRoute      = "multisig"
 	multisigAccountGraphInfoRoute = "multisig/graph"
 )
