@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )
@@ -136,10 +137,10 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 	}
 
 	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Error responce status code = %d", resp.StatusCode)
+
+	assert.NotNil(t, err, "request with empty MosaicIds must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 
 }

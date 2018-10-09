@@ -3,6 +3,7 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )
@@ -155,9 +156,7 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 	}
 
 	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
-	if err == nil {
-		t.Error("addrees is null - method must return error")
-	}
+	assert.NotNil(t, err, "request with empty Address must return error")
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
@@ -179,10 +178,9 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	}
 
 	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Error responce status code = %d", resp.StatusCode)
+	assert.NotNil(t, err, "request with empty Addresses must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 }
 
