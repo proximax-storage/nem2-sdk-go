@@ -41,7 +41,7 @@ type namespaceDTO struct {
 
 // namespaceInfoDTO temporary struct for reading responce & fill NamespaceInfo
 type namespaceInfoDTO struct {
-	Meta      NamespaceMosaicMetaDTO
+	Meta      namespaceMosaicMetaDTO
 	Namespace namespaceDTO
 }
 

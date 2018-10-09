@@ -11,7 +11,6 @@ import (
 
 func init() {
 	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
 	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
 
 	i, _ := (&big.Int{}).SetString("9562080086528621131", 10)
@@ -90,47 +89,6 @@ var (
 
 func init() {
 	addRouters(nsRouters)
-}
-func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
-	result := true
-	if !nsInfo.Active {
-		t.Error("failed Active data Convertion")
-		result = false
-	}
-	if !(nsInfo.Index == 0) {
-		t.Error("failed Index data Convertion")
-		result = false
-	}
-	if !(nsInfo.MetaId == "5B55E02EACCB7B00015DB6EB") {
-		t.Error("failed Id data Convertion")
-		result = false
-	}
-	if !(nsInfo.TypeSpace == Root) {
-		t.Error("failed Type data Convertion")
-		result = false
-	}
-	if !(nsInfo.Depth == 1) {
-		t.Error("failed Depth data Convertion")
-		result = false
-	}
-	if !(nsInfo.Owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
-		t.Error("failed Owner data Convertion")
-		result = false
-	}
-	if nsId := nsInfo.ParentId.Id; !(nsId.Uint64() == 0) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-	if sH := nsInfo.StartHeight; !(sH.Uint64() == 1) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.toBigInt().Uint64()) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-
-	return result
 }
 
 const testIDs = "84b3552d375ffa4b"
@@ -218,4 +176,46 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	}
 	t.Logf("%#v", nsInfo)
 
+}
+
+func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
+	result := true
+	if !nsInfo.Active {
+		t.Error("failed Active data Convertion")
+		result = false
+	}
+	if !(nsInfo.Index == 0) {
+		t.Error("failed Index data Convertion")
+		result = false
+	}
+	if !(nsInfo.MetaId == "5B55E02EACCB7B00015DB6EB") {
+		t.Error("failed Id data Convertion")
+		result = false
+	}
+	if !(nsInfo.TypeSpace == Root) {
+		t.Error("failed Type data Convertion")
+		result = false
+	}
+	if !(nsInfo.Depth == 1) {
+		t.Error("failed Depth data Convertion")
+		result = false
+	}
+	if !(nsInfo.Owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
+		t.Error("failed Owner data Convertion")
+		result = false
+	}
+	if nsId := nsInfo.ParentId.Id; !(nsId.Uint64() == 0) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+	if sH := nsInfo.StartHeight; !(sH.Uint64() == 1) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.toBigInt().Uint64()) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+
+	return result
 }
