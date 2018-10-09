@@ -17,14 +17,17 @@ type Account struct {
 	*crypto.KeyPair
 }
 
+// Sign a transaction
 func (a *Account) Sign(tx Transaction) (*SignedTransaction, error) {
 	return signTransactionWith(tx, a)
 }
 
+// Sign transaction with cosignatories creating a new SignedTransaction
 func (a *Account) SignWithCosignatures(tx *AggregateTransaction, cosignatories []*Account) (*SignedTransaction, error) {
 	return signTransactionWithCosignatures(tx, a, cosignatories)
 }
 
+// Sign aggregate signature transaction
 func (a *Account) SignCosignatureTransaction(tx *CosignatureTransaction) (*CosignatureSignedTransaction, error) {
 	return signCosignatureTransaction(a, tx)
 }
@@ -305,6 +308,7 @@ func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, err
 	return &PublicAccount{ad, pKey}, nil
 }
 
+// Create an Address from a given raw address
 func NewAddress(address string, networkType NetworkType) *Address {
 	address = strings.Replace(address, "-", "", -1)
 	address = strings.ToUpper(address)
@@ -325,6 +329,7 @@ func NewAddressFromRaw(address string) (*Address, error) {
 	return nil, addressError
 }
 
+// Create an Address from a given raw address.
 func NewAddressFromPublicKey(pKey string, networkType NetworkType) (*Address, error) {
 	ad, err := generateEncodedAddress(pKey, networkType)
 	if err != nil {

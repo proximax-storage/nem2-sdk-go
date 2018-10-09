@@ -178,6 +178,7 @@ type MosaicName struct {
 
 var XemMosaicId, _ = NewMosaicId(nil, "nem:xem")
 
+// Create xem with using xem as unit
 func Xem(amount int64) *Mosaic {
 	return &Mosaic{XemMosaicId, big.NewInt(amount)}
 }

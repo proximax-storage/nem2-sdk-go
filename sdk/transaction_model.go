@@ -188,8 +188,12 @@ type transactionInfoDTO struct {
 }
 
 func (dto *transactionInfoDTO) toStruct() *TransactionInfo {
+	height := big.NewInt(0)
+	if dto.Height != nil {
+		height = dto.Height.toBigInt()
+	}
 	return &TransactionInfo{
-		dto.Height.toBigInt(),
+		height,
 		dto.Index,
 		dto.Id,
 		dto.Hash,
@@ -206,6 +210,7 @@ type AggregateTransaction struct {
 	Cosignatures      []*AggregateTransactionCosignature
 }
 
+// Create an aggregate complete transaction
 func NewCompleteAggregateTransaction(deadline *Deadline, innerTxs []Transaction, networkType NetworkType) (*AggregateTransaction, error) {
 	if innerTxs == nil {
 		return nil, errors.New("innerTransactions must not be nil")
@@ -576,6 +581,7 @@ type TransferTransaction struct {
 	Recipient *Address
 }
 
+// Create a transfer transaction
 func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosaics, message *Message, networkType NetworkType) (*TransferTransaction, error) {
 	if recipient == nil {
 		return nil, errors.New("recipient must not be nil")
@@ -601,6 +607,12 @@ func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosa
 }
 
 func (tx *TransferTransaction) GetAbstractTransaction() *abstractTransaction {
+	return &tx.abstractTransaction
+}
+
+// Convert an aggregate transaction to an inner transaction including transaction signer
+func (tx *TransferTransaction) ToAggregate(publicAccount *PublicAccount) *abstractTransaction {
+	tx.Signer = publicAccount
 	return &tx.abstractTransaction
 }
 
@@ -1492,6 +1504,7 @@ func (d *Deadline) GetInstant() int64 {
 	return (d.Time.UnixNano() / 1e6) - (TimestampNemesisBlock.UnixNano() / 1e6)
 }
 
+// Create deadline model
 func NewDeadline(d time.Duration) *Deadline {
 	return &Deadline{time.Now().Add(d)}
 }
@@ -1502,6 +1515,7 @@ type Message struct {
 	Payload string
 }
 
+// The transaction message of 1024 characters.
 func NewPlainMessage(payload string) *Message {
 	return &Message{0, payload}
 }
@@ -1814,6 +1828,9 @@ func createTransactionHash(p string) (string, error) {
 }
 
 func toAggregateTransactionBytes(tx Transaction) ([]byte, error) {
+	if tx.GetAbstractTransaction().Signer == nil {
+		return nil, fmt.Errorf("some of the transaction does not have a signer")
+	}
 	sb, err := hex.DecodeString(tx.GetAbstractTransaction().Signer.PublicKey)
 	if err != nil {
 		return nil, err

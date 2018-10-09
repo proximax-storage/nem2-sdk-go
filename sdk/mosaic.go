@@ -107,9 +107,13 @@ func (ref MosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
 // mosaics get mosaics Info
 // @get /mosaic/{mosaicId}
 func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId string) (mscInfo *MosaicInfo, resp *http.Response, err error) {
+	newMosaic, _ := NewMosaicId(nil, mosaicId)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	mscInfoDTO := &mosaicInfoDTO{}
-	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+mosaicId, nil, mscInfoDTO)
+	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+fmt.Sprintf("%X", newMosaic.Id), nil, mscInfoDTO)
 
 	if err != nil {
 		return nil, resp, err
