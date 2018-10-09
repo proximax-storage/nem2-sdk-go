@@ -7,6 +7,11 @@ type SubscribeHash struct {
 	Hash string `json:"hash"`
 }
 
+// structure for Subscribe PartialRemoved
+type SubscribePartialRemoved struct {
+	Meta SubscribeHash `json:"meta"`
+}
+
 type SubscribeService serviceWs
 
 // const routers path for methods SubscribeService
