@@ -147,10 +147,10 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds MosaicIds) (
 
 // GetMosaicNames Get readable names for a set of mosaics
 // post @/mosaic/names
-func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds *MosaicIds) (mscNames []*MosaicName, resp *http.Response, err error) {
+func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds MosaicIds) (mscNames []*MosaicName, resp *http.Response, err error) {
 
 	mscNamesDTO := make(MosaicNamesDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaicNames, mosaicIds, &mscNamesDTO)
+	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaicNames, &mosaicIds, &mscNamesDTO)
 
 	if err != nil {
 		return nil, resp, err
@@ -167,13 +167,13 @@ func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds *MosaicI
 
 // GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
 // get @/namespaces/{namespaceId}/mosaic/
-func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespaceId string, mosaicId string,
+func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespaceId *NamespaceId, mosaicId *MosaicId,
 	pageSize int) (mscInfo []*MosaicInfo, resp *http.Response, err error) {
 
 	url, comma := "", "?"
 
-	if mosaicId > "" {
-		url = comma + "id=" + mosaicId
+	if mosaicId != nil {
+		url = comma + "id=" + mosaicId.toHexString()
 		comma = "&"
 	}
 
@@ -181,7 +181,7 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 		url += comma + "pageSize=" + strconv.Itoa(pageSize)
 	}
 
-	url = fmt.Sprintf(pathMosaicFromNamespace, namespaceId) + url
+	url = fmt.Sprintf(pathMosaicFromNamespace, namespaceId.toHexString()) + url
 
 	mscInfoDTOArr := make([]*mosaicInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, &mscInfoDTOArr)

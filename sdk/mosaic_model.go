@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"regexp"
 	"strings"
@@ -67,6 +68,10 @@ func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 	return &MosaicId{id, name}, nil
 }
 
+func (m *MosaicId) toHexString() string {
+	return utils.BigIntegerToHex(m.Id)
+}
+
 var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
 
 func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error) {
@@ -90,7 +95,7 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 
 // MosaicIds is a list MosaicId
 type MosaicIds struct {
-	MosaicIds []string `json:"mosaicIds"`
+	MosaicIds []*MosaicId `json:"mosaicIds"`
 }
 
 // MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.

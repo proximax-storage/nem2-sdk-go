@@ -26,3 +26,17 @@ func TestBigIntToByteArray(t *testing.T) {
 
 	assert.Equal(t, make([]byte, 32), b)
 }
+
+//using different numbers from original javs sdk because of signed and unsigned transformation
+//ex. uint64(-8884663987180930485) = 9562080086528621131
+func TestBigIntegerToHex_bigIntegerNEMAndXEMToHex(t *testing.T) {
+	testBigInt(t, "9562080086528621131", "84b3552d375ffa4b")
+	testBigInt(t, "15358872602548358953", "d525ad41d95fcf29")
+}
+func testBigInt(t *testing.T, str, hexStr string) {
+	i, ok := (&big.Int{}).SetString(str, 10)
+	assert.True(t, ok)
+	result := BigIntegerToHex(i)
+	assert.Equal(t, hexStr, result)
+
+}

@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
+	"math/big"
 	"net/http"
 	"testing"
 )
+
+func init() {
+	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
+
+	i, _ := (&big.Int{}).SetString("9562080086528621131", 10)
+	testNamespaceId.Id = i
+}
 
 var (
 	testAddresses = Addresses{
@@ -17,9 +27,10 @@ var (
 	}
 	testAddress = Address{Address: "SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE"}
 
+	testNamespaceId  = &NamespaceId{}
 	testNamespaceIDs = &NamespaceIds{
 		List: []*NamespaceId{
-			{FullName: "84b3552d375ffa4b"},
+			testNamespaceId,
 		},
 	}
 	ad = &NamespaceIds{}
@@ -126,7 +137,7 @@ const testIDs = "84b3552d375ffa4b"
 
 func TestNamespaceService_GetNamespace(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testNamespaceId)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
@@ -184,12 +195,6 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	}
 }
 
-func init() {
-	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
-
-}
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 
 	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, testNamespaceIDs)

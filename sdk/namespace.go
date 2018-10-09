@@ -84,10 +84,11 @@ func (ref *namespaceInfoDTO) extractLevels() []*NamespaceId {
 	return levels
 }
 
-func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId string) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 
 	nsInfoDTO := &namespaceInfoDTO{}
-	resp, err = ref.client.DoNewRequest(ctx, "GET", pathNamespace+nsId, nil, nsInfoDTO)
+	url := pathNamespace + nsId.toHexString()
+	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, nsInfoDTO)
 
 	if err != nil {
 		return nil, resp, err

@@ -3,11 +3,19 @@ package sdk
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"math/big"
 	"net/http"
 	"testing"
 )
 
-var mosaicTest = MosaicIds{MosaicIds: []string{"d525ad41d95fcf29"}}
+func init() {
+	addRouters(mscRouters)
+}
+
+var (
+	testMosaicId  = &MosaicId{Id: big.NewInt(-3087871471161192663)}
+	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{testMosaicId}}
+)
 
 const testMosaicPathID = "d525ad41d95fcf29"
 const testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
@@ -74,10 +82,6 @@ var (
 	}
 )
 
-func init() {
-	addRouters(mscRouters)
-}
-
 func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
 	result := true
 
@@ -123,7 +127,7 @@ func TestMosaicService_GetMosaic(t *testing.T) {
 }
 func TestMosaicService_GetMosaics(t *testing.T) {
 
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaics(ctx, mosaicTest)
+	mscInfoArr, resp, err := serv.Mosaic.GetMosaics(ctx, testMosaicIds)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -145,11 +149,6 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 }
 
-var testMosaicIds = &MosaicIds{
-	[]string{
-		"d525ad41d95fcf29",
-	}}
-
 func TestMosaicService_GetMosaicNames(t *testing.T) {
 
 	mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, testMosaicIds)
@@ -162,7 +161,7 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 }
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, mosaicNamespace, testMosaicFromNamesaceId, pageSize)
+	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {

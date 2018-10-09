@@ -38,6 +38,20 @@ func (ref *PublicAccount) String() string {
 	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
 }
 
+func (ref *MultisigAccountInfo) String() string {
+	return fmt.Sprintf(
+		`Account: %s,
+				MinApproval: %d,
+				MinRemoval: %d,
+				MultisigAccounts: %v,
+				Cosignatories:  %v`,
+		ref.Account,
+		ref.MinApproval,
+		ref.MinRemoval,
+		ref.MultisigAccounts,
+		ref.Cosignatories)
+}
+
 type AccountInfo struct {
 	Address          *Address
 	AddressHeight    *big.Int
@@ -105,6 +119,28 @@ type Addresses struct {
 	lock sync.RWMutex
 }
 
+func (tx *AccountInfo) String() string {
+
+	return fmt.Sprintf(
+		`
+			"Address": %s,
+			"AddressHeight": %s,
+			"Mosaics": %s,
+			"PublicKey": %s,
+			"Importance": %d,
+			"ImportanceHeight": %d,
+			"PublicKeyHeight": %s,
+		`,
+		tx.Address,
+		tx.AddressHeight,
+		tx.Mosaics,
+		tx.PublicKey,
+		tx.Importance,
+		tx.ImportanceHeight,
+		tx.PublicKeyHeight,
+	)
+}
+
 func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
@@ -159,8 +195,8 @@ type multisigAccountInfoDTO struct {
 
 func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigAccountInfo, error) {
 	var wg sync.WaitGroup
-	var cs []*PublicAccount
-	var ms []*PublicAccount
+	cs := make([]*PublicAccount, len(dto.Multisig.Cosignatories))
+	ms := make([]*PublicAccount, len(dto.Multisig.MultisigAccounts))
 
 	acc, err := NewPublicAccount(dto.Multisig.Account, networkType)
 	if err != nil {

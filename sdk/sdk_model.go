@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"encoding/binary"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 )
 
@@ -18,28 +17,6 @@ func (dto uint64DTO) toBigInt() *big.Int {
 	binary.BigEndian.PutUint32(b[len(dto)*2:], dto[0])
 	int.SetBytes(b)
 	return &int
-}
-
-func fromBigInt(int *big.Int) []uint32 {
-	b := int.Bytes()
-	ln := len(b)
-	utils.ReverseByteArray(b)
-	l, h, s := uint32(0), uint32(0), 4
-	if ln < 4 {
-		s = ln
-	}
-	lb := make([]byte, 4)
-	copy(lb[:s], b[:s])
-	l = binary.LittleEndian.Uint32(lb)
-	if ln > 4 {
-		if ln-4 < 4 {
-			s = ln - 4
-		}
-		hb := make([]byte, 4)
-		copy(hb[:s], b[4:])
-		h = binary.LittleEndian.Uint32(hb)
-	}
-	return []uint32{l, h}
 }
 
 type AccountTransactionsOption struct {
