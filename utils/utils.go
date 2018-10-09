@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"math/big"
+	"strconv"
 )
 
 func ReverseByteArray(a []byte) {
@@ -77,4 +79,34 @@ func HexDecode(src []byte) ([]byte, error) {
 		return nil, err
 	}
 	return dst, nil
+}
+
+// analog JAVA Uint64.bigIntegerToHex
+func BigIntegerToHex(id *big.Int) string {
+
+	u := FromBigInt(id)
+
+	return strconv.FormatInt(int64(u[1]), 16) + strconv.FormatInt(int64(u[0]), 16)
+
+}
+func FromBigInt(int *big.Int) []uint32 {
+	b := int.Bytes()
+	ln := len(b)
+	ReverseByteArray(b)
+	l, h, s := uint32(0), uint32(0), 4
+	if ln < 4 {
+		s = ln
+	}
+	lb := make([]byte, 4)
+	copy(lb[:s], b[:s])
+	l = binary.LittleEndian.Uint32(lb)
+	if ln > 4 {
+		if ln-4 < 4 {
+			s = ln - 4
+		}
+		hb := make([]byte, 4)
+		copy(hb[:s], b[4:])
+		h = binary.LittleEndian.Uint32(hb)
+	}
+	return []uint32{l, h}
 }

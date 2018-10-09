@@ -18,6 +18,10 @@ type NamespaceId struct {
 	FullName string
 }
 
+func (n *NamespaceId) toHexString() string {
+	return utils.BigIntegerToHex(n.Id)
+}
+
 type namespaceIdDTO uint64DTO
 
 func (dto *namespaceIdDTO) toStruct() *NamespaceId {
@@ -54,7 +58,7 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 		if i > 0 {
 			buf = append(buf, ',')
 		}
-		buf = append(buf, []byte(`"`+nsId.FullName+`"`)...)
+		buf = append(buf, []byte(`"`+nsId.toHexString()+`"`)...)
 	}
 
 	buf = append(buf, ']', '}')
@@ -122,7 +126,8 @@ type NamespaceInfo struct {
 	Owner       *PublicAccount
 	StartHeight *big.Int
 	EndHeight   *big.Int
-} /* NamespaceInfo */
+}
+
 func NamespaceInfoFromDTO(nsInfoDTO *namespaceInfoDTO) (*NamespaceInfo, error) {
 	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
 	if err != nil {
