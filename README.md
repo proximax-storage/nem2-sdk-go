@@ -49,6 +49,7 @@ For more examples, go to our [wiki](https://github.com/proximax-storage/nem2-sdk
 ## Core Contributors ##
 
  + [@carlocayos](https://github.com/carlocayos)
+ + [@brambear](https://github.com/alvin-reyes)
  + [@ruslanBik4](https://github.com/ruslanBik4)
  + [@Wondertan](https://github.com/Wondertan)
  + [@slackve](https://github.com/slackve)
