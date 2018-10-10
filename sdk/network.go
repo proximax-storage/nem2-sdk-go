@@ -9,11 +9,6 @@ import (
 
 type NetworkService service
 
-// const routers path for methods MosaicService
-const (
-	pathNetwork = "/network"
-)
-
 type networkDTO struct {
 	Name        string
 	Description string
@@ -31,8 +26,8 @@ func (ref *NetworkService) GetNetworkType(ctx context.Context) (mscInfo NetworkT
 	}
 
 	if strings.ToLower(netDTO.Name) == "mijintest" {
-		return MIJIN_TEST, resp, nil
+		return MijinTest, resp, nil
 	}
 
-	return NOT_SUPPORTED_NETWORKTYPE, resp, errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
+	return NotSupportedNet, resp, errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
 }

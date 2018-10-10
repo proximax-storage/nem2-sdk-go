@@ -8,14 +8,26 @@ import (
 	"strings"
 )
 
-// Models
-
 // Mosaic
 type Mosaic struct {
 	MosaicId *MosaicId
 	Amount   *big.Int
 }
 
+func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
+
+	if mosaicId == nil {
+		return nil, errNilMosaicAmount
+	}
+	if amount == nil {
+		return nil, errNilMosaicId
+	}
+
+	return &Mosaic{
+		mosaicId,
+		amount,
+	}, nil
+}
 func (m *Mosaic) String() string {
 	return fmt.Sprintf(
 		`
@@ -61,10 +73,14 @@ func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 
 	}
 	id, err := generateMosaicId(parts[0], parts[1])
-	if networkTypeError != nil {
+	if err != nil {
 		return nil, err
 	}
 	return &MosaicId{id, name}, nil
+}
+
+func (m *MosaicId) toHexString() string {
+	return BigIntegerToHex(m.Id)
 }
 
 var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
@@ -75,21 +91,22 @@ func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error)
 		return nil, errors.New(mosaicName + " having zero length")
 	}
 
-	namespacePath, err := generateNamespacePath(namespaceName)
+	namespacePath, err := GenerateNamespacePath(namespaceName)
 	if err != nil {
 		return nil, err
 	}
-	namespaceId := namespacePath[len(namespacePath)-1]
+
 	if !regValidMosaicName.MatchString(mosaicName) {
 		return nil, errors.New(mosaicName + "invalid mosaic name")
 	}
 
-	return generateId(mosaicName, namespaceId)
+	b, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
+	return b, err
 }
 
 // MosaicIds is a list MosaicId
 type MosaicIds struct {
-	MosaicIds []string `json:"mosaicIds"`
+	MosaicIds []*MosaicId `json:"mosaicIds"`
 }
 
 // MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
@@ -125,7 +142,7 @@ type MosaicProperties struct {
 	Transferable  bool
 	LevyMutable   bool
 	Divisibility  int64
-	Duration *big.Int
+	Duration      *big.Int
 }
 
 func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration *big.Int) *MosaicProperties {
@@ -155,14 +172,14 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
-//MosaicSupplyType mosaic supply type :
+// MosaicSupplyType mosaic supply type :
 // Decrease the supply - DECREASE.
-//Increase the supply - INCREASE.
+// Increase the supply - INCREASE.
 type MosaicSupplyType uint8
 
 const (
-	DECREASE MosaicSupplyType = iota
-	INCREASE
+	Decrease MosaicSupplyType = iota
+	Increase
 )
 
 func (tx MosaicSupplyType) String() string {
@@ -173,4 +190,15 @@ type MosaicName struct {
 	MosaicId *MosaicId
 	Name     string
 	ParentId *NamespaceId
+}
+
+var XemMosaicId, _ = NewMosaicId(nil, "nem:xem")
+
+// Create xem with using xem as unit
+func Xem(amount int64) *Mosaic {
+	return &Mosaic{XemMosaicId, big.NewInt(amount)}
+}
+
+func XemRelative(amount int64) *Mosaic {
+	return Xem(big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(amount)).Int64())
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"math"
 	"math/big"
 )
 
@@ -28,7 +29,9 @@ func NewSignature(r []byte, s []byte) (*Signature, error) {
 	return ref, nil
 }
 func NewSignatureFromBigInt(rInt, sInt *big.Int) (*Signature, error) {
-	if (rInt == nil) || (sInt == nil) {
+	if (rInt == nil) || (sInt == nil) ||
+		(rInt.Uint64() > math.MaxInt32) ||
+		(sInt.Uint64() > math.MaxInt32) {
 		return nil, errBadParamNewSignatureBigInt
 	}
 

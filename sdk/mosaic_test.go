@@ -2,13 +2,24 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"math/big"
 	"net/http"
 	"testing"
 )
 
-var mosaicTest = MosaicIds{MosaicIds: []string{"d525ad41d95fcf29"}}
+func init() {
+	addRouters(mscRouters)
+	i, _ := (&big.Int{}).SetString("15358872602548358953", 10)
+	testMosaicId.Id = i
+}
 
-const testMosaicID = "d525ad41d95fcf29"
+var (
+	testMosaicId  = &MosaicId{}
+	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{testMosaicId}}
+)
+
+const testMosaicPathID = "d525ad41d95fcf29"
 const testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
 
 var (
@@ -54,8 +65,8 @@ var (
   }
 }`
 	mscRouters = map[string]sRouting{
-		pathMosaic + testMosaicID: {tplMosaic, nil},
-		pathMosaic:                {"[" + tplMosaic + "]", routeNeedBody},
+		pathMosaic + testMosaicPathID: {tplMosaic, nil},
+		pathMosaic:                    {"[" + tplMosaic + "]", routeNeedBody},
 		pathMosaicNames: {`[
 						  {
 							"mosaicId": [
@@ -73,15 +84,67 @@ var (
 	}
 )
 
-func init() {
-	addRouters(mscRouters)
+func TestMosaicService_GetMosaic(t *testing.T) {
+
+	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, *testMosaicId)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
+		t.Logf("%#v", mscInfo)
+	}
+
+}
+func TestMosaicService_GetMosaics(t *testing.T) {
+
+	mscInfoArr, resp, err := serv.Mosaic.GetMosaics(ctx, testMosaicIds)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		isValid := true
+		for _, mscInfo := range mscInfoArr {
+			isValid = isValid && validateMosaicInfo(mscInfo, t)
+		}
+		if isValid {
+			t.Logf("%s", mscInfoArr)
+		}
+	}
+
+	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
+
+	assert.NotNil(t, err, "request with empty MosaicIds must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	}
+
+}
+
+func TestMosaicService_GetMosaicNames(t *testing.T) {
+
+	mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, testMosaicIds)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		t.Logf("%s", mscInfoArr)
+
+	}
+}
+
+func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
+
+	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		t.Logf("%v", mscInfoArr)
+
+	}
+
 }
 
 func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
 	result := true
 
-	if mscInfo == nil {
-		t.Error("return nil structure mscInfo")
+	if !assert.NotNil(t, mscInfo) {
 		result = false
 	} else if metaId := mscInfo.MetaId; metaId != "5B55E02EACCB7B00015DB6EC" {
 		t.Error(fmt.Sprintf("failed MetaId data Convertion = '%s' (%#v)", metaId, mscInfo))
@@ -109,64 +172,4 @@ func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
 		result = false
 	}
 	return result
-}
-func TestMosaicService_GetMosaic(t *testing.T) {
-
-	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, testMosaicID)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
-		t.Logf("%#v", mscInfo)
-	}
-
-}
-func TestMosaicService_GetMosaics(t *testing.T) {
-
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaics(ctx, mosaicTest)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		isValid := true
-		for _, mscInfo := range mscInfoArr {
-			isValid = isValid && validateMosaicInfo(mscInfo, t)
-		}
-		if isValid {
-			t.Logf("%s", mscInfoArr)
-		}
-	}
-
-	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Error responce status code = %d", resp.StatusCode)
-	}
-
-}
-
-var testMosaicIds = &MosaicIds{
-	[]string{
-		"d525ad41d95fcf29",
-	}}
-
-func TestMosaicService_GetMosaicNames(t *testing.T) {
-
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, testMosaicIds)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		t.Logf("%s", mscInfoArr)
-
-	}
-}
-func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
-
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, mosaicNamespace, testMosaicFromNamesaceId, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		t.Logf("%v", mscInfoArr)
-
-	}
-
 }

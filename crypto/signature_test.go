@@ -91,7 +91,6 @@ func TestSignature_String_HexRepresentation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Assert:
 
 	assert.Equal(t, expectedSignature, signature.String(), `signature.toString() and expectedSignature must by not equal !`)
 }

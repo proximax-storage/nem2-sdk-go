@@ -6,9 +6,15 @@ import (
 )
 
 func ReverseByteArray(a []byte) {
-	for i := len(a)/2 - 1; i >= 0; i-- {
-		opp := len(a) - 1 - i
-		a[i], a[opp] = a[opp], a[i]
+	//for i := len(a)/2 - 1; i >= 0; i-- {
+	//	opp := len(a) - 1 - i
+	//	a[i], a[opp] = a[opp], a[i]
+	//}
+	lenA := len(a)
+	j := lenA
+	for i := range a[lenA/2:] {
+		j--
+		a[i], a[j] = a[j], a[i]
 	}
 }
 func MustHexDecodeString(s string) []byte {
@@ -32,6 +38,10 @@ func BigIntToByteArray(value *big.Int, numBytes int) []byte {
 	outputBytes := make([]byte, numBytes)
 	bigIntegerBytes := value.Bytes()
 	copyStartIndex := 0
+
+	if len(bigIntegerBytes) == 0 {
+		return outputBytes
+	}
 	if 0x00 == bigIntegerBytes[0] {
 		copyStartIndex = 1
 	}

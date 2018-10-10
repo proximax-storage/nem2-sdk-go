@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -171,13 +173,26 @@ func NewMockServer() *mockService {
 }
 
 func validateResp(resp *http.Response, t *testing.T) bool {
-	if resp == nil {
+	if !assert.NotNil(t, resp) {
 		return false
 	}
-	if resp.StatusCode != 200 {
-		t.Error(resp.Status)
+	if !assert.Equal(t, 200, resp.StatusCode) {
 		t.Logf("%#v", resp.Body)
 		return false
 	}
 	return true
+}
+
+//using different numbers from original javs sdk because of signed and unsigned transformation
+//ex. uint64(-8884663987180930485) = 9562080086528621131
+func TestBigIntegerToHex_bigIntegerNEMAndXEMToHex(t *testing.T) {
+	testBigInt(t, "9562080086528621131", "84b3552d375ffa4b")
+	testBigInt(t, "15358872602548358953", "d525ad41d95fcf29")
+}
+func testBigInt(t *testing.T, str, hexStr string) {
+	i, ok := (&big.Int{}).SetString(str, 10)
+	assert.True(t, ok)
+	result := BigIntegerToHex(i)
+	assert.Equal(t, hexStr, result)
+
 }

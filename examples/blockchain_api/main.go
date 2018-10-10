@@ -1,16 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/proximax-storage/nem2-sdk-go/sdk"
 	"golang.org/x/net/context"
+	"math/big"
 )
+
+const baseUrl = "http://catapult.internal.proximax.io:3000"
 
 // Simple Blockchain API request
 func main() {
 
-	conf, err := sdk.LoadTestnetConfig("http://catapult.internal.proximax.io:3000")
+	conf, err := sdk.LoadTestnetConfig(baseUrl)
 	if err != nil {
 		panic(err)
 	}
@@ -23,36 +25,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	chainHeightJson, _ := json.Marshal(chainHeight)
+
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
-	fmt.Printf("%s\n\n", string(chainHeightJson))
+	fmt.Printf("%s\n\n", chainHeight)
 
 	// Get the chain score
 	chainScore, resp, err := client.Blockchain.GetBlockchainScore(context.Background())
 	if err != nil {
 		panic(err)
 	}
-	chainScoreJson, _ := json.Marshal(chainScore)
-	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
-	fmt.Printf("%s\n\n", string(chainScoreJson))
 
-	// Get the Block Height
-	blockHeight, resp, err := client.Blockchain.GetBlockByHeight(context.Background(), 1)
+	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
+	fmt.Printf("%s\n\n", chainScore)
+
+	// Get the Block by height
+	blockHeight, resp, err := client.Blockchain.GetBlockByHeight(context.Background(), big.NewInt(9999))
 	if err != nil {
 		panic(err)
 	}
-	blockHeightJson, _ := json.Marshal(blockHeight)
+
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
-	fmt.Printf("%s\n\n", string(blockHeightJson))
+	fmt.Printf("%v\n\n", blockHeight)
 
 	// Get the Block Transactions
-	transactions, resp, err := client.Blockchain.GetBlockTransactions(context.Background(), 1)
+	transactions, resp, err := client.Blockchain.GetBlockTransactions(context.Background(), big.NewInt(1))
 	if err != nil {
 		panic(err)
 	}
-	transactionsJson, _ := json.Marshal(transactions)
+
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
-	fmt.Printf("%s\n\n", string(transactionsJson))
+	fmt.Printf("%s\n\n", transactions)
 
 	// Get the Blockchain Storage Info
 	blockchainStorageInfo, resp, err := client.Blockchain.GetBlockchainStorage(context.Background())
@@ -60,7 +62,6 @@ func main() {
 		panic(err)
 	}
 
-	blockchainStorageInfoJson, _ := json.Marshal(blockchainStorageInfo)
 	fmt.Printf("Response Status Code == %d\n", resp.StatusCode)
-	fmt.Printf("%s\n\n", string(blockchainStorageInfoJson))
+	fmt.Printf("%v\n\n", blockchainStorageInfo)
 }

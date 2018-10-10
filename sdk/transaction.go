@@ -9,14 +9,6 @@ import (
 
 type TransactionService service
 
-const (
-	mainTransactionRoute               = "transaction"
-	announceAggreagateRoute            = "partial"
-	announceAggreagateCosignatureRoute = "cosignature"
-	transactionStatusRoute             = "status"
-	transactionStatusesRoute           = "statuses"
-)
-
 // Returns transaction information for a given transaction id or hash
 func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, *http.Response, error) {
 	var b bytes.Buffer
@@ -109,12 +101,15 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 	return tss, resp, nil
 }
 
-func (txs *TransactionService) announceTransaction(ctx context.Context, tx Signed, path string) (string, *http.Response, error) {
-	var m string
-	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, m)
+func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, *http.Response, error) {
+	m := struct {
+		Message string `json:"message"`
+	}{}
+
+	resp, err := txs.client.DoNewRequest(ctx, "PUT", path, tx, &m)
 	if err != nil {
 		return "", resp, err
 	}
 
-	return m, resp, nil
+	return m.Message, resp, nil
 }

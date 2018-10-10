@@ -17,7 +17,7 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 	} else if resp.StatusCode != 200 {
 		t.Error(resp.Status)
 		t.Logf("%#v", resp)
-	} else if netType != MIJIN_TEST {
+	} else if netType != MijinTest {
 		t.Errorf("%d", netType)
 	}
 
@@ -26,8 +26,8 @@ func TestExtractNetworkType(t *testing.T) {
 	i := uint64(36888)
 
 	nt := ExtractNetworkType(i)
-	if nt != MIJIN_TEST {
-		t.Errorf("wrong convert %d (%d - %d)", i, nt, MIJIN_TEST)
+	if nt != MijinTest {
+		t.Errorf("wrong convert %d (%d - %d)", i, nt, MijinTest)
 	}
 
 }

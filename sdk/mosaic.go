@@ -10,106 +10,12 @@ import (
 
 type MosaicService service
 
-// const routers path for methods MosaicService
-const (
-	pathMosaic              = "/mosaic/"
-	pathMosaicNames         = "/mosaic/names"
-	pathMosaicFromNamespace = "/namespaces/%s/mosaic/"
-)
-
-type mosaicPropertiesDTO []uint64DTO
-
-// NamespaceMosaicMetaDTO
-type NamespaceMosaicMetaDTO struct {
-	Active bool
-	Index  int
-	Id     string
-}
-type mosaicDefinitionDTO struct {
-	NamespaceId uint64DTO
-	MosaicId    uint64DTO
-	Supply      uint64DTO
-	Height      uint64DTO
-	Owner       string
-	Properties  mosaicPropertiesDTO
-	Levy        interface{}
-}
-
-// mosaicInfoDTO is temporary struct for reading response & fill MosaicInfo
-type mosaicInfoDTO struct {
-	Meta   NamespaceMosaicMetaDTO
-	Mosaic mosaicDefinitionDTO
-}
-
-func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
-	flags := "00" + dto[0].toBigInt().Text(2)
-	bitMapFlags := flags[len(flags)-3:]
-
-	return NewMosaicProperties(bitMapFlags[2] == '1',
-		bitMapFlags[1] == '1',
-		bitMapFlags[0] == '1',
-		dto[1].toBigInt().Int64(),
-		dto[2].toBigInt(),
-	)
-}
-
-func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
-
-	publicAcc, err := NewPublicAccount(ref.Mosaic.Owner, NetworkType(1))
-	if err != nil {
-		return nil, err
-	}
-	if len(ref.Mosaic.Properties) < 3 {
-		return nil, errors.New("mosaic Properties is not valid")
-	}
-	mosaicID, err := NewMosaicId(ref.Mosaic.MosaicId.toBigInt(), "")
-	if err != nil {
-		return nil, err
-	}
-	return &MosaicInfo{
-		ref.Meta.Active,
-		ref.Meta.Index,
-		ref.Meta.Id,
-		NewNamespaceId(ref.Mosaic.NamespaceId.toBigInt(), ""),
-		mosaicID,
-		ref.Mosaic.Supply.toBigInt(),
-		ref.Mosaic.Height.toBigInt(),
-		publicAcc,
-		ref.Mosaic.Properties.toStruct(),
-	}, nil
-}
-
-// mosaicInfoDTO is temporary struct for reading response & fill MosaicName
-type MosaicNameDTO struct {
-	ParentId uint64DTO
-	MosaicId uint64DTO
-	Name     string
-}
-type MosaicNamesDTO []*MosaicNameDTO
-
-func (ref MosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
-	mscNames := make([]*MosaicName, len(ref))
-	for i, mscNameDTO := range ref {
-		newMscId, err := NewMosaicId(mscNameDTO.MosaicId.toBigInt(), "")
-		if err != nil {
-			return nil, err
-		}
-		mscNames[i] = &MosaicName{
-			newMscId,
-			mscNameDTO.Name,
-			NewNamespaceId(mscNameDTO.ParentId.toBigInt(), ""),
-		}
-	}
-
-	return mscNames, nil
-}
-
 // mosaics get mosaics Info
 // @get /mosaic/{mosaicId}
-func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId string) (mscInfo *MosaicInfo, resp *http.Response, err error) {
+func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId MosaicId) (mscInfo *MosaicInfo, resp *http.Response, err error) {
 
 	mscInfoDTO := &mosaicInfoDTO{}
-	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+mosaicId, nil, mscInfoDTO)
+	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+mosaicId.toHexString(), nil, mscInfoDTO)
 
 	if err != nil {
 		return nil, resp, err
@@ -147,10 +53,10 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds MosaicIds) (
 
 // GetMosaicNames Get readable names for a set of mosaics
 // post @/mosaic/names
-func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds *MosaicIds) (mscNames []*MosaicName, resp *http.Response, err error) {
+func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds MosaicIds) (mscNames []*MosaicName, resp *http.Response, err error) {
 
-	mscNamesDTO := make(MosaicNamesDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaicNames, mosaicIds, &mscNamesDTO)
+	mscNamesDTO := make(mosaicNamesDTO, 0)
+	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaicNames, &mosaicIds, &mscNamesDTO)
 
 	if err != nil {
 		return nil, resp, err
@@ -167,13 +73,13 @@ func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds *MosaicI
 
 // GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
 // get @/namespaces/{namespaceId}/mosaic/
-func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespaceId string, mosaicId string,
+func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespaceId *NamespaceId, mosaicId *MosaicId,
 	pageSize int) (mscInfo []*MosaicInfo, resp *http.Response, err error) {
 
 	url, comma := "", "?"
 
-	if mosaicId > "" {
-		url = comma + "id=" + namespaceId
+	if mosaicId != nil {
+		url = comma + "id=" + mosaicId.toHexString()
 		comma = "&"
 	}
 
@@ -181,7 +87,7 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 		url += comma + "pageSize=" + strconv.Itoa(pageSize)
 	}
 
-	url = fmt.Sprintf(pathMosaicFromNamespace, namespaceId) + url
+	url = fmt.Sprintf(pathMosaicFromNamespace, namespaceId.toHexString()) + url
 
 	mscInfoDTOArr := make([]*mosaicInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, &mscInfoDTOArr)
@@ -200,6 +106,103 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 	}
 
 	return mscInfo, resp, nil
+}
+
+type mosaicPropertiesDTO []uint64DTO
+
+// namespaceMosaicMetaDTO
+type namespaceMosaicMetaDTO struct {
+	Active bool
+	Index  int
+	Id     string
+}
+
+type mosaicDefinitionDTO struct {
+	NamespaceId uint64DTO
+	MosaicId    uint64DTO
+	Supply      uint64DTO
+	Height      uint64DTO
+	Owner       string
+	Properties  mosaicPropertiesDTO
+	Levy        interface{}
+}
+
+// mosaicInfoDTO is temporary struct for reading response & fill MosaicInfo
+type mosaicInfoDTO struct {
+	Meta   namespaceMosaicMetaDTO
+	Mosaic mosaicDefinitionDTO
+}
+
+func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
+	flags := "00" + dto[0].toBigInt().Text(2)
+	bitMapFlags := flags[len(flags)-3:]
+
+	return NewMosaicProperties(bitMapFlags[2] == '1',
+		bitMapFlags[1] == '1',
+		bitMapFlags[0] == '1',
+		dto[1].toBigInt().Int64(),
+		dto[2].toBigInt(),
+	)
+}
+
+func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
+
+	publicAcc, err := NewPublicAccount(ref.Mosaic.Owner, NetworkType(1))
+	if err != nil {
+		return nil, err
+	}
+	if len(ref.Mosaic.Properties) < 3 {
+		return nil, errors.New("mosaic Properties is not valid")
+	}
+	mosaicID, err := NewMosaicId(ref.Mosaic.MosaicId.toBigInt(), "")
+	if err != nil {
+		return nil, err
+	}
+	nsName, err := NewNamespaceId(ref.Mosaic.NamespaceId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
+	return &MosaicInfo{
+		ref.Meta.Active,
+		ref.Meta.Index,
+		ref.Meta.Id,
+		nsName,
+		mosaicID,
+		ref.Mosaic.Supply.toBigInt(),
+		ref.Mosaic.Height.toBigInt(),
+		publicAcc,
+		ref.Mosaic.Properties.toStruct(),
+	}, nil
+}
+
+// mosaicInfoDTO is temporary struct for reading response & fill MosaicName
+type mosaicNameDTO struct {
+	ParentId uint64DTO
+	MosaicId uint64DTO
+	Name     string
+}
+
+type mosaicNamesDTO []*mosaicNameDTO
+
+func (ref mosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
+	mscNames := make([]*MosaicName, len(ref))
+	for i, mscNameDTO := range ref {
+		newMscId, err := NewMosaicId(mscNameDTO.MosaicId.toBigInt(), "")
+		if err != nil {
+			return nil, err
+		}
+		parentId, err := NewNamespaceId(mscNameDTO.ParentId.toBigInt())
+		if err != nil {
+			return nil, err
+		}
+		mscNames[i] = &MosaicName{
+			newMscId,
+			mscNameDTO.Name,
+			parentId,
+		}
+	}
+
+	return mscNames, nil
 }
 
 type mosaicDTO struct {

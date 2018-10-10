@@ -17,6 +17,21 @@ type Account struct {
 	*crypto.KeyPair
 }
 
+// Sign a transaction
+func (a *Account) Sign(tx Transaction) (*SignedTransaction, error) {
+	return signTransactionWith(tx, a)
+}
+
+// Sign transaction with cosignatories creating a new SignedTransaction
+func (a *Account) SignWithCosignatures(tx *AggregateTransaction, cosignatories []*Account) (*SignedTransaction, error) {
+	return signTransactionWithCosignatures(tx, a, cosignatories)
+}
+
+// Sign aggregate signature transaction
+func (a *Account) SignCosignatureTransaction(tx *CosignatureTransaction) (*CosignatureSignedTransaction, error) {
+	return signCosignatureTransaction(a, tx)
+}
+
 type PublicAccount struct {
 	Address   *Address
 	PublicKey string
@@ -24,6 +39,20 @@ type PublicAccount struct {
 
 func (ref *PublicAccount) String() string {
 	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
+}
+
+func (ref *MultisigAccountInfo) String() string {
+	return fmt.Sprintf(
+		`Account: %s,
+				MinApproval: %d,
+				MinRemoval: %d,
+				MultisigAccounts: %v,
+				Cosignatories:  %v`,
+		ref.Account,
+		ref.MinApproval,
+		ref.MinRemoval,
+		ref.MultisigAccounts,
+		ref.Cosignatories)
 }
 
 type AccountInfo struct {
@@ -89,22 +118,44 @@ func (ad *Address) Pretty() string {
 }
 
 type Addresses struct {
-	list []*Address
+	List []*Address
 	lock sync.RWMutex
+}
+
+func (tx *AccountInfo) String() string {
+
+	return fmt.Sprintf(
+		`
+			"Address": %s,
+			"AddressHeight": %s,
+			"Mosaics": %s,
+			"PublicKey": %s,
+			"Importance": %d,
+			"ImportanceHeight": %d,
+			"PublicKeyHeight": %s,
+		`,
+		tx.Address,
+		tx.AddressHeight,
+		tx.Mosaics,
+		tx.PublicKey,
+		tx.Importance,
+		tx.ImportanceHeight,
+		tx.PublicKeyHeight,
+	)
 }
 
 func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
 
-	ref.list = append(ref.list, address)
+	ref.List = append(ref.List, address)
 }
 func (ref *Addresses) GetAddress(i int) (*Address, error) {
 
-	if (i >= 0) && (i < len(ref.list)) {
+	if (i >= 0) && (i < len(ref.List)) {
 		ref.lock.RLock()
 		defer ref.lock.RUnlock()
-		return ref.list[i], nil
+		return ref.List[i], nil
 	}
 
 	return nil, errors.New("index out of range - " + strconv.Itoa(i))
@@ -112,8 +163,8 @@ func (ref *Addresses) GetAddress(i int) (*Address, error) {
 }
 func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 	buf = []byte(`{"addresses":[`)
-	for i, address := range ref.list {
-		b := []byte(address.Address)
+	for i, address := range ref.List {
+		b := []byte(`"` + address.Address + `"`)
 		if i > 0 {
 			buf = append(buf, ',')
 		}
@@ -147,8 +198,8 @@ type multisigAccountInfoDTO struct {
 
 func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigAccountInfo, error) {
 	var wg sync.WaitGroup
-	var cs []*PublicAccount
-	var ms []*PublicAccount
+	cs := make([]*PublicAccount, len(dto.Multisig.Cosignatories))
+	ms := make([]*PublicAccount, len(dto.Multisig.MultisigAccounts))
 
 	acc, err := NewPublicAccount(dto.Multisig.Account, networkType)
 	if err != nil {
@@ -230,6 +281,25 @@ func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*Mult
 
 var addressError = errors.New("wrong address")
 
+func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
+	k, err := crypto.NewPrivateKeyfromHexString(pKey)
+	if err != nil {
+		return nil, err
+	}
+
+	kp, err := crypto.NewKeyPair(k, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	pa, err := NewPublicAccount(kp.PublicKey.String(), networkType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Account{pa, kp}, nil
+}
+
 func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, error) {
 	ad, err := NewAddressFromPublicKey(pKey, networkType)
 	if err != nil {
@@ -238,6 +308,7 @@ func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, err
 	return &PublicAccount{ad, pKey}, nil
 }
 
+// Create an Address from a given raw address
 func NewAddress(address string, networkType NetworkType) *Address {
 	address = strings.Replace(address, "-", "", -1)
 	address = strings.ToUpper(address)
@@ -245,20 +316,20 @@ func NewAddress(address string, networkType NetworkType) *Address {
 }
 
 var addressNet = map[uint8]NetworkType{
-	'N': MAIN_NET,
-	'T': TEST_NET,
-	'M': MIJIN,
-	'S': MIJIN_TEST,
+	'N': MainNet,
+	'T': TestNet,
+	'M': Mijin,
+	'S': MijinTest,
 }
 
 func NewAddressFromRaw(address string) (*Address, error) {
-
 	if nType, ok := addressNet[address[0]]; ok {
 		return NewAddress(address, nType), nil
 	}
 	return nil, addressError
 }
 
+// Create an Address from a given raw address.
 func NewAddressFromPublicKey(pKey string, networkType NetworkType) (*Address, error) {
 	ad, err := generateEncodedAddress(pKey, networkType)
 	if err != nil {

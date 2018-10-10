@@ -3,22 +3,33 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
+	"math/big"
 	"net/http"
 	"testing"
 )
 
+func init() {
+	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
+
+	i, _ := (&big.Int{}).SetString("9562080086528621131", 10)
+	testNamespaceId.Id = i
+}
+
 var (
 	testAddresses = Addresses{
-		list: []*Address{
+		List: []*Address{
 			{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
 			{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
 		},
 	}
 	testAddress = Address{Address: "SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE"}
 
+	testNamespaceId  = &NamespaceId{}
 	testNamespaceIDs = &NamespaceIds{
 		List: []*NamespaceId{
-			{FullName: "84b3552d375ffa4b"},
+			testNamespaceId,
 		},
 	}
 	ad = &NamespaceIds{}
@@ -79,53 +90,12 @@ var (
 func init() {
 	addRouters(nsRouters)
 }
-func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
-	result := true
-	if !nsInfo.Active {
-		t.Error("failed Active data Convertion")
-		result = false
-	}
-	if !(nsInfo.Index == 0) {
-		t.Error("failed Index data Convertion")
-		result = false
-	}
-	if !(nsInfo.MetaId == "5B55E02EACCB7B00015DB6EB") {
-		t.Error("failed Id data Convertion")
-		result = false
-	}
-	if !(nsInfo.TypeSpace == RootNamespace) {
-		t.Error("failed Type data Convertion")
-		result = false
-	}
-	if !(nsInfo.Depth == 1) {
-		t.Error("failed Depth data Convertion")
-		result = false
-	}
-	if !(nsInfo.Owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
-		t.Error("failed Owner data Convertion")
-		result = false
-	}
-	if nsId := nsInfo.ParentId.Id; !(nsId.Uint64() == 0) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-	if sH := nsInfo.StartHeight; !(sH.Uint64() == 1) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.toBigInt().Uint64()) {
-		t.Error("failed ParentId data Convertion")
-		result = false
-	}
-
-	return result
-}
 
 const testIDs = "84b3552d375ffa4b"
 
 func TestNamespaceService_GetNamespace(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testNamespaceId)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
@@ -155,9 +125,7 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 	}
 
 	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
-	if err == nil {
-		t.Error("addrees is null - method must return error")
-	}
+	assert.NotNil(t, err, "request with empty Address must return error")
 }
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
@@ -179,22 +147,15 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	}
 
 	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Error responce status code = %d", resp.StatusCode)
+	assert.NotNil(t, err, "request with empty Addresses must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}
 }
 
-func init() {
-	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
-
-}
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, testNamespaceIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, *testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
 	} else if validateResp(resp, t) {
@@ -215,4 +176,46 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	}
 	t.Logf("%#v", nsInfo)
 
+}
+
+func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
+	result := true
+	if !nsInfo.Active {
+		t.Error("failed Active data Convertion")
+		result = false
+	}
+	if !(nsInfo.Index == 0) {
+		t.Error("failed Index data Convertion")
+		result = false
+	}
+	if !(nsInfo.MetaId == "5B55E02EACCB7B00015DB6EB") {
+		t.Error("failed Id data Convertion")
+		result = false
+	}
+	if !(nsInfo.TypeSpace == Root) {
+		t.Error("failed Type data Convertion")
+		result = false
+	}
+	if !(nsInfo.Depth == 1) {
+		t.Error("failed Depth data Convertion")
+		result = false
+	}
+	if !(nsInfo.Owner.PublicKey == "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E") {
+		t.Error("failed Owner data Convertion")
+		result = false
+	}
+	if nsId := nsInfo.ParentId.Id; !(nsId.Uint64() == 0) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+	if sH := nsInfo.StartHeight; !(sH.Uint64() == 1) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+	if eH := nsInfo.EndHeight; !(eH.Uint64() == uint64DTO{4294967295, 4294967295}.toBigInt().Uint64()) {
+		t.Error("failed ParentId data Convertion")
+		result = false
+	}
+
+	return result
 }
