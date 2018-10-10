@@ -9,18 +9,6 @@ import (
 
 type AccountService service
 
-const (
-	mainAccountRoute              = "account"
-	transactionsRoute             = "transactions"
-	incomingTransactionsRoute     = "transactions/incoming"
-	outgoingTransactionsRoute     = "transactions/outgoing"
-	unconfirmedTransactionsRoute  = "transactions/unconfirmed"
-	aggregateTransactionsRoute    = "transactions/partial"
-	multisigAccountInfoRoute      = "multisig"
-	multisigAccountGraphInfoRoute = "multisig/graph"
-)
-
-// Gets an AccountInfo for an account.
 func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, *http.Response, error) {
 	dto := &accountInfoDTO{}
 

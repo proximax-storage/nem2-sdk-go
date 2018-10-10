@@ -446,10 +446,11 @@ func TestRegisterRootNamespaceTransactionSerialization(t *testing.T) {
 func TestRegisterSubNamespaceTransactionSerialization(t *testing.T) {
 	want := []byte{150, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 78, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 126, 233, 179, 184, 175, 223, 83, 64, 3, 18, 152, 27, 120, 121, 163, 113, 12, 115, 117, 98, 110, 97, 109, 101, 115, 112, 97, 99, 101}
+
 	tx, err := NewRegisterSubNamespaceTransaction(
 		fakeDeadline,
 		"subnamespace",
-		NewNamespaceId(big.NewInt(4635294387305441662), ""),
+		&NamespaceId{Id: big.NewInt(4635294387305441662)},
 		MijinTest,
 	)
 	b, err := tx.generateBytes()

@@ -81,7 +81,7 @@ func (tx *abstractTransaction) generateVectors(builder *flatbuffers.Builder) (v 
 	v, err = strconv.ParseUint(strconv.FormatUint(uint64(tx.NetworkType), 16)+"0"+strconv.FormatUint(tx.Version, 16), 16, 32)
 	signatureV = transactions.TransactionBufferCreateByteVector(builder, make([]byte, 64))
 	signerV = transactions.TransactionBufferCreateByteVector(builder, make([]byte, 32))
-	dV = transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(big.NewInt(tx.Deadline.GetInstant())))
+	dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(big.NewInt(tx.Deadline.GetInstant())))
 	fV = transactions.TransactionBufferCreateUint32Vector(builder, []uint32{0, 0})
 	return
 }
@@ -362,6 +362,10 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaicName string, names
 		return nil, err
 	}
 
+	nsId, err := NewNamespaceIdFromName(namespaceName)
+	if err != nil {
+		return nil, err
+	}
 	return &MosaicDefinitionTransaction{
 		abstractTransaction: abstractTransaction{
 			Version:     2,
@@ -370,7 +374,7 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaicName string, names
 			NetworkType: networkType,
 		},
 		MosaicName:  mosaicName,
-		NamespaceId: NewNamespaceId(nil, namespaceName),
+		NamespaceId: nsId,
 		MosaicId: &MosaicId{
 			Id:       id,
 			FullName: "",
@@ -411,9 +415,9 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 		f += 4
 	}
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicId.Id))
-	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicProperties.Duration))
-	nV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.NamespaceId.Id))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicId.Id))
+	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicProperties.Duration))
+	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.NamespaceId.Id))
 
 	n := builder.CreateString(tx.MosaicName)
 
@@ -461,10 +465,15 @@ func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransact
 		return nil, err
 	}
 
+	nsId, err := NewNamespaceId(dto.Tx.ParentId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
+
 	return &MosaicDefinitionTransaction{
 		*atx,
 		dto.Tx.Properties.toStruct(),
-		NewNamespaceId(dto.Tx.ParentId.toBigInt(), ""),
+		nsId,
 		m,
 		dto.Tx.MosaicName,
 	}, nil
@@ -524,8 +533,8 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.MosaicId.Id))
-	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Delta))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicId.Id))
+	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Delta))
 
 	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
 	if err != nil {
@@ -637,8 +646,8 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	ml := len(tx.Mosaics)
 	mb := make([]flatbuffers.UOffsetT, ml)
 	for i, mos := range tx.Mosaics {
-		id := transactions.MosaicBufferCreateIdVector(builder, fromBigInt(mos.MosaicId.Id))
-		am := transactions.MosaicBufferCreateAmountVector(builder, fromBigInt(mos.Amount))
+		id := transactions.MosaicBufferCreateIdVector(builder, FromBigInt(mos.MosaicId.Id))
+		am := transactions.MosaicBufferCreateAmountVector(builder, FromBigInt(mos.Amount))
 		transactions.MosaicBufferStart(builder)
 		transactions.MosaicBufferAddId(builder, id)
 		transactions.MosaicBufferAddAmount(builder, am)
@@ -919,12 +928,12 @@ func (tx *RegisterNamespaceTransaction) String() string {
 func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	nV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Id))
+	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Id))
 	var dV flatbuffers.UOffsetT
 	if tx.NamespaceType == Root {
-		dV = transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Duration))
+		dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 	} else {
-		dV = transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.ParentId.Id))
+		dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.ParentId.Id))
 	}
 	n := builder.CreateString(tx.NamspaceName)
 
@@ -965,18 +974,26 @@ func (dto *registerNamespaceTransactionDTO) toStruct() (*RegisterNamespaceTransa
 		return nil, err
 	}
 
-	var d *big.Int
+	d := big.NewInt(0)
 	n := &NamespaceId{}
+
 	if dto.Tx.NamespaceType == Root {
 		d = dto.Tx.Duration.toBigInt()
 	} else {
-		d = big.NewInt(0)
-		n = dto.Tx.ParentId.toStruct()
+		n, err = dto.Tx.ParentId.toStruct()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	nsId, err := dto.Tx.Id.toStruct()
+	if err != nil {
+		return nil, err
 	}
 
 	return &RegisterNamespaceTransaction{
 		*atx,
-		dto.Tx.Id.toStruct(),
+		nsId,
 		dto.Tx.NamespaceType,
 		dto.Tx.NamspaceName,
 		d,
@@ -1041,9 +1058,9 @@ func (tx *LockFundsTransaction) String() string {
 func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mv := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Mosaic.MosaicId.Id))
-	maV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Mosaic.Amount))
-	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Duration))
+	mv := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.MosaicId.Id))
+	maV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.Amount))
+	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 
 	h, err := hex.DecodeString(tx.SignedTransaction.Hash)
 	if err != nil {
@@ -1163,9 +1180,9 @@ func (tx *SecretLockTransaction) String() string {
 func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Mosaic.MosaicId.Id))
-	maV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Mosaic.Amount))
-	dV := transactions.TransactionBufferCreateUint32Vector(builder, fromBigInt(tx.Duration))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.MosaicId.Id))
+	maV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.Amount))
+	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 
 	s, err := hex.DecodeString(tx.Secret)
 	if err != nil {

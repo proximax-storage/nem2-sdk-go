@@ -3,9 +3,19 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
+	"math/big"
 	"net/http"
 	"testing"
 )
+
+func init() {
+	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
+	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
+
+	i, _ := (&big.Int{}).SetString("9562080086528621131", 10)
+	testNamespaceId.Id = i
+}
 
 var (
 	testAddresses = Addresses{
@@ -16,9 +26,10 @@ var (
 	}
 	testAddress = Address{Address: "SCASIIAPS6BSFEC66V6MU5ZGEVWM53BES5GYBGLE"}
 
+	testNamespaceId  = &NamespaceId{}
 	testNamespaceIDs = &NamespaceIds{
 		List: []*NamespaceId{
-			{FullName: "84b3552d375ffa4b"},
+			testNamespaceId,
 		},
 	}
 	ad = &NamespaceIds{}
@@ -79,6 +90,94 @@ var (
 func init() {
 	addRouters(nsRouters)
 }
+
+const testIDs = "84b3552d375ffa4b"
+
+func TestNamespaceService_GetNamespace(t *testing.T) {
+
+	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testNamespaceId)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
+		t.Logf("%s", nsInfo)
+	}
+}
+
+const testNamespaceID = "5B55E02EACCB7B00015DB6EB"
+
+func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
+
+	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		if len(nsInfoArr.list) != 1 {
+			t.Error("return result must have length = 1")
+		} else {
+			isValid := true
+			for _, nsInfo := range nsInfoArr.list {
+				isValid = isValid && validateNamespaceInfo(nsInfo, t)
+			}
+			if isValid {
+				t.Logf("%v", nsInfoArr)
+			}
+		}
+	}
+
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
+	assert.NotNil(t, err, "request with empty Address must return error")
+}
+func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
+
+	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		if len(nsInfoArr.list) != 1 {
+			t.Error("return result must have length = 1")
+		} else {
+			isValid := true
+			for _, nsInfo := range nsInfoArr.list {
+				isValid = isValid && validateNamespaceInfo(nsInfo, t)
+			}
+			if isValid {
+				t.Logf("%v", nsInfoArr)
+			}
+		}
+	}
+
+	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
+	assert.NotNil(t, err, "request with empty Addresses must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	}
+}
+
+func TestNamespaceService_GetNamespaceNames(t *testing.T) {
+
+	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, *testNamespaceIDs)
+	if err != nil {
+		t.Fatal(err)
+	} else if validateResp(resp, t) {
+		if (nsInfo == nil) || (len(nsInfo) == 0) {
+			t.Logf("%#v %#v", resp, resp.Body)
+		} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
+			t.Logf("%#v", arr0)
+		} else {
+			if id := arr0.NamespaceId.Id; !(id.Uint64() == uint64DTO{929036875, 2226345261}.toBigInt().Uint64()) {
+				t.Error("failed namespaceName id Convertion")
+				t.Logf("%s", id)
+			}
+			if arr0.Name != "nem" {
+				t.Error("failed namespaceName Name Convertion")
+				t.Logf("%#v", arr0.Name)
+			}
+		}
+	}
+	t.Logf("%#v", nsInfo)
+
+}
+
 func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 	result := true
 	if !nsInfo.Active {
@@ -119,100 +218,4 @@ func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
 	}
 
 	return result
-}
-
-const testIDs = "84b3552d375ffa4b"
-
-func TestNamespaceService_GetNamespace(t *testing.T) {
-
-	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testIDs)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
-		t.Logf("%s", nsInfo)
-	}
-}
-
-const testNamespaceID = "5B55E02EACCB7B00015DB6EB"
-
-func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
-
-	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		if len(nsInfoArr.list) != 1 {
-			t.Error("return result must have length = 1")
-		} else {
-			isValid := true
-			for _, nsInfo := range nsInfoArr.list {
-				isValid = isValid && validateNamespaceInfo(nsInfo, t)
-			}
-			if isValid {
-				t.Logf("%v", nsInfoArr)
-			}
-		}
-	}
-
-	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
-	if err == nil {
-		t.Error("addrees is null - method must return error")
-	}
-}
-func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
-
-	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		if len(nsInfoArr.list) != 1 {
-			t.Error("return result must have length = 1")
-		} else {
-			isValid := true
-			for _, nsInfo := range nsInfoArr.list {
-				isValid = isValid && validateNamespaceInfo(nsInfo, t)
-			}
-			if isValid {
-				t.Logf("%v", nsInfoArr)
-			}
-		}
-	}
-
-	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Error responce status code = %d", resp.StatusCode)
-	}
-}
-
-func init() {
-	jsoniter.RegisterTypeEncoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", testNamespaceIDs)
-	jsoniter.RegisterTypeDecoder("*NamespaceIds", ad)
-
-}
-func TestNamespaceService_GetNamespaceNames(t *testing.T) {
-
-	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, testNamespaceIDs)
-	if err != nil {
-		t.Fatal(err)
-	} else if validateResp(resp, t) {
-		if (nsInfo == nil) || (len(nsInfo) == 0) {
-			t.Logf("%#v %#v", resp, resp.Body)
-		} else if arr0 := (nsInfo)[0]; (arr0.NamespaceId == nil) || (arr0.NamespaceId.Id == nil) {
-			t.Logf("%#v", arr0)
-		} else {
-			if id := arr0.NamespaceId.Id; !(id.Uint64() == uint64DTO{929036875, 2226345261}.toBigInt().Uint64()) {
-				t.Error("failed namespaceName id Convertion")
-				t.Logf("%s", id)
-			}
-			if arr0.Name != "nem" {
-				t.Error("failed namespaceName Name Convertion")
-				t.Logf("%#v", arr0.Name)
-			}
-		}
-	}
-	t.Logf("%#v", nsInfo)
-
 }

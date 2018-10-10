@@ -11,16 +11,6 @@ import (
 
 type BlockchainService service
 
-// const routers path for methods BlockchainService
-const (
-	pathBlockHeight         = "/chain/height"
-	pathBlockByHeight       = "/block/%s"
-	pathBlockScore          = "/chain/score"
-	pathBlockGetTransaction = "/block/%s/transactions"
-	pathBlockInfo           = "/blocks/%s/limit/%s"
-	pathBlockStorage        = "/diagnostic/storage"
-)
-
 // Get Block Height
 func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height *big.Int) (*BlockInfo, *http.Response, error) {
 	u := fmt.Sprintf(pathBlockByHeight, height.String())

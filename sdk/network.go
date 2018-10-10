@@ -9,11 +9,6 @@ import (
 
 type NetworkService service
 
-// const routers path for methods MosaicService
-const (
-	pathNetwork = "/network"
-)
-
 type networkDTO struct {
 	Name        string
 	Description string
