@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -180,4 +181,18 @@ func validateResp(resp *http.Response, t *testing.T) bool {
 		return false
 	}
 	return true
+}
+
+//using different numbers from original javs sdk because of signed and unsigned transformation
+//ex. uint64(-8884663987180930485) = 9562080086528621131
+func TestBigIntegerToHex_bigIntegerNEMAndXEMToHex(t *testing.T) {
+	testBigInt(t, "9562080086528621131", "84b3552d375ffa4b")
+	testBigInt(t, "15358872602548358953", "d525ad41d95fcf29")
+}
+func testBigInt(t *testing.T, str, hexStr string) {
+	i, ok := (&big.Int{}).SetString(str, 10)
+	assert.True(t, ok)
+	result := BigIntegerToHex(i)
+	assert.Equal(t, hexStr, result)
+
 }

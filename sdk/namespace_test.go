@@ -155,7 +155,7 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, testNamespaceIDs)
+	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, *testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
 	} else if validateResp(resp, t) {
