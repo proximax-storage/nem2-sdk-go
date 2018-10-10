@@ -1,3 +1,8 @@
+// Copyright 2018 ProximaX Limited. All rights reserved.
+// Use of this source code is governed by the Apache 2.0
+// license that can be found in the LICENSE file.
+
+
 package crypto
 
 import (
@@ -1059,7 +1064,7 @@ func assertEquals(t *testing.T, f Ed25519FieldElement, b1 *big.Int, msgAndArgs .
 			args[0] = arg
 			i = 1
 		} else {
-			for _ = range msgAndArgs {
+			for range msgAndArgs {
 				msg += " %+v"
 			}
 			args[0] = msg

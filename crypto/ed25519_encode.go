@@ -1,3 +1,7 @@
+// Copyright 2018 ProximaX Limited. All rights reserved.
+// Use of this source code is governed by the Apache 2.0
+// license that can be found in the LICENSE file.
+
 package crypto
 
 import (
@@ -1070,7 +1074,7 @@ func (ref *Ed25519EncodedFieldElement) modQ() *Ed25519EncodedFieldElement {
 
 	s22 := 0x1FFFFF & (ref.fourBytesToLong(ref.Raw, 57) >> 6)
 
-	s23 := (ref.fourBytesToLong(ref.Raw, 60) >> 3)
+	s23 := ref.fourBytesToLong(ref.Raw, 60) >> 3
 
 	/**
 	 * Lots of magic numbers :)
@@ -1393,7 +1397,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
 
 	a10 := 0x1FFFFF & (ref.threeBytesToLong(ref.Raw, 26) >> 2)
 
-	a11 := (ref.fourBytesToLong(ref.Raw, 28) >> 7)
+	a11 := ref.fourBytesToLong(ref.Raw, 28) >> 7
 
 	b0 := 0x1FFFFF & ref.threeBytesToLong(b.Raw, 0)
 
@@ -1417,7 +1421,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
 
 	b10 := 0x1FFFFF & (ref.threeBytesToLong(b.Raw, 26) >> 2)
 
-	b11 := (ref.fourBytesToLong(b.Raw, 28) >> 7)
+	b11 := ref.fourBytesToLong(b.Raw, 28) >> 7
 
 	c0 := 0x1FFFFF & ref.threeBytesToLong(c.Raw, 0)
 
@@ -1441,7 +1445,7 @@ func (ref *Ed25519EncodedFieldElement) multiplyAndAddModQ(
 
 	c10 := 0x1FFFFF & (ref.threeBytesToLong(c.Raw, 26) >> 2)
 
-	c11 := (ref.fourBytesToLong(c.Raw, 28) >> 7)
+	c11 := ref.fourBytesToLong(c.Raw, 28) >> 7
 
 	s0 := c0 + a0*b0
 	s1 := c1 + a0*b1 + a1*b0
@@ -2151,8 +2155,8 @@ func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) [
 	a := encoded.Raw
 	e := make([]int8, 64)
 	for i := 0; i < 32; i++ {
-		e[2*i] = (int8(a[i]) & 15)
-		e[2*i+1] = ((int8(a[i]) >> 4) & 15)
+		e[2*i] = int8(a[i]) & 15
+		e[2*i+1] = (int8(a[i]) >> 4) & 15
 	}
 
 	/* each e[i] is between 0 and 15 */
@@ -2197,7 +2201,7 @@ func (ref *Ed25519GroupElement) toRadix16(encoded *Ed25519EncodedFieldElement) [
 	r := make([]int8, 256)
 	// Put each bit of 'a' into a separate byte, 0 or 1
 	for i := 0; i < 256; i++ {
-		r[i] = (1 & (int8(a[i>>3]) >> uint(i&7)))
+		r[i] = 1 & (int8(a[i>>3]) >> uint(i&7))
 	}
 	//todo: algorimt must be simple!
 	// Note: r[i] will always be odd.
