@@ -10,13 +10,6 @@ import (
 
 type MosaicService service
 
-// const routers path for methods MosaicService
-const (
-	pathMosaic              = "/mosaic/"
-	pathMosaicNames         = "/mosaic/names"
-	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
-)
-
 // mosaics get mosaics Info
 // @get /mosaic/{mosaicId}
 func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId MosaicId) (mscInfo *MosaicInfo, resp *http.Response, err error) {
@@ -165,11 +158,15 @@ func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	nsName, err := NewNamespaceId(ref.Mosaic.NamespaceId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
 	return &MosaicInfo{
 		ref.Meta.Active,
 		ref.Meta.Index,
 		ref.Meta.Id,
-		NewNamespaceId(ref.Mosaic.NamespaceId.toBigInt(), ""),
+		nsName,
 		mosaicID,
 		ref.Mosaic.Supply.toBigInt(),
 		ref.Mosaic.Height.toBigInt(),
@@ -194,10 +191,14 @@ func (ref mosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
 		if err != nil {
 			return nil, err
 		}
+		parentId, err := NewNamespaceId(mscNameDTO.ParentId.toBigInt())
+		if err != nil {
+			return nil, err
+		}
 		mscNames[i] = &MosaicName{
 			newMscId,
 			mscNameDTO.Name,
-			NewNamespaceId(mscNameDTO.ParentId.toBigInt(), ""),
+			parentId,
 		}
 	}
 

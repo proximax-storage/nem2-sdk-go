@@ -3,13 +3,10 @@ package sdk
 import (
 	"errors"
 	"fmt"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"regexp"
 	"strings"
 )
-
-// Models
 
 // Mosaic
 type Mosaic struct {
@@ -17,6 +14,20 @@ type Mosaic struct {
 	Amount   *big.Int
 }
 
+func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
+
+	if mosaicId == nil {
+		return nil, errNilMosaicAmount
+	}
+	if amount == nil {
+		return nil, errNilMosaicId
+	}
+
+	return &Mosaic{
+		mosaicId,
+		amount,
+	}, nil
+}
 func (m *Mosaic) String() string {
 	return fmt.Sprintf(
 		`
@@ -69,7 +80,7 @@ func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
 }
 
 func (m *MosaicId) toHexString() string {
-	return utils.BigIntegerToHex(m.Id)
+	return BigIntegerToHex(m.Id)
 }
 
 var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)

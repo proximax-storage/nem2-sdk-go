@@ -8,38 +8,37 @@ import (
 	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"golang.org/x/crypto/sha3"
 	"math/big"
-	"regexp"
 	"strings"
 	"unsafe"
 )
 
+// 	NamespaceId
 type NamespaceId struct {
 	Id       *big.Int
 	FullName string
 }
 
 func (n *NamespaceId) toHexString() string {
-	return utils.BigIntegerToHex(n.Id)
+	return BigIntegerToHex(n.Id)
 }
 
-type namespaceIdDTO uint64DTO
+//NewNamespaceId generate new NamespaceId from bigInt
+func NewNamespaceId(id *big.Int) (*NamespaceId, error) {
 
-func (dto *namespaceIdDTO) toStruct() *NamespaceId {
-	return NewNamespaceId(uint64DTO(*dto).toBigInt(), "")
-}
-
-/* NamespaceId */
-func NewNamespaceId(id *big.Int, namespaceName string) *NamespaceId {
-
-	if namespaceName == "" {
-		return &NamespaceId{id, ""}
+	if id == nil {
+		return nil, errNilIdNamespace
 	}
+	return &NamespaceId{id, ""}, nil
+}
+
+//NewNamespaceIdFromName generate Id from namespaceName
+func NewNamespaceIdFromName(namespaceName string) (*NamespaceId, error) {
 
 	id, err := generateNamespaceId(namespaceName)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &NamespaceId{id, namespaceName}
+	return &NamespaceId{id, namespaceName}, nil
 }
 
 // Equals compares namespaceIds for equality
@@ -91,7 +90,8 @@ func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
 	if err == nil {
-		stream.Write(buf)
+		_, err = stream.Write(buf)
+		//	todo: log error in future
 	}
 
 }
@@ -101,18 +101,7 @@ type NamespaceName struct {
 	NamespaceId *NamespaceId
 	Name        string
 	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
-} /* NamespaceName */
-type NamespaceNameDTO struct {
-	namespaceId uint64DTO
-	name        string
-	parentId    uint64DTO
-} /* NamespaceNameDTO */
-type NamespaceType uint8
-
-const (
-	Root NamespaceType = iota
-	Sub
-)
+}
 
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
@@ -127,48 +116,6 @@ type NamespaceInfo struct {
 	StartHeight *big.Int
 	EndHeight   *big.Int
 }
-
-func NamespaceInfoFromDTO(nsInfoDTO *namespaceInfoDTO) (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(nsInfoDTO.Namespace.Owner, NetworkType(nsInfoDTO.Namespace.Type))
-	if err != nil {
-		return nil, err
-	}
-
-	return &NamespaceInfo{
-		nsInfoDTO.Meta.Active,
-		nsInfoDTO.Meta.Index,
-		nsInfoDTO.Meta.Id,
-		NamespaceType(nsInfoDTO.Namespace.Type),
-		nsInfoDTO.Namespace.Depth,
-		nsInfoDTO.extractLevels(),
-		NewNamespaceId(nsInfoDTO.Namespace.ParentId.toBigInt(), ""),
-		pubAcc,
-		nsInfoDTO.Namespace.StartHeight.toBigInt(),
-		nsInfoDTO.Namespace.EndHeight.toBigInt(),
-	}, nil
-}
-
-const tplNamespaceInfo = `"active": %v,
-    "index": %d,
-    "id": "%s",
-	"type": %d,
-    "depth": %d,
-    "levels": [
-      %v
-    ],
-    "parentId": [
-      %v
-    ],
-    "owner": "%v",
-    "ownerAddress": "%s",
-    "startHeight": [
-      %v
-    ],
-    "endHeight": [
-      %v
-    ]
-  }
-`
 
 func (ref *NamespaceInfo) String() string {
 	return fmt.Sprintf(tplNamespaceInfo,
@@ -201,10 +148,6 @@ func generateNamespaceId(namespaceName string) (*big.Int, error) {
 
 	return list[len(list)-1], nil
 }
-
-// regValidNamespace check namespace on valid symbols
-var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
-var errNamespaceToManyPart = errors.New("too many parts")
 
 // GenerateNamespacePath create list NamespaceId from string
 func GenerateNamespacePath(name string) ([]*big.Int, error) {
