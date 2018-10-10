@@ -171,6 +171,8 @@ func restParser(data []byte) (string, error) {
 			subscribe = "block"
 		} else if _, ok := obj["status"]; ok {
 			subscribe = "status"
+		} else if _, ok := obj["signer"]; ok {
+			subscribe = "signer"
 		} else if v, ok := obj["meta"]; ok {
 			channelName := v.(map[string]interface{})
 			subscribe = fmt.Sprintf("%v", channelName["channelName"])
@@ -205,6 +207,15 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		c.subscriptions[name] <- data
 		return nil
 
+	case "signer":
+		var data SignerInfo
+		err := json.Unmarshal(t, &data)
+		if err != nil {
+			return err
+		}
+		c.subscriptions["cosignature"] <- data
+		return nil
+
 	case "unconfirmedRemoved":
 		var data SubscribeHash
 		err := json.Unmarshal(t, &data)
@@ -215,7 +226,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		return nil
 
 	case "partialRemoved":
-		var data SubscribeHash
+		var data SubscribePartialRemoved
 		err := json.Unmarshal(t, &data)
 		if err != nil {
 			return err
