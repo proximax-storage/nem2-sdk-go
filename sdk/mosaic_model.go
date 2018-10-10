@@ -8,8 +8,6 @@ import (
 	"strings"
 )
 
-// Models
-
 // Mosaic
 type Mosaic struct {
 	MosaicId *MosaicId

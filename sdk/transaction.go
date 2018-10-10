@@ -9,14 +9,6 @@ import (
 
 type TransactionService service
 
-const (
-	mainTransactionRoute               = "transaction"
-	announceAggreagateRoute            = "partial"
-	announceAggreagateCosignatureRoute = "cosignature"
-	transactionStatusRoute             = "status"
-	transactionStatusesRoute           = "statuses"
-)
-
 // Returns transaction information for a given transaction id or hash
 func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, *http.Response, error) {
 	var b bytes.Buffer

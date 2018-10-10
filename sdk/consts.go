@@ -2,6 +2,18 @@ package sdk
 
 import "regexp"
 
+// const routers path for methods AccountService
+const (
+	mainAccountRoute              = "account"
+	transactionsRoute             = "transactions"
+	incomingTransactionsRoute     = "transactions/incoming"
+	outgoingTransactionsRoute     = "transactions/outgoing"
+	unconfirmedTransactionsRoute  = "transactions/unconfirmed"
+	aggregateTransactionsRoute    = "transactions/aggregateBondedTransactions"
+	multisigAccountInfoRoute      = "multisig"
+	multisigAccountGraphInfoRoute = "multisig/graph"
+)
+
 // const routers path for methods NamespaceService
 const (
 	pathNamespacesFromAccounts = "/account/namespaces"
@@ -15,6 +27,30 @@ const (
 	pathMosaic              = "/mosaic/"
 	pathMosaicNames         = "/mosaic/names"
 	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
+)
+
+// const routers path for methods BlockchainService
+const (
+	pathBlockHeight         = "/chain/height"
+	pathBlockByHeight       = "/block/%s"
+	pathBlockScore          = "/chain/score"
+	pathBlockGetTransaction = "/block/%s/transactions"
+	pathBlockInfo           = "/blocks/%s/limit/%s"
+	pathBlockStorage        = "/diagnostic/storage"
+)
+
+// const routers path for methods MosaicService
+const (
+	pathNetwork = "/network"
+)
+
+// const routers path for methods TransactionService
+const (
+	mainTransactionRoute               = "transaction"
+	announceAggreagateRoute            = "partial"
+	announceAggreagateCosignatureRoute = "cosignature"
+	transactionStatusRoute             = "status"
+	transactionStatusesRoute           = "statuses"
 )
 
 const tplNamespaceInfo = `"active": %v,

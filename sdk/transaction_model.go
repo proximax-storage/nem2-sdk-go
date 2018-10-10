@@ -357,7 +357,7 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaicName string, names
 		return nil, err
 	}
 
-	nsId, err := NewNamespaceIdFormName(namespaceName)
+	nsId, err := NewNamespaceIdFromName(namespaceName)
 	if err != nil {
 		return nil, err
 	}

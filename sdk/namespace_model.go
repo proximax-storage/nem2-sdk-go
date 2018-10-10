@@ -31,8 +31,8 @@ func NewNamespaceId(id *big.Int) (*NamespaceId, error) {
 	return &NamespaceId{id, ""}, nil
 }
 
-//NewNamespaceIdFormName generate Id from namespaceName
-func NewNamespaceIdFormName(namespaceName string) (*NamespaceId, error) {
+//NewNamespaceIdFromName generate Id from namespaceName
+func NewNamespaceIdFromName(namespaceName string) (*NamespaceId, error) {
 
 	id, err := generateNamespaceId(namespaceName)
 	if err != nil {
