@@ -40,6 +40,21 @@ deadlines, cancelation signals, and other request-scoped values
 chainHeight, resp, err := client.Blockchain.GetChainHeight(context.Background())
 ```
 
-## Examples ##
+## Wiki / Examples ##
 
 Examples are in the `examples` folder
+
+For more examples, go to our [wiki](https://github.com/proximax-storage/nem2-sdk-go/wiki)
+
+## Core Contributors ##
+
+ + [@carlocayos](https://github.com/carlocayos)
+ + [@ruslanBik4](https://github.com/ruslanBik4)
+ + [@Wondertan](https://github.com/Wondertan)
+ + [@slackve](https://github.com/slackve)
+
+
+## Contribution ##
+We'd love to get more people involve in the project. Please feel free to raise any issues or PR and we'll review your contribution.
+
+Copyright (c) 2018 ProximaX Limited
