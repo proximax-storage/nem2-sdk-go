@@ -2,6 +2,8 @@
 
 nem2-sdk-go is a Golang client library for [Catapult API](http://docs.nem.ninja/#/) 
 
+![nem2-sdk-go](doc/catapult-nem2-sdk-go.jpg)
+
 ## Usage ##
 
 ```go
@@ -56,6 +58,6 @@ For more examples, go to our [wiki](https://github.com/proximax-storage/nem2-sdk
 
 
 ## Contribution ##
-We'd love to get more people involve in the project. Please feel free to raise any issues or PR and we'll review your contribution.
+We'd love to get more people involved in the project. Please feel free to raise any issues or PR and we'll review your contribution.
 
 Copyright (c) 2018 ProximaX Limited
