@@ -1,6 +1,6 @@
 # nem2-sdk-go
 
-nem2-sdk-go is a Golang client library for [Catapult API](http://docs.nem.ninja/#/) 
+nem2-sdk-go is a Golang client library for Catapult API
 
 
 <p align="center"> 
