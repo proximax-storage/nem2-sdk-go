@@ -11,7 +11,7 @@ import (
 	"math/big"
 )
 
-const baseUrl = "http://catapult.internal.proximax.io:3000"
+const baseUrl = "http://localhost:3000"
 
 // Simple Blockchain API request
 func main() {

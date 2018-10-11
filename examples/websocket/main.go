@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	baseUrl     = "http://catapult.internal.proximax.io:3000"
+	baseUrl     = "http://localhost:3000"
 	networkType = sdk.MijinTest
 	privateKey  = "0F3CC33190A49ABB32E7172E348EA927F975F8829107AAA3D6349BB10797D4F6"
 )

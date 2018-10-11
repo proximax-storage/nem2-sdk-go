@@ -14,11 +14,11 @@ Create a Catapult network configuration
 
 Using the *Testnet* network
 ```go
-conf, err := sdk.LoadTestnetConfig("http://catapult.internal.proximax.io:3000")
+conf, err := sdk.LoadTestnetConfig("http://localhost:3000")
 ```
 Or using the *Mainnet* network
 ```go
-conf, err := sdk.LoadMainnetConfig("http://catapult.internal.proximax.io:3000")
+conf, err := sdk.LoadMainnetConfig("http://localhost:3000")
 ```
 
 Construct a new Catapult client

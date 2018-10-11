@@ -1,5 +1,5 @@
 # get namespace Info
-GET http://catapult.internal.proximax.io:3000/blocks/{height}/limit/{limit}
+GET http://localhost:3000/blocks/{height}/limit/{limit}
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
@@ -7,7 +7,7 @@ Cache-Control: no-cache
 
 ###
 
-GET http://catapult.internal.proximax.io:3000/blocks/height
+GET http://localhost:3000/blocks/height
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
