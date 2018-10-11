@@ -20,7 +20,10 @@ func init() {
 
 var (
 	testMosaicId  = &MosaicId{}
-	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{testMosaicId}}
+	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{
+		testMosaicId,
+		{Id: big.NewInt(5734678065854194365)},
+	}}
 )
 
 const testMosaicPathID = "d525ad41d95fcf29"
@@ -115,7 +118,7 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
 
-	assert.NotNil(t, err, "request with empty MosaicIds must return error")
+	assert.Equal(t, errEmptyMosaicIds, err, "request with empty MosaicIds must return error")
 	if resp != nil {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}

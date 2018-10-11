@@ -180,6 +180,11 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	}
 	t.Logf("%#v", nsInfo)
 
+	nsInfo, resp, err = serv.Namespace.GetNamespaceNames(ctx, NamespaceIds{})
+	assert.Equal(t, errEmptyNamespaceIds, err, "request with empty NamespaceIds must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	}
 }
 
 func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {
