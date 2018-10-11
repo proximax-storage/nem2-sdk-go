@@ -118,7 +118,7 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
 
-	assert.NotNil(t, err, "request with empty MosaicIds must return error")
+	assert.Equal(t, errEmptyMosaicIds, err, "request with empty MosaicIds must return error")
 	if resp != nil {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	}

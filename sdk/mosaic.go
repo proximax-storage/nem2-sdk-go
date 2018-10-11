@@ -37,6 +37,10 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId MosaicId) (msc
 // post @/mosaic/
 func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds MosaicIds) (mscInfoArr MosaicsInfo, resp *http.Response, err error) {
 
+	if len(mosaicIds.MosaicIds) == 0 {
+		return nil, nil, errEmptyMosaicIds
+	}
+
 	nsInfosDTO := make([]mosaicInfoDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", pathMosaic, &mosaicIds, &nsInfosDTO)
 

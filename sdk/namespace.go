@@ -37,6 +37,10 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId
 
 // GetNamespaceNames
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
+
+	if len(nsIds.List) == 0 {
+		return nil, nil, errEmptyNamespaceIds
+	}
 	res := make([]*namespaceNameDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
 

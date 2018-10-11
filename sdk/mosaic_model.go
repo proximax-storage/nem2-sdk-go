@@ -114,7 +114,7 @@ type MosaicIds struct {
 }
 
 func (ref *MosaicIds) MarshalJSON() (buf []byte, err error) {
-	buf = []byte(`{"namespaceIds": [`)
+	buf = []byte(`{"mosaicIds": [`)
 	for i, nsId := range ref.MosaicIds {
 		if i > 0 {
 			buf = append(buf, ',')
