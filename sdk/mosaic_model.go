@@ -113,6 +113,19 @@ type MosaicIds struct {
 	MosaicIds []*MosaicId `json:"mosaicIds"`
 }
 
+func (ref *MosaicIds) MarshalJSON() (buf []byte, err error) {
+	buf = []byte(`{"namespaceIds": [`)
+	for i, nsId := range ref.MosaicIds {
+		if i > 0 {
+			buf = append(buf, ',')
+		}
+		buf = append(buf, []byte(`"`+nsId.toHexString()+`"`)...)
+	}
+
+	buf = append(buf, ']', '}')
+	return
+}
+
 // MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
 type MosaicInfo struct {
 	Active      bool

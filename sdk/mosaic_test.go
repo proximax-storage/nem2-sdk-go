@@ -20,7 +20,10 @@ func init() {
 
 var (
 	testMosaicId  = &MosaicId{}
-	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{testMosaicId}}
+	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{
+		testMosaicId,
+		{Id: big.NewInt(5734678065854194365)},
+	}}
 )
 
 const testMosaicPathID = "d525ad41d95fcf29"
