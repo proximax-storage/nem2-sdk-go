@@ -139,7 +139,7 @@ func (ref *NamespaceInfo) String() string {
 
 // ListNamespaceInfo is a list NamespaceInfo
 type ListNamespaceInfo struct {
-	list []*NamespaceInfo
+	List []*NamespaceInfo
 }
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
