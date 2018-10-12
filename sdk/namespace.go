@@ -236,7 +236,7 @@ func listNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo
 		if err != nil {
 			return err
 		}
-		nsList.list = append(nsList.list, nsInfo)
+		nsList.List = append(nsList.List, nsInfo)
 	}
 
 	return nil
