@@ -143,6 +143,114 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 		t.Error(err)
 	} else if validateResp(resp, t) {
 		t.Logf("%v", mscInfoArr)
+	}
+
+	nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
+	mscInfoArr, resp, err = serv.Mosaic.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
+	if err != nil {
+		t.Error(err)
+	} else if validateResp(resp, t) {
+		t.Logf("%v", mscInfoArr)
+
+	}
+
+}
+
+const iter = 1000
+
+func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
+
+	cfg, _ := LoadMainnetConfig("http://190.216.224.11:3000")
+
+	serv := NewClient(nil, cfg)
+
+	h, _, err := serv.Blockchain.GetBlockchainHeight(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := uint64(1); i < h.Uint64() && i <= iter; i++ {
+
+		h := big.NewInt(int64(i))
+		trans, _, err := serv.Blockchain.GetBlockTransactions(ctx, h)
+		if err != nil {
+			t.Fatal(err)
+			continue
+		}
+
+		if len(trans) == 0 {
+			t.Logf("%d block, empty transactiona", h)
+		}
+
+		for j, val := range trans {
+			if val == nil {
+				t.Logf("empty trans #%d", j)
+				continue
+			}
+			//t.Log(val.String())
+			switch val.GetAbstractTransaction().Type {
+			case MosaicDefinition:
+				tran := val.(*MosaicDefinitionTransaction)
+
+				if tran.NamespaceId == nil {
+					t.Logf("empty nsId or MosaicId")
+					t.Log(tran)
+					continue
+				}
+				mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, tran.NamespaceId, tran.MosaicId, pageSize)
+				if err != nil {
+					t.Error(err)
+				} else if validateResp(resp, t) {
+					for _, mscInfo := range mscInfoArr {
+						t.Logf("%+v", mscInfo)
+					}
+				}
+			case MosaicSupplyChange:
+				tran := val.(*MosaicSupplyChangeTransaction)
+
+				if tran.MosaicId == nil {
+					t.Logf("empty MosaicId")
+					t.Log(tran)
+					continue
+				}
+				mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, *tran.MosaicId)
+				if err != nil {
+					t.Error(err)
+				} else if validateResp(resp, t) {
+					t.Logf("%+v", mscInfo)
+				}
+			case Transfer:
+				tran := val.(*TransferTransaction)
+				if tran.Mosaics == nil {
+					t.Logf("empty Mosaics")
+					t.Log(tran)
+					continue
+				}
+				mosaicIDs := MosaicIds{}
+				for _, val := range tran.Mosaics {
+					mosaicIDs.MosaicIds = append(mosaicIDs.MosaicIds, val.MosaicId)
+				}
+				mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, mosaicIDs)
+				if err != nil {
+					t.Error(err)
+				} else if validateResp(resp, t) {
+					for _, mscInfo := range mscInfoArr {
+						t.Logf("%+v", mscInfo)
+
+					}
+				}
+			case RegisterNamespace:
+				tran := val.(*RegisterNamespaceTransaction)
+				nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, tran.NamespaceId)
+				if err != nil {
+					t.Error(err)
+				} else if validateResp(resp, t) {
+					t.Logf("%#v", nsInfo)
+				}
+			default:
+				t.Log(val)
+			}
+		}
 
 	}
 
