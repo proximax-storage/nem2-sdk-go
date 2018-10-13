@@ -26,7 +26,6 @@ type ClientWs struct {
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
 	Subscribe *SubscribeService
-	//subscriptions map[string]chan<- interface{}
 }
 
 type subscribe struct {
@@ -111,7 +110,6 @@ func NewConnectWs(host string) (*ClientWs, error) {
 	c := &ClientWs{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
-	//c.subscriptions = make(map[string]chan<- interface{})
 
 	err = c.wsConnect()
 	if err != nil {
@@ -122,9 +120,6 @@ func NewConnectWs(host string) (*ClientWs, error) {
 
 func (c *ClientWs) buildSubscribe(destination string) *subscribe {
 	b := new(subscribe)
-	//b.ChIn = make(chan interface{})
-	//subName := strings.Split(destination, "/")[0]
-	//c.subscriptions[subName] = b.ChIn
 	b.Uid = c.Uid
 	b.Subscribe = destination
 	b.conn = c.client
