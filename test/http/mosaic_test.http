@@ -49,7 +49,25 @@ Cache-Control: no-cache
 ###
 
 # Get mosaics information
-GET http://localhost:3000/namespace/84b3552d375ffa4b/mosaics?id=5B55E02EACCB7B00015DB6EC&pagesize=32
+GET http://localhost:3000/namespace/84b3552d375ffa4b/mosaics?id=d525ad41d95fcf29&pagesize=32
+Content-Type: application/json
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
+Cache-Control: no-cache
+
+###
+
+# Get mosaics information
+GET http://190.216.224.11:3000/namespace/a887d82dfeb659b0/mosaics?id=4f95ab513876a2bd&pagesize=32
+Content-Type: application/json
+Accept: */*
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
+Cache-Control: no-cache
+
+###
+
+# Get mosaics information
+GET http://190.216.224.11:3000/namespace/a887d82dfeb659b0/mosaics?pagesize=32
 Content-Type: application/json
 Accept: */*
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15
