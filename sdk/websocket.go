@@ -16,11 +16,11 @@ import (
 )
 
 type serviceWs struct {
-	client *ClientWs
+	client *ClientWebsocket
 }
 
 // Catapult Websocket Client configuration
-type ClientWs struct {
+type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
 	config    *Config
@@ -93,7 +93,7 @@ type sendJson struct {
 	Subscribe string `json:"subscribe"`
 }
 
-func (c *ClientWs) changeURLPort() {
+func (c *ClientWebsocket) changeURLPort() {
 	c.config.BaseURL.Scheme = "ws"
 	c.config.BaseURL.Path = "/ws"
 	split := strings.Split(c.config.BaseURL.Host, ":")
@@ -101,13 +101,13 @@ func (c *ClientWs) changeURLPort() {
 	c.config.BaseURL.Host = strings.Join([]string{host, port}, ":")
 }
 
-func NewConnectWs(host string) (*ClientWs, error) {
+func NewConnectWs(host string) (*ClientWebsocket, error) {
 	u, err := url.Parse(host)
 	if err != nil {
 		return nil, err
 	}
 	newconf := &Config{BaseURL: u}
-	c := &ClientWs{config: newconf}
+	c := &ClientWebsocket{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
 
@@ -118,7 +118,7 @@ func NewConnectWs(host string) (*ClientWs, error) {
 	return c, nil
 }
 
-func (c *ClientWs) buildSubscribe(destination string) *subscribe {
+func (c *ClientWebsocket) buildSubscribe(destination string) *subscribe {
 	b := new(subscribe)
 	b.Uid = c.Uid
 	b.Subscribe = destination
@@ -126,7 +126,7 @@ func (c *ClientWs) buildSubscribe(destination string) *subscribe {
 	return b
 }
 
-func (c *ClientWs) wsConnect() error {
+func (c *ClientWebsocket) wsConnect() error {
 	c.changeURLPort()
 	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
 	if err != nil {
@@ -152,7 +152,7 @@ func (c *ClientWs) wsConnect() error {
 	return nil
 }
 
-func (c *ClientWs) subsChannel(msg *subscribe) error {
+func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 	if err := websocket.JSON.Send(c.client, sendJson{
 		Uid:       msg.Uid,
 		Subscribe: msg.Subscribe,
@@ -230,7 +230,7 @@ func restParser(data []byte) (string, error) {
 	return subscribe, nil
 }
 
-func (c *ClientWs) buildType(name string, t []byte) error {
+func (c *ClientWebsocket) buildType(name string, t []byte) error {
 	switch name {
 	case "block":
 		var b blockInfoDTO
@@ -242,7 +242,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.Block.Ch <- data
+		ChanSubscribe.Block.Ch <- data
 		return nil
 
 	case "status":
@@ -251,7 +251,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.Status.Ch <- &data
+		ChanSubscribe.Status.Ch <- &data
 		return nil
 
 	case "signer":
@@ -260,7 +260,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.Cosignature.Ch <- &data
+		ChanSubscribe.Cosignature.Ch <- &data
 		return nil
 
 	case "unconfirmedRemoved":
@@ -269,7 +269,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.UnconfirmedRemoved.Ch <- &data
+		ChanSubscribe.UnconfirmedRemoved.Ch <- &data
 		return nil
 
 	case "partialRemoved":
@@ -278,7 +278,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.PartialRemoved.Ch <- &data
+		ChanSubscribe.PartialRemoved.Ch <- &data
 		return nil
 
 	case "partialAdded":
@@ -286,7 +286,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.UnconfirmedAdded.Ch <- data
+		ChanSubscribe.UnconfirmedAdded.Ch <- data
 		return nil
 
 	case "unconfirmedAdded":
@@ -294,7 +294,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.UnconfirmedAdded.Ch <- data
+		ChanSubscribe.UnconfirmedAdded.Ch <- data
 		return nil
 
 	default:
@@ -302,7 +302,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChSubscribe.ConfirmedAdded.Ch <- data
+		ChanSubscribe.ConfirmedAdded.Ch <- data
 		return nil
 	}
 }
