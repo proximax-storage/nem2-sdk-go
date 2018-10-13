@@ -38,45 +38,41 @@ func main() {
 	// The UnconfirmedAdded channel notifies when a transaction related to an
 	// address is in unconfirmed state and waiting to be included in a block.
 	// The message contains the transaction.
-	a, _ := ws.Subscribe.UnconfirmedAdded(acc.Address.Address)
+	chUnconfirmedAdded, _ := ws.Subscribe.UnconfirmedAdded(acc.Address.Address)
 	go func() {
 		for {
-			data := <-a.ChIn
-			ch := data.(sdk.Transaction)
-			fmt.Printf("UnconfirmedAdded Tx Hash: %v \n", ch.GetAbstractTransaction().Hash)
-			a.Unsubscribe()
+			data := <-chUnconfirmedAdded.Ch
+			fmt.Printf("UnconfirmedAdded Tx Hash: %v \n", data.GetAbstractTransaction().Hash)
+			chUnconfirmedAdded.Unsubscribe()
 		}
 	}()
-
-	// The confirmedAdded channel notifies when a transaction related to an
-	// address is included in a block. The message contains the transaction.
-	b, _ := ws.Subscribe.ConfirmedAdded(acc.Address.Address)
+	//
+	//// The confirmedAdded channel notifies when a transaction related to an
+	//// address is included in a block. The message contains the transaction.
+	chConfirmedAdded, _ := ws.Subscribe.ConfirmedAdded(acc.Address.Address)
 	go func() {
 		for {
-			data := <-b.ChIn
-			ch := data.(sdk.Transaction)
-			fmt.Printf("ConfirmedAdded Tx Hash: %v \n", ch.GetAbstractTransaction().Hash)
-			b.Unsubscribe()
+			data := <-chConfirmedAdded.Ch
+			fmt.Printf("ConfirmedAdded Tx Hash: %v \n", data.GetAbstractTransaction().Hash)
+			chConfirmedAdded.Unsubscribe()
 			fmt.Println("Successful transfer!")
-
 		}
 	}()
 
 	//The status channel notifies when a transaction related to an address rises an error.
 	//The message contains the error message and the transaction hash.
-	c, _ := ws.Subscribe.Status(acc.Address.Address)
+	chStatus, _ := ws.Subscribe.Status(acc.Address.Address)
 
 	go func() {
 		for {
-			data := <-c.ChIn
-			ch := data.(sdk.StatusInfo)
-			c.Unsubscribe()
-			fmt.Printf("Hash: %v \n", ch.Hash)
-			panic(fmt.Sprint("Status: ", ch.Status))
+			data := <-chStatus.Ch
+			chStatus.Unsubscribe()
+			fmt.Printf("Hash: %v \n", data.Hash)
+			panic(fmt.Sprint("Status: ", data.Status))
 		}
 	}()
 
-	time.Sleep(time.Second * 5)
+	//time.Sleep(time.Second * 5)
 	// Use the default http client
 	client := sdk.NewClient(nil, conf)
 
@@ -105,11 +101,10 @@ func main() {
 
 	// The block channel notifies for every new block.
 	// The message contains the block information.
-	d, _ := ws.Subscribe.Block()
+	chBlock, _ := ws.Subscribe.Block()
 
 	for {
-		data := <-d.ChIn
-		ch := data.(*sdk.BlockInfo)
-		fmt.Printf("Block received with height: %v \n", ch.Height)
+		data := <-chBlock.Ch
+		fmt.Printf("Block received with height: %v \n", data.Height)
 	}
 }

@@ -19,26 +19,74 @@ type serviceWs struct {
 	client *ClientWs
 }
 
-var chanSubscribe = struct {
-	block  chan BlockInfo
-	status chan StatusInfo
-}{}
-
 // Catapult Websocket Client configuration
 type ClientWs struct {
-	client        *websocket.Conn
-	Uid           string
-	config        *Config
-	common        serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
-	Subscribe     *SubscribeService
-	subscriptions map[string]chan<- interface{}
+	client    *websocket.Conn
+	Uid       string
+	config    *Config
+	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
+	Subscribe *SubscribeService
+	//subscriptions map[string]chan<- interface{}
 }
 
-type Subscribe struct {
+type subscribe struct {
 	Uid       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
-	ChIn      chan interface{}
 	conn      *websocket.Conn
+}
+
+type SubscribeBlock struct {
+	*subscribe
+	Ch chan *BlockInfo
+}
+
+func (s *SubscribeBlock) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+type SubscribeTransaction struct {
+	*subscribe
+	Ch chan Transaction
+}
+
+func (s *SubscribeTransaction) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+type SubscribeHash struct {
+	*subscribe
+	Ch chan *HashInfo
+}
+
+func (s *SubscribeHash) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+type SubscribePartialRemoved struct {
+	*subscribe
+	Ch chan *PartialRemovedInfo
+}
+
+func (s *SubscribePartialRemoved) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+type SubscribeStatus struct {
+	*subscribe
+	Ch chan *StatusInfo
+}
+
+func (s *SubscribeStatus) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+type SubscribeSigner struct {
+	*subscribe
+	Ch chan *SignerInfo
+}
+
+func (s *SubscribeSigner) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
 }
 
 type sendJson struct {
@@ -63,7 +111,7 @@ func NewConnectWs(host string) (*ClientWs, error) {
 	c := &ClientWs{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
-	c.subscriptions = make(map[string]chan<- interface{})
+	//c.subscriptions = make(map[string]chan<- interface{})
 
 	err = c.wsConnect()
 	if err != nil {
@@ -72,11 +120,11 @@ func NewConnectWs(host string) (*ClientWs, error) {
 	return c, nil
 }
 
-func (c *ClientWs) buildSubscribe(destination string) *Subscribe {
-	b := new(Subscribe)
-	b.ChIn = make(chan interface{})
-	subName := strings.Split(destination, "/")[0]
-	c.subscriptions[subName] = b.ChIn
+func (c *ClientWs) buildSubscribe(destination string) *subscribe {
+	b := new(subscribe)
+	//b.ChIn = make(chan interface{})
+	//subName := strings.Split(destination, "/")[0]
+	//c.subscriptions[subName] = b.ChIn
 	b.Uid = c.Uid
 	b.Subscribe = destination
 	b.conn = c.client
@@ -109,7 +157,7 @@ func (c *ClientWs) wsConnect() error {
 	return nil
 }
 
-func (c *ClientWs) subsChannel(msg *Subscribe) error {
+func (c *ClientWs) subsChannel(msg *subscribe) error {
 	if err := websocket.JSON.Send(c.client, sendJson{
 		Uid:       msg.Uid,
 		Subscribe: msg.Subscribe,
@@ -147,8 +195,8 @@ func (c *ClientWs) subsChannel(msg *Subscribe) error {
 	return e
 }
 
-func msgParser(msg []byte) (*Subscribe, error) {
-	var message Subscribe
+func msgParser(msg []byte) (*subscribe, error) {
+	var message subscribe
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		return nil, err
@@ -199,7 +247,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		c.subscriptions[name] <- data
+		ChSubscribe.Block.Ch <- data
 		return nil
 
 	case "status":
@@ -208,34 +256,50 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		c.subscriptions[name] <- data
+		ChSubscribe.Status.Ch <- &data
 		return nil
 
 	case "signer":
 		var data SignerInfo
-		err := json.Unmarshal(t, &data)
+		err := json.Unmarshal(t, data)
 		if err != nil {
 			return err
 		}
-		c.subscriptions["cosignature"] <- data
+		ChSubscribe.Cosignature.Ch <- &data
 		return nil
 
 	case "unconfirmedRemoved":
-		var data SubscribeHash
-		err := json.Unmarshal(t, &data)
+		var data HashInfo
+		err := json.Unmarshal(t, data)
 		if err != nil {
 			return err
 		}
-		c.subscriptions[name] <- data
+		ChSubscribe.UnconfirmedRemoved.Ch <- &data
 		return nil
 
 	case "partialRemoved":
-		var data SubscribePartialRemoved
+		var data PartialRemovedInfo
 		err := json.Unmarshal(t, &data)
 		if err != nil {
 			return err
 		}
-		c.subscriptions[name] <- data
+		ChSubscribe.PartialRemoved.Ch <- &data
+		return nil
+
+	case "partialAdded":
+		data, err := MapTransaction(bytes.NewBuffer([]byte(t)))
+		if err != nil {
+			return err
+		}
+		ChSubscribe.UnconfirmedAdded.Ch <- data
+		return nil
+
+	case "unconfirmedAdded":
+		data, err := MapTransaction(bytes.NewBuffer([]byte(t)))
+		if err != nil {
+			return err
+		}
+		ChSubscribe.UnconfirmedAdded.Ch <- data
 		return nil
 
 	default:
@@ -243,7 +307,7 @@ func (c *ClientWs) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		c.subscriptions[name] <- data
+		ChSubscribe.ConfirmedAdded.Ch <- data
 		return nil
 	}
 }
