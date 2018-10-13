@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	baseUrl     = "http://localhost:3000"
+	baseUrl     = "http://vpn.isarq.com:3000"
 	networkType = sdk.MijinTest
 	privateKey  = "0F3CC33190A49ABB32E7172E348EA927F975F8829107AAA3D6349BB10797D4F6"
 )
@@ -72,7 +72,7 @@ func main() {
 		}
 	}()
 
-	//time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 5)
 	// Use the default http client
 	client := sdk.NewClient(nil, conf)
 
