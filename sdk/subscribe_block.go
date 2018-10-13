@@ -6,7 +6,7 @@ package sdk
 
 import "golang.org/x/net/websocket"
 
-var ChSubscribe struct {
+var ChanSubscribe struct {
 	Block              *SubscribeBlock
 	ConfirmedAdded     *SubscribeTransaction
 	UnconfirmedAdded   *SubscribeTransaction
@@ -45,7 +45,7 @@ const (
 // The message contains the BlockInfo struct.
 func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 	subBlock := new(SubscribeBlock)
-	ChSubscribe.Block = subBlock
+	ChanSubscribe.Block = subBlock
 	subBlock.Ch = make(chan *BlockInfo)
 	subscribe, err := c.newSubscribe(pathBlock)
 	subBlock.subscribe = subscribe
@@ -57,7 +57,7 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 // The message contains the transaction.
 func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChSubscribe.ConfirmedAdded = subTransaction
+	ChanSubscribe.ConfirmedAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
@@ -69,7 +69,7 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 // The message contains the transaction.
 func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChSubscribe.UnconfirmedAdded = subTransaction
+	ChanSubscribe.UnconfirmedAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
@@ -81,7 +81,7 @@ func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, 
 // The message contains the transaction hash.
 func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error) {
 	subHash := new(SubscribeHash)
-	ChSubscribe.UnconfirmedRemoved = subHash
+	ChanSubscribe.UnconfirmedRemoved = subHash
 	subHash.Ch = make(chan *HashInfo)
 	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add)
 	subHash.subscribe = subscribe
@@ -92,7 +92,7 @@ func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error
 // The message contains the error message and the transaction hash.
 func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 	subStatus := new(SubscribeStatus)
-	ChSubscribe.Status = subStatus
+	ChanSubscribe.Status = subStatus
 	subStatus.Ch = make(chan *StatusInfo)
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
 	subStatus.subscribe = subscribe
@@ -104,7 +104,7 @@ func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 // The message contains a transaction.
 func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChSubscribe.PartialAdded = subTransaction
+	ChanSubscribe.PartialAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add)
 	subTransaction.subscribe = subscribe
@@ -116,11 +116,11 @@ func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, erro
 // The message contains the transaction hash.
 func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved, error) {
 	subPartialRemoved := new(SubscribePartialRemoved)
-	ChSubscribe.PartialRemoved = subPartialRemoved
+	ChanSubscribe.PartialRemoved = subPartialRemoved
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
 	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add)
 	subPartialRemoved.subscribe = subscribe
-	return ChSubscribe.PartialRemoved, err
+	return ChanSubscribe.PartialRemoved, err
 }
 
 // Cosignature notifies when a cosignature signed transaction related to an
@@ -128,11 +128,11 @@ func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved,
 // The message contains the cosignature signed transaction.
 func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
 	subCosignature := new(SubscribeSigner)
-	ChSubscribe.Cosignature = subCosignature
+	ChanSubscribe.Cosignature = subCosignature
 	subCosignature.Ch = make(chan *SignerInfo)
 	subscribe, err := c.newSubscribe(pathCosignature + "/" + add)
 	subCosignature.subscribe = subscribe
-	return ChSubscribe.Cosignature, err
+	return ChanSubscribe.Cosignature, err
 }
 
 // Unsubscribe terminates the specified subscription.
