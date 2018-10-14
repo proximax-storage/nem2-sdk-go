@@ -93,7 +93,7 @@ var (
 
 func TestMosaicService_GetMosaic(t *testing.T) {
 
-	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, *testMosaicId)
+	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, testMosaicId)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
@@ -137,7 +137,6 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 }
 
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
-
 	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
 	if err != nil {
 		t.Error(err)
@@ -150,6 +149,7 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
+		t.Log(t)
 		t.Logf("%v", mscInfoArr)
 
 	}
@@ -159,11 +159,6 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 const iter = 1000
 
 func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
-
-	cfg, _ := LoadMainnetConfig("http://190.216.224.11:3000")
-
-	serv := NewClient(nil, cfg)
-
 	h, _, err := serv.Blockchain.GetBlockchainHeight(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -213,7 +208,7 @@ func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
 					t.Log(tran)
 					continue
 				}
-				mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, *tran.MosaicId)
+				mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, tran.MosaicId)
 				if err != nil {
 					t.Error(err)
 				} else if validateResp(resp, t) {

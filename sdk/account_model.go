@@ -205,7 +205,7 @@ func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigA
 	cs := make([]*PublicAccount, len(dto.Multisig.Cosignatories))
 	ms := make([]*PublicAccount, len(dto.Multisig.MultisigAccounts))
 
-	acc, err := NewPublicAccount(dto.Multisig.Account, networkType)
+	acc, err := NewAccountFromPublicKey(dto.Multisig.Account, networkType)
 	if err != nil {
 		return nil, err
 	}
@@ -214,14 +214,14 @@ func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigA
 	go func() {
 		defer wg.Done()
 		for i, c := range dto.Multisig.Cosignatories {
-			cs[i], err = NewPublicAccount(c, networkType)
+			cs[i], err = NewAccountFromPublicKey(c, networkType)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		for i, m := range dto.Multisig.MultisigAccounts {
-			ms[i], err = NewPublicAccount(m, networkType)
+			ms[i], err = NewAccountFromPublicKey(m, networkType)
 		}
 	}()
 
@@ -285,7 +285,20 @@ func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*Mult
 
 var addressError = errors.New("wrong address")
 
-func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
+func NewAccount(networkType NetworkType) (*Account, error) {
+	kp, err := crypto.NewKeyPairByEngine(crypto.CryptoEngines.DefaultEngine)
+	if err != nil {
+		return nil, err
+	}
+
+	pa, err := NewAccountFromPublicKey(kp.PublicKey.String(), networkType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Account{pa, kp}, nil
+}
+func NewAccountFromPrivateKey(pKey string, networkType NetworkType) (*Account, error) {
 	k, err := crypto.NewPrivateKeyfromHexString(pKey)
 	if err != nil {
 		return nil, err
@@ -296,7 +309,7 @@ func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
 		return nil, err
 	}
 
-	pa, err := NewPublicAccount(kp.PublicKey.String(), networkType)
+	pa, err := NewAccountFromPublicKey(kp.PublicKey.String(), networkType)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +317,7 @@ func NewAccount(pKey string, networkType NetworkType) (*Account, error) {
 	return &Account{pa, kp}, nil
 }
 
-func NewPublicAccount(pKey string, networkType NetworkType) (*PublicAccount, error) {
+func NewAccountFromPublicKey(pKey string, networkType NetworkType) (*PublicAccount, error) {
 	ad, err := NewAddressFromPublicKey(pKey, networkType)
 	if err != nil {
 		return nil, err

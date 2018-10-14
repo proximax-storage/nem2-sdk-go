@@ -87,7 +87,7 @@ type blockInfoDTO struct {
 func (dto *blockInfoDTO) toStruct() (*BlockInfo, error) {
 	nt := ExtractNetworkType(dto.Block.Version)
 
-	pa, err := NewPublicAccount(dto.Block.Signer, nt)
+	pa, err := NewAccountFromPublicKey(dto.Block.Signer, nt)
 	if err != nil {
 		return nil, err
 	}

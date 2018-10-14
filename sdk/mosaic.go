@@ -16,7 +16,7 @@ type MosaicService service
 
 // mosaics get mosaics Info
 // @get /mosaic/{mosaicId}
-func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId MosaicId) (mscInfo *MosaicInfo, resp *http.Response, err error) {
+func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId *MosaicId) (mscInfo *MosaicInfo, resp *http.Response, err error) {
 
 	mscInfoDTO := &mosaicInfoDTO{}
 	resp, err = ref.client.DoNewRequest(ctx, "GET", pathMosaic+mosaicId.toHexString(), nil, mscInfoDTO)
@@ -80,7 +80,6 @@ func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds MosaicId
 }
 
 // GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
-// get @/namespaces/{namespaceId}/mosaic/
 func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespaceId *NamespaceId, mosaicId *MosaicId,
 	pageSize int) (mscInfo []*MosaicInfo, resp *http.Response, err error) {
 
@@ -155,7 +154,7 @@ func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
 
 func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 
-	publicAcc, err := NewPublicAccount(ref.Mosaic.Owner, NetworkType(1))
+	publicAcc, err := NewAccountFromPublicKey(ref.Mosaic.Owner, NetworkType(1))
 	if err != nil {
 		return nil, err
 	}
