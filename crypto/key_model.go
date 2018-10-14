@@ -32,6 +32,7 @@ type PrivateKey struct {
 	Raw   []byte
 }
 
+
 // NewPrivateKey creates a new private key from []byte
 func NewPrivateKey(raw []byte) *PrivateKey {
 	return &PrivateKey{(&big.Int{}).SetBytes(raw), raw}
@@ -64,8 +65,7 @@ func NewPrivateKeyfromDecimalString(decimal string) (*PrivateKey, error) {
 }
 
 func (ref *PrivateKey) String() string {
-
-	return string(ref.Raw)
+	return hex.EncodeToString(ref.Raw)
 }
 
 //PublicKey  Represents a public key.

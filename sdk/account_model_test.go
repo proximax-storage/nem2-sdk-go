@@ -18,6 +18,18 @@ var testAddressesForEncoded = map[NetworkType]string{
 	MainNet:   "NARNASAS2BIAB6LMFA3FPMGBPGIJGK6IJFJKUV32",
 }
 
+func TestGenerateNewAccount_NEM(t *testing.T) {
+	acc, err := NewAccount(MijinTest)
+	if err != nil {
+		t.Fatal("Error")
+	}
+	a := acc.KeyPair.PrivateKey.String()
+	t.Log("Private Key: " + a)
+
+	assert.NotNil(t,acc.KeyPair.PrivateKey.String(),"Error generating new KeyPair")
+
+
+}
 func TestGenerateEncodedAddress_NEM(t *testing.T) {
 
 	for nType, testAddress := range testAddressesForEncoded {

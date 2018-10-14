@@ -6,7 +6,7 @@ package sdk
 
 import (
 	"encoding/binary"
-	"github.com/Wondertan/nem2-sdk-go/utils"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"strconv"
 )
