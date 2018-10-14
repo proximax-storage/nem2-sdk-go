@@ -63,24 +63,26 @@ type MosaicId struct {
 	FullName string
 }
 
-func NewMosaicId(id *big.Int, name string) (*MosaicId, error) {
-	if id != nil {
-		return &MosaicId{id, ""}, nil
-	}
-
+func NewMosaicIdFromName(name string) (*MosaicId, error) {
 	if (name == "") || strings.Contains(name, " {") {
 		return nil, errors.New(name + " is not valid")
 	}
+
 	parts := strings.Split(name, ":")
 	if len(parts) != 2 {
 		return nil, errors.New(name + " is not valid")
-
 	}
+
 	id, err := generateMosaicId(parts[0], parts[1])
 	if err != nil {
 		return nil, err
 	}
+
 	return &MosaicId{id, name}, nil
+}
+
+func NewMosaicId(id *big.Int) *MosaicId {
+	return &MosaicId{Id: id}
 }
 
 func (m *MosaicId) toHexString() string {
@@ -209,7 +211,7 @@ type MosaicName struct {
 	ParentId *NamespaceId
 }
 
-var XemMosaicId, _ = NewMosaicId(nil, "nem:xem")
+var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
 
 // Create xem with using xem as unit
 func Xem(amount int64) *Mosaic {
