@@ -13,6 +13,8 @@ import (
 
 type AccountService service
 
+
+
 func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, *http.Response, error) {
 	dto := &accountInfoDTO{}
 

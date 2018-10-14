@@ -122,7 +122,7 @@ func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*abstractTr
 		return nil, err
 	}
 
-	pa, err := NewPublicAccount(dto.Signer, nt)
+	pa, err := NewAccountFromPublicKey(dto.Signer, nt)
 	if err != nil {
 		return nil, err
 	}
@@ -1405,7 +1405,7 @@ type aggregateTransactionCosignatureDTO struct {
 }
 
 func (dto *aggregateTransactionCosignatureDTO) toStruct(networkType NetworkType) (*AggregateTransactionCosignature, error) {
-	acc, err := NewPublicAccount(dto.Signer, networkType)
+	acc, err := NewAccountFromPublicKey(dto.Signer, networkType)
 	if err != nil {
 		return nil, err
 	}
@@ -1449,7 +1449,7 @@ type multisigCosignatoryModificationDTO struct {
 }
 
 func (dto *multisigCosignatoryModificationDTO) toStruct(networkType NetworkType) (*MultisigCosignatoryModification, error) {
-	acc, err := NewPublicAccount(dto.PublicAccount, networkType)
+	acc, err := NewAccountFromPublicKey(dto.PublicAccount, networkType)
 	if err != nil {
 		return nil, err
 	}

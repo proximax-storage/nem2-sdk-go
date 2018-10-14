@@ -21,12 +21,12 @@ const (
 // The notification is received in real time without having to poll the API waiting for a reply.
 func main() {
 
-	conf, err := sdk.LoadTestnetConfig(baseUrl)
+	conf, err := sdk.NewConfig(baseUrl,networkType)
 	if err != nil {
 		panic(err)
 	}
 
-	acc, err := sdk.NewAccount(privateKey, networkType)
+	acc, err := sdk.NewAccountFromPrivateKey(privateKey, networkType)
 
 	ws, err := sdk.NewConnectWs(baseUrl)
 	if err != nil {
