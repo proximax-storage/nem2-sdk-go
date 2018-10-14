@@ -110,7 +110,7 @@ var wantBlockInfo *BlockInfo
 func init() {
 	addRouters(bcRouters)
 
-	pubAcc, _ := NewPublicAccount("321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E", MijinTest)
+	pubAcc, _ := NewAccountFromPublicKey("321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E", MijinTest)
 
 	wantBlockInfo = &BlockInfo{
 		NetworkType:           MijinTest,

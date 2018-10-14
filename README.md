@@ -17,11 +17,11 @@ Create a Catapult network configuration
 
 Using the *Testnet* network
 ```go
-conf, err := sdk.LoadTestnetConfig("http://localhost:3000")
+conf, err := sdk.NewConfig("http://localhost:3000",sdk.Testnet)
 ```
 Or using the *Mainnet* network
 ```go
-conf, err := sdk.LoadMainnetConfig("http://localhost:3000")
+conf, err := sdk.NewConfig("http://localhost:3000",sdk.Mainnet)
 ```
 
 Construct a new Catapult client

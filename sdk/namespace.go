@@ -171,7 +171,7 @@ type namespaceInfoDTO struct {
 
 //getNamespaceInfo create & return new NamespaceInfo from namespaceInfoDTO
 func (ref *namespaceInfoDTO) getNamespaceInfo() (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
+	pubAcc, err := NewAccountFromPublicKey(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func listNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo
 		if err != nil {
 			return err
 		}
-		nsList.list = append(nsList.list, nsInfo)
+		nsList.List = append(nsList.List, nsInfo)
 	}
 
 	return nil
