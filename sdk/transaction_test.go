@@ -285,7 +285,7 @@ func TestMosaicDefinitionTransactionSerialization(t *testing.T) {
 	want := []byte{156, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 77, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 155, 138, 22, 28, 245, 9, 35, 144, 21, 153, 17, 174, 167, 46, 189, 60, 7, 1, 7, 4, 109, 111, 115, 97, 105, 99, 115, 2, 16, 39, 0, 0, 0, 0, 0, 0}
 
-	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, "mosaics", "sname", NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
+	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, &MosaicId{FullName: "mosaics"}, &NamespaceId{FullName: "sname"}, NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
 
 	b, err := tx.generateBytes()
 
@@ -302,7 +302,7 @@ func TestMosaicSupplyChangeTransactionSerialization(t *testing.T) {
 	want := []byte{137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 77, 66, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 136, 105, 116, 110, 155, 26, 112, 87, 1, 10, 0, 0, 0, 0, 0, 0, 0}
 
-	id, _ := NewMosaicId(big.NewInt(6300565133566699912), "")
+	id := NewMosaicId(big.NewInt(6300565133566699912))
 	tx, err := NewMosaicSupplyChangeTransaction(fakeDeadline, id, Increase, big.NewInt(10), MijinTest)
 
 	b, err := tx.generateBytes()
@@ -433,7 +433,7 @@ func TestRegisterRootNamespaceTransactionSerialization(t *testing.T) {
 		2, 144, 78, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 126, 233, 179, 184, 175, 223, 83, 64, 12, 110, 101, 119, 110, 97, 109, 101, 115, 112, 97, 99, 101}
 	tx, err := NewRegisterRootNamespaceTransaction(
 		fakeDeadline,
-		"newnamespace",
+		&NamespaceId{FullName: "newnamespace"},
 		big.NewInt(10000),
 		MijinTest,
 	)
@@ -453,7 +453,7 @@ func TestRegisterSubNamespaceTransactionSerialization(t *testing.T) {
 
 	tx, err := NewRegisterSubNamespaceTransaction(
 		fakeDeadline,
-		"subnamespace",
+		&NamespaceId{FullName: "subnamespace"},
 		&NamespaceId{Id: big.NewInt(4635294387305441662)},
 		MijinTest,
 	)

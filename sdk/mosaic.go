@@ -153,7 +153,6 @@ func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
 }
 
 func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
-
 	publicAcc, err := NewAccountFromPublicKey(ref.Mosaic.Owner, NetworkType(1))
 	if err != nil {
 		return nil, err
@@ -161,20 +160,18 @@ func (ref *mosaicInfoDTO) setMosaicInfo() (*MosaicInfo, error) {
 	if len(ref.Mosaic.Properties) < 3 {
 		return nil, errors.New("mosaic Properties is not valid")
 	}
-	mosaicID, err := NewMosaicId(ref.Mosaic.MosaicId.toBigInt(), "")
-	if err != nil {
-		return nil, err
-	}
+
 	nsName, err := NewNamespaceId(ref.Mosaic.NamespaceId.toBigInt())
 	if err != nil {
 		return nil, err
 	}
+
 	return &MosaicInfo{
 		ref.Meta.Active,
 		ref.Meta.Index,
 		ref.Meta.Id,
 		nsName,
-		mosaicID,
+		NewMosaicId(ref.Mosaic.MosaicId.toBigInt()),
 		ref.Mosaic.Supply.toBigInt(),
 		ref.Mosaic.Height.toBigInt(),
 		publicAcc,
@@ -194,16 +191,13 @@ type mosaicNamesDTO []*mosaicNameDTO
 func (ref mosaicNamesDTO) setMosaicNames() ([]*MosaicName, error) {
 	mscNames := make([]*MosaicName, len(ref))
 	for i, mscNameDTO := range ref {
-		newMscId, err := NewMosaicId(mscNameDTO.MosaicId.toBigInt(), "")
-		if err != nil {
-			return nil, err
-		}
 		parentId, err := NewNamespaceId(mscNameDTO.ParentId.toBigInt())
 		if err != nil {
 			return nil, err
 		}
+
 		mscNames[i] = &MosaicName{
-			newMscId,
+			NewMosaicId(mscNameDTO.MosaicId.toBigInt()),
 			mscNameDTO.Name,
 			parentId,
 		}
@@ -217,10 +211,6 @@ type mosaicDTO struct {
 	Amount   uint64DTO `json:"amount"`
 }
 
-func (dto *mosaicDTO) toStruct() (*Mosaic, error) {
-	id, err := NewMosaicId(dto.MosaicId.toBigInt(), "")
-	if err != nil {
-		return nil, err
-	}
-	return &Mosaic{id, dto.Amount.toBigInt()}, nil
+func (dto *mosaicDTO) toStruct() *Mosaic {
+	return &Mosaic{NewMosaicId(dto.MosaicId.toBigInt()), dto.Amount.toBigInt()}
 }
