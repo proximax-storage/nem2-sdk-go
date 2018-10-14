@@ -30,7 +30,8 @@ const testMosaicPathID = "d525ad41d95fcf29"
 const testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
 
 var (
-	tplMosaic = `{
+	tplMosaic = `
+{
   "meta": {
     "active": true,
     "index": 0,
