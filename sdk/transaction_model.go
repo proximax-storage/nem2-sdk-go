@@ -694,13 +694,15 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 }
 
 type transferTransactionDTO struct {
-	Tx struct {
-		abstractTransactionDTO
-		messageDTO `json:"message"`
-		Mosaics    []*mosaicDTO `json:"mosaics"`
-		Address    string       `json:"recipient"`
-	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
+	Tx transaction `json:"transaction"`
+}
+
+type transaction struct {
+	abstractTransactionDTO
+	Message 		 messageDTO `json:"message"`
+	Mosaics          []*mosaicDTO `json:"mosaics"`
+	Address          string      `json:"recipient"`
 }
 
 func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
@@ -722,9 +724,10 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 		return nil, err
 	}
 
+
 	return &TransferTransaction{
 		*atx,
-		dto.Tx.messageDTO.toStruct(),
+		dto.Tx.Message.toStruct(),
 		txs,
 		a,
 	}, nil
@@ -1553,13 +1556,16 @@ func (m *Message) String() string {
 }
 
 type messageDTO struct {
+	Type uint8 `json:"type"`
 	Payload string `json:"payload"`
 }
 
 func (m *messageDTO) toStruct() *Message {
 	b, err := hex.DecodeString(m.Payload)
 	if err != nil {
-		return &Message{0, m.Payload}
+		if err != nil {
+			return &Message{m.Type, m.Payload}
+		}
 	}
 
 	return &Message{0, string(b)}
@@ -1757,8 +1763,8 @@ func MapTransaction(b *bytes.Buffer) (Transaction, error) {
 		return tx, nil
 	case Transfer:
 		dto := transferTransactionDTO{}
-
 		err := json.Unmarshal(b.Bytes(), &dto)
+
 		if err != nil {
 			return nil, err
 		}
