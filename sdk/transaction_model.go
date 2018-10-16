@@ -1562,13 +1562,12 @@ type messageDTO struct {
 
 func (m *messageDTO) toStruct() *Message {
 	b, err := hex.DecodeString(m.Payload)
+
 	if err != nil {
-		if err != nil {
-			return &Message{m.Type, m.Payload}
-		}
+		return &Message{0, ""}
 	}
 
-	return &Message{0, string(b)}
+	return &Message{m.Type, string(b)}
 }
 
 type transactionTypeStruct struct {
