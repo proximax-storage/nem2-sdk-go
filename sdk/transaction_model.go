@@ -1539,9 +1539,35 @@ type Message struct {
 	Payload string
 }
 
-// The transaction message of 1024 characters.
+type SecureMessage struct {
+	Message *Message
+	PrivateKeyPair *crypto.KeyPair
+	PublicKeyPair *crypto.KeyPair
+}
+
+
+// The plain message of 1024 characters.
 func NewPlainMessage(payload string) *Message {
 	return &Message{0, payload}
+}
+
+func NewSecureMessage(payload string, sender Account, recipient Account) *SecureMessage {
+	return &SecureMessage{&Message{1, payload},sender.KeyPair,recipient.KeyPair}
+}
+
+func (m *SecureMessage) Encrypt() *Message {
+	ciper := crypto.CryptoEngines.Ed25519Engine.CreateBlockCipher(m.PrivateKeyPair,m.PublicKeyPair)
+	encodedPayload := ciper.Encrypt([]byte(m.Message.Payload))
+	return &Message{1, string(encodedPayload)}
+}
+
+func (m *SecureMessage) Decrypt() *Message {
+	ciper := crypto.CryptoEngines.Ed25519Engine.CreateBlockCipher(m.PrivateKeyPair,m.PublicKeyPair)
+	fmt.Println(m.Message.Payload)
+	//payload := hex.EncodeToString([]byte(m.Message.Payload))
+	decodedPayload := ciper.Decrypt([]byte(m.Message.Payload))
+	fmt.Println(decodedPayload)
+	return &Message{1, string(hex.EncodeToString(decodedPayload))}
 }
 
 func (m *Message) String() string {
