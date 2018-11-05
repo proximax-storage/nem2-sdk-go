@@ -115,11 +115,11 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
-		if len(nsInfoArr.list) != 1 {
+		if len(nsInfoArr.List) != 1 {
 			t.Error("return result must have length = 1")
 		} else {
 			isValid := true
-			for _, nsInfo := range nsInfoArr.list {
+			for _, nsInfo := range nsInfoArr.List {
 				isValid = isValid && validateNamespaceInfo(nsInfo, t)
 			}
 			if isValid {
@@ -137,11 +137,11 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
-		if len(nsInfoArr.list) != 1 {
+		if len(nsInfoArr.List) != 1 {
 			t.Error("return result must have length = 1")
 		} else {
 			isValid := true
-			for _, nsInfo := range nsInfoArr.list {
+			for _, nsInfo := range nsInfoArr.List {
 				isValid = isValid && validateNamespaceInfo(nsInfo, t)
 			}
 			if isValid {
@@ -180,6 +180,11 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	}
 	t.Logf("%#v", nsInfo)
 
+	nsInfo, resp, err = serv.Namespace.GetNamespaceNames(ctx, NamespaceIds{})
+	assert.Equal(t, errEmptyNamespaceIds, err, "request with empty NamespaceIds must return error")
+	if resp != nil {
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	}
 }
 
 func validateNamespaceInfo(nsInfo *NamespaceInfo, t *testing.T) bool {

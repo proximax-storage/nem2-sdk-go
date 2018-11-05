@@ -14,10 +14,8 @@ import (
 // NamespaceService provides a set of methods for obtaining information about the namespace
 type NamespaceService service
 
-func NewNamespaceService(httpClient *http.Client, conf *Config) *NamespaceService {
-	return &NamespaceService{client: NewClient(httpClient, conf)}
-}
-
+//GetNamespace
+// @/namespace/
 func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
 
 	nsInfoDTO := &namespaceInfoDTO{}
@@ -36,7 +34,12 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId
 }
 
 // GetNamespaceNames
+//@/namespace/names
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
+
+	if len(nsIds.List) == 0 {
+		return nil, nil, errEmptyNamespaceIds
+	}
 	res := make([]*namespaceNameDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
 
@@ -55,6 +58,7 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds Namesp
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
+// @/account/%s/namespaces
 func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
 
@@ -87,6 +91,7 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 }
 
 // GetNamespacesFromAccounts get required params addresses, other skipped if value is empty
+// @/account/namespaces
 func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
 
@@ -166,7 +171,7 @@ type namespaceInfoDTO struct {
 
 //getNamespaceInfo create & return new NamespaceInfo from namespaceInfoDTO
 func (ref *namespaceInfoDTO) getNamespaceInfo() (*NamespaceInfo, error) {
-	pubAcc, err := NewPublicAccount(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
+	pubAcc, err := NewAccountFromPublicKey(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +237,7 @@ func listNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo
 		if err != nil {
 			return err
 		}
-		nsList.list = append(nsList.list, nsInfo)
+		nsList.List = append(nsList.List, nsInfo)
 	}
 
 	return nil

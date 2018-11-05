@@ -6,13 +6,24 @@ package sdk
 
 import "golang.org/x/net/websocket"
 
+var ChanSubscribe struct {
+	Block              *SubscribeBlock
+	ConfirmedAdded     *SubscribeTransaction
+	UnconfirmedAdded   *SubscribeTransaction
+	UnconfirmedRemoved *SubscribeHash
+	Status             *SubscribeStatus
+	PartialAdded       *SubscribeTransaction
+	PartialRemoved     *SubscribePartialRemoved
+	Cosignature        *SubscribeSigner
+}
+
 // structure for Subscribe status
-type SubscribeHash struct {
+type HashInfo struct {
 	Hash string `json:"hash"`
 }
 
 // structure for Subscribe PartialRemoved
-type SubscribePartialRemoved struct {
+type PartialRemovedInfo struct {
 	Meta SubscribeHash `json:"meta"`
 }
 
@@ -32,61 +43,101 @@ const (
 
 // Block notifies for every new block.
 // The message contains the BlockInfo struct.
-func (c *SubscribeService) Block() (*Subscribe, error) {
-	return c.newChannel(pathBlock)
+func (c *SubscribeService) Block() (*SubscribeBlock, error) {
+	subBlock := new(SubscribeBlock)
+	ChanSubscribe.Block = subBlock
+	subBlock.Ch = make(chan *BlockInfo)
+	subscribe, err := c.newSubscribe(pathBlock)
+	subBlock.subscribe = subscribe
+	return subBlock, err
 }
 
 // ConfirmedAdded notifies when a transaction related to an
 // address is included in a block.
 // The message contains the transaction.
-func (c *SubscribeService) ConfirmedAdded(add string) (*Subscribe, error) {
-	return c.newChannel(pathConfirmedAdded + "/" + add)
+func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, error) {
+	subTransaction := new(SubscribeTransaction)
+	ChanSubscribe.ConfirmedAdded = subTransaction
+	subTransaction.Ch = make(chan Transaction)
+	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
+	subTransaction.subscribe = subscribe
+	return subTransaction, err
 }
 
 // UnconfirmedAdded notifies when a transaction related to an
 // address is in unconfirmed state and waiting to be included in a block.
 // The message contains the transaction.
-func (c *SubscribeService) UnconfirmedAdded(add string) (*Subscribe, error) {
-	return c.newChannel(pathUnconfirmedAdded + "/" + add)
+func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, error) {
+	subTransaction := new(SubscribeTransaction)
+	ChanSubscribe.UnconfirmedAdded = subTransaction
+	subTransaction.Ch = make(chan Transaction)
+	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add)
+	subTransaction.subscribe = subscribe
+	return subTransaction, err
 }
 
 // UnconfirmedRemoved notifies when a transaction related to an
 // address was in unconfirmed state but not anymore.
 // The message contains the transaction hash.
-func (c *SubscribeService) UnconfirmedRemoved(add string) (*Subscribe, error) {
-	return c.newChannel(pathUnconfirmedRemoved + "/" + add)
+func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error) {
+	subHash := new(SubscribeHash)
+	ChanSubscribe.UnconfirmedRemoved = subHash
+	subHash.Ch = make(chan *HashInfo)
+	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add)
+	subHash.subscribe = subscribe
+	return subHash, err
 }
 
 // Status notifies when a transaction related to an address rises an error.
 // The message contains the error message and the transaction hash.
-func (c *SubscribeService) Status(add string) (*Subscribe, error) {
-	return c.newChannel(pathStatus + "/" + add)
+func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
+	subStatus := new(SubscribeStatus)
+	ChanSubscribe.Status = subStatus
+	subStatus.Ch = make(chan *StatusInfo)
+	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
+	subStatus.subscribe = subscribe
+	return subStatus, err
 }
 
 // PartialAdded notifies when an aggregate bonded transaction related to an
 // address is in partial state and waiting to have all required cosigners.
 // The message contains a transaction.
-func (c *SubscribeService) PartialAdded(add string) (*Subscribe, error) {
-	return c.newChannel(pathPartialAdded + "/" + add)
+func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, error) {
+	subTransaction := new(SubscribeTransaction)
+	ChanSubscribe.PartialAdded = subTransaction
+	subTransaction.Ch = make(chan Transaction)
+	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add)
+	subTransaction.subscribe = subscribe
+	return subTransaction, err
 }
 
 // PartialRemoved notifies when a transaction related to an
 // address was in partial state but not anymore.
 // The message contains the transaction hash.
-func (c *SubscribeService) PartialRemoved(add string) (*Subscribe, error) {
-	return c.newChannel(pathPartialRemoved + "/" + add)
+func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved, error) {
+	subPartialRemoved := new(SubscribePartialRemoved)
+	ChanSubscribe.PartialRemoved = subPartialRemoved
+	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
+	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add)
+	subPartialRemoved.subscribe = subscribe
+	return ChanSubscribe.PartialRemoved, err
 }
 
 // Cosignature notifies when a cosignature signed transaction related to an
 // address is added to an aggregate bonded transaction with partial state.
 // The message contains the cosignature signed transaction.
-func (c *SubscribeService) Cosignature(add string) (*Subscribe, error) {
-	return c.newChannel(pathCosignature + "/" + add)
+func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
+	subCosignature := new(SubscribeSigner)
+	ChanSubscribe.Cosignature = subCosignature
+	subCosignature.Ch = make(chan *SignerInfo)
+	subscribe, err := c.newSubscribe(pathCosignature + "/" + add)
+	subCosignature.subscribe = subscribe
+	return ChanSubscribe.Cosignature, err
 }
 
 // Unsubscribe terminates the specified subscription.
 // It does not have any specific param.
-func (c *Subscribe) Unsubscribe() error {
+func (c *subscribe) unsubscribe() error {
 	if err := websocket.JSON.Send(c.conn, sendJson{
 		Uid:       c.Uid,
 		Subscribe: c.Subscribe,
@@ -99,7 +150,7 @@ func (c *Subscribe) Unsubscribe() error {
 // Generate a new channel and subscribe to the websocket.
 // param route A subscription channel route.
 // return A pointer Subscribe struct or an error.
-func (c *SubscribeService) newChannel(route string) (*Subscribe, error) {
+func (c *SubscribeService) newSubscribe(route string) (*subscribe, error) {
 	subMsg := c.client.buildSubscribe(route)
 
 	err := c.client.subsChannel(subMsg)

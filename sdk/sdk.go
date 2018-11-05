@@ -7,18 +7,14 @@ package sdk
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"github.com/google/go-querystring/query"
 	"github.com/json-iterator/go"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"golang.org/x/net/context"
 	"io"
-	"math/big"
 	"net/http"
 	"net/url"
 	"reflect"
-	"strconv"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -29,26 +25,15 @@ type Config struct {
 	NetworkType
 }
 
-// Mainnet config default
-func LoadMainnetConfig(baseUrl string) (*Config, error) {
+// Config constructor
+func NewConfig(baseUrl string, networkType NetworkType) (*Config, error) {
 	u, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	c := &Config{BaseURL: u, NetworkType: MainNet}
+	c := &Config{BaseURL: u, NetworkType: networkType}
 
-	return c, nil
-}
-
-// Testnet config default
-func LoadTestnetConfig(baseUrl string) (*Config, error) {
-	u, err := url.Parse(baseUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &Config{BaseURL: u, NetworkType: TestNet}
 	return c, nil
 }
 
@@ -125,7 +110,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	defer resp.Body.Close()
 
 	if resp.StatusCode > 226 || resp.StatusCode < 200 {
-		return resp, errors.New(resp.Status)
+		b := &bytes.Buffer{}
+		b.ReadFrom(resp.Body)
+		return nil, errors.New(b.String())
 	}
 	if v != nil {
 		if w, ok := v.(io.Writer); ok {
@@ -192,34 +179,4 @@ func addOptions(s string, opt interface{}) (string, error) {
 
 	u.RawQuery = qs.Encode()
 	return u.String(), nil
-}
-
-// analog JAVA Uint64.bigIntegerToHex
-func BigIntegerToHex(id *big.Int) string {
-
-	u := FromBigInt(id)
-
-	return strconv.FormatInt(int64(u[1]), 16) + strconv.FormatInt(int64(u[0]), 16)
-
-}
-func FromBigInt(int *big.Int) []uint32 {
-	b := int.Bytes()
-	ln := len(b)
-	utils.ReverseByteArray(b)
-	l, h, s := uint32(0), uint32(0), 4
-	if ln < 4 {
-		s = ln
-	}
-	lb := make([]byte, 4)
-	copy(lb[:s], b[:s])
-	l = binary.LittleEndian.Uint32(lb)
-	if ln > 4 {
-		if ln-4 < 4 {
-			s = ln - 4
-		}
-		hb := make([]byte, 4)
-		copy(hb[:s], b[4:])
-		h = binary.LittleEndian.Uint32(hb)
-	}
-	return []uint32{l, h}
 }

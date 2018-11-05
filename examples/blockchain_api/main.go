@@ -11,12 +11,15 @@ import (
 	"math/big"
 )
 
-const baseUrl = "http://localhost:3000"
+const (
+	baseUrl = "http://localhost:3000"
+	networkType = sdk.MijinTest
+)
 
 // Simple Blockchain API request
 func main() {
 
-	conf, err := sdk.LoadTestnetConfig(baseUrl)
+	conf, err := sdk.NewConfig(baseUrl,networkType)
 	if err != nil {
 		panic(err)
 	}
