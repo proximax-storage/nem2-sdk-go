@@ -737,12 +737,12 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 // ModifyMultisigAccountTransaction
 type ModifyMultisigAccountTransaction struct {
 	abstractTransaction
-	MinApprovalDelta int32
-	MinRemovalDelta  int32
+	MinApprovalDelta int
+	MinRemovalDelta  int
 	Modifications    []*MultisigCosignatoryModification
 }
 
-func NewModifyMultisigAccountTransaction(deadline *Deadline, minApprovalDelta int32, minRemovalDelta int32, modifications []*MultisigCosignatoryModification, networkType NetworkType) (*ModifyMultisigAccountTransaction, error) {
+func NewModifyMultisigAccountTransaction(deadline *Deadline, minApprovalDelta int, minRemovalDelta int, modifications []*MultisigCosignatoryModification, networkType NetworkType) (*ModifyMultisigAccountTransaction, error) {
 	if modifications == nil {
 		return nil, errors.New("modifications must not be nil")
 	}
@@ -804,8 +804,8 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 	transactions.ModifyMultisigAccountTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 123+(33*len(tx.Modifications)))
 	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
-	transactions.ModifyMultisigAccountTransactionBufferAddMinApprovalDelta(builder, tx.MinApprovalDelta)
-	transactions.ModifyMultisigAccountTransactionBufferAddMinRemovalDelta(builder, tx.MinRemovalDelta)
+	transactions.ModifyMultisigAccountTransactionBufferAddMinApprovalDelta(builder, int32(tx.MinApprovalDelta))
+	transactions.ModifyMultisigAccountTransactionBufferAddMinRemovalDelta(builder, int32(tx.MinRemovalDelta))
 	transactions.ModifyMultisigAccountTransactionBufferAddNumModifications(builder, len(tx.Modifications))
 	transactions.ModifyMultisigAccountTransactionBufferAddModifications(builder, mV)
 	t := transactions.TransactionBufferEnd(builder)
@@ -817,8 +817,8 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 type modifyMultisigAccountTransactionDTO struct {
 	Tx struct {
 		abstractTransactionDTO
-		MinApprovalDelta int32                                 `json:"minApprovalDelta"`
-		MinRemovalDelta  int32                                 `json:"minRemovalDelta"`
+		MinApprovalDelta int                                   `json:"minApprovalDelta"`
+		MinRemovalDelta  int                                   `json:"minRemovalDelta"`
 		Modifications    []*multisigCosignatoryModificationDTO `json:"modifications"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
