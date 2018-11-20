@@ -9,14 +9,21 @@ import (
 	"testing"
 )
 
+const (
+	mijinRoute = `{
+  			"name": "MIJIN",
+  			"description": "catapult development network"
+  	}`
+	mijinTestRoute = `{
+  			"name": "MIJIN_TEST",
+  			"description": "catapult development network"
+  	}`
+)
+
 func TestNetworkService_GetNetworkType(t *testing.T) {
 
-	addRouters(map[string]sRouting{pathNetwork: {
-		`{
-  "name": "MIJIN_TEST",
-  "description": "catapult development network"
-  }`,
-		nil}})
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinTestRoute}})
+
 	netType, resp, err := serv.Network.GetNetworkType(ctx)
 	if err != nil {
 		t.Error(err)
@@ -30,12 +37,8 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 }
 func TestNetworkService_GetNetworkType_MIJIN(t *testing.T) {
 
-	addRouters(map[string]sRouting{pathNetwork: {
-		`{
-  "name": "MIJIN",
-  "description": "catapult development network"
-  }`,
-		nil}})
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinRoute}})
+
 	netType, resp, err := serv.Network.GetNetworkType(ctx)
 	if err != nil {
 		t.Error(err)
@@ -49,12 +52,12 @@ func TestNetworkService_GetNetworkType_MIJIN(t *testing.T) {
 }
 func TestNetworkService_GetNetworkType_Unknow(t *testing.T) {
 
-	addRouters(map[string]sRouting{pathNetwork: {
-		`{
-  "name": "",
-  "description": "catapult development network"
-  }`,
-		nil}})
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {
+		resp: `{
+ 				 "name": "",
+  				"description": "catapult development network"
+  				}`}})
+
 	netType, resp, err := serv.Network.GetNetworkType(ctx)
 	if err == nil {
 		t.Error(errors.New("Must be errror"))
