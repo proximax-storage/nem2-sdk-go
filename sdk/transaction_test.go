@@ -19,7 +19,7 @@ const transactionId = "5B55E02EACCB7B00015DB6E1"
 const transactionHash = "7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F"
 
 var transaction = &TransferTransaction{
-	abstractTransaction: abstractTransaction{
+	AbstractTransaction: AbstractTransaction{
 		Type:        Transfer,
 		Version:     uint64(3),
 		NetworkType: MijinTest,
@@ -369,7 +369,6 @@ func TestTransferTransactionSigning(t *testing.T) {
 		"94933C673D12DE60E4BC05ABA56F750E1026D70E1954775749C6811084D6450A3184D977383F0E4282CD47118AF377550390544100000" +
 		"00000000000010000000000000090E8FEBD671DD41BEE94EC3BA5831CB608A312C2F203BA84AC01000100672B0000CE56000064000000" +
 		"00000000"
-	want1 := "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424"
 	a, err := NewAccountFromPrivateKey("787225aaff3d2c71f4ffa32d4f19ec4922f3cd869747f267378f81f8e3fcb12d", MijinTest)
 
 	tx, err := NewTransferTransaction(
@@ -388,8 +387,8 @@ func TestTransferTransactionSigning(t *testing.T) {
 		t.Errorf("TransaferTransaction signing returned wrong payload: \n %s, want: \n %s", stx.Payload, want)
 	}
 
-	if !reflect.DeepEqual(stx.Hash, want1) {
-		t.Errorf("TransaferTransaction signing returned wrong hash: \n %s, want: \n %s", stx.Hash, want1)
+	if stx.Hash != "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424" {
+		t.Errorf("TransaferTransaction signing returned wrong hash: \n %s, want: \n %s", stx.Hash, "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424")
 	}
 }
 
@@ -529,7 +528,7 @@ func TestLockFundsTransactionSigning(t *testing.T) {
 		t.Errorf("LockFundsTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
 	}
 
-	if !reflect.DeepEqual(b.Hash, "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A") {
+	if b.Hash != "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A" {
 		t.Errorf("LockFundsTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Hash, "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A")
 	}
 }
@@ -597,7 +596,7 @@ func TestSecretLockTransactionSigning(t *testing.T) {
 	if !reflect.DeepEqual(b.Payload, want) {
 		t.Errorf("SecretLockTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
 	}
-	if !reflect.DeepEqual(b.Hash, "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5") {
+	if b.Hash != "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5" {
 		t.Errorf("SecretLockTransaction signing returned wrong hash: \n %+v, want: \n %+v", b.Hash, "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5")
 	}
 }

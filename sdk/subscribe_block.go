@@ -17,16 +17,6 @@ var ChanSubscribe struct {
 	Cosignature        *SubscribeSigner
 }
 
-// structure for Subscribe status
-type HashInfo struct {
-	Hash string `json:"hash"`
-}
-
-// structure for Subscribe PartialRemoved
-type PartialRemovedInfo struct {
-	Meta SubscribeHash `json:"meta"`
-}
-
 type SubscribeService serviceWs
 
 // const routers path for methods SubscribeService

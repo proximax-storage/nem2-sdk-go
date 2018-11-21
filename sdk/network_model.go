@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type NetworkType uint8
@@ -20,6 +21,20 @@ const (
 	MijinTest       NetworkType = 144
 	NotSupportedNet NetworkType = 0
 )
+
+func NetworkTypeFromString(networkType string) NetworkType {
+	switch strings.ToUpper(networkType) {
+	case "MIJIN":
+		return Mijin
+	case "MIJIN_TEST":
+		return MijinTest
+	case "TEST_NET":
+		return TestNet
+	case "MAIN_NET":
+		return MijinTest
+	}
+	return NotSupportedNet
+}
 
 func (nt NetworkType) String() string {
 	return fmt.Sprintf("%d", nt)

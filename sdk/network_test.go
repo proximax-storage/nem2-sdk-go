@@ -4,16 +4,25 @@
 
 package sdk
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
-func init() {
-	addRouters(map[string]sRouting{pathNetwork: {`{
-  "name": "mijinTest",
-  "description": "catapult development network"
-}`, nil}})
+const (
+	mijinRoute = `{
+  			"name": "MIJIN",
+  			"description": "catapult development network"
+  	}`
+	mijinTestRoute = `{
+  			"name": "MIJIN_TEST",
+  			"description": "catapult development network"
+  	}`
+)
 
-}
 func TestNetworkService_GetNetworkType(t *testing.T) {
+
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinTestRoute}})
 
 	netType, resp, err := serv.Network.GetNetworkType(ctx)
 	if err != nil {
@@ -22,6 +31,40 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 		t.Error(resp.Status)
 		t.Logf("%#v", resp)
 	} else if netType != MijinTest {
+		t.Errorf("%d", netType)
+	}
+
+}
+func TestNetworkService_GetNetworkType_MIJIN(t *testing.T) {
+
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinRoute}})
+
+	netType, resp, err := serv.Network.GetNetworkType(ctx)
+	if err != nil {
+		t.Error(err)
+	} else if resp.StatusCode != 200 {
+		t.Error(resp.Status)
+		t.Logf("%#v", resp)
+	} else if netType != Mijin {
+		t.Errorf("%d", netType)
+	}
+
+}
+func TestNetworkService_GetNetworkType_Unknow(t *testing.T) {
+
+	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {
+		resp: `{
+ 				 "name": "",
+  				"description": "catapult development network"
+  				}`}})
+
+	netType, resp, err := serv.Network.GetNetworkType(ctx)
+	if err == nil {
+		t.Error(errors.New("Must be errror"))
+	} else if resp.StatusCode != 200 {
+		t.Error(resp.Status)
+		t.Logf("%#v", resp)
+	} else if netType != NotSupportedNet {
 		t.Errorf("%d", netType)
 	}
 
