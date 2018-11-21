@@ -25,44 +25,44 @@ import (
 // Models
 // Transaction
 type Transaction interface {
-	GetAbstractTransaction() *abstractTransaction
+	GetAbstractTransaction() *AbstractTransaction
 	String() string
 	generateBytes() ([]byte, error)
 }
 
-// abstractTransaction
-type abstractTransaction struct {
-	NetworkType
+// AbstractTransaction
+type AbstractTransaction struct {
 	*TransactionInfo
-	*Deadline
-	Type      TransactionType
-	Version   uint64
-	Fee       *big.Int
-	Signature string
-	Signer    *PublicAccount
+	NetworkType NetworkType
+	Deadline    *Deadline
+	Type        TransactionType
+	Version     uint64
+	Fee         *big.Int
+	Signature   string
+	Signer      *PublicAccount
 }
 
-func (tx *abstractTransaction) IsUnconfirmed() bool {
+func (tx *AbstractTransaction) IsUnconfirmed() bool {
 	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() == 0 && tx.TransactionInfo.Hash == tx.TransactionInfo.MerkleComponentHash
 }
 
-func (tx *abstractTransaction) IsConfirmed() bool {
+func (tx *AbstractTransaction) IsConfirmed() bool {
 	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() > 0
 }
 
-func (tx *abstractTransaction) HasMissingSignatures() bool {
+func (tx *AbstractTransaction) HasMissingSignatures() bool {
 	return tx.TransactionInfo != nil && tx.TransactionInfo.Height.Int64() == 0 && tx.TransactionInfo.Hash != tx.TransactionInfo.MerkleComponentHash
 }
 
-func (tx *abstractTransaction) IsUnannounced() bool {
+func (tx *AbstractTransaction) IsUnannounced() bool {
 	return tx.TransactionInfo == nil
 }
 
-func (tx *abstractTransaction) ToAggregate(signer *PublicAccount) {
+func (tx *AbstractTransaction) ToAggregate(signer *PublicAccount) {
 	tx.Signer = signer
 }
 
-func (tx *abstractTransaction) String() string {
+func (tx *AbstractTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"NetworkType": %s,
@@ -85,7 +85,7 @@ func (tx *abstractTransaction) String() string {
 	)
 }
 
-func (tx *abstractTransaction) generateVectors(builder *flatbuffers.Builder) (v uint64, signatureV, signerV, dV, fV flatbuffers.UOffsetT, err error) {
+func (tx *AbstractTransaction) generateVectors(builder *flatbuffers.Builder) (v uint64, signatureV, signerV, dV, fV flatbuffers.UOffsetT, err error) {
 	v, err = strconv.ParseUint(strconv.FormatUint(uint64(tx.NetworkType), 16)+"0"+strconv.FormatUint(tx.Version, 16), 16, 32)
 	signatureV = transactions.TransactionBufferCreateByteVector(builder, make([]byte, 64))
 	signerV = transactions.TransactionBufferCreateByteVector(builder, make([]byte, 32))
@@ -94,7 +94,7 @@ func (tx *abstractTransaction) generateVectors(builder *flatbuffers.Builder) (v 
 	return
 }
 
-func (tx *abstractTransaction) buildVectors(builder *flatbuffers.Builder, v uint64, signatureV, signerV, dV, fV flatbuffers.UOffsetT) {
+func (tx *AbstractTransaction) buildVectors(builder *flatbuffers.Builder, v uint64, signatureV, signerV, dV, fV flatbuffers.UOffsetT) {
 	transactions.TransactionBufferAddSignature(builder, signatureV)
 	transactions.TransactionBufferAddSigner(builder, signerV)
 	transactions.TransactionBufferAddVersion(builder, v)
@@ -113,7 +113,7 @@ type abstractTransactionDTO struct {
 	Signer      string     `json:"signer"`
 }
 
-func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*abstractTransaction, error) {
+func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*AbstractTransaction, error) {
 	t, err := TransactionTypeFromRaw(dto.Type)
 	if err != nil {
 		return nil, err
@@ -141,9 +141,9 @@ func (dto *abstractTransactionDTO) toStruct(tInfo *TransactionInfo) (*abstractTr
 		f = dto.Fee.toBigInt()
 	}
 
-	return &abstractTransaction{
-		nt,
+	return &AbstractTransaction{
 		tInfo,
+		nt,
 		d,
 		t,
 		tv,
@@ -213,7 +213,7 @@ func (dto *transactionInfoDTO) toStruct() *TransactionInfo {
 
 // AggregateTransaction
 type AggregateTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	InnerTransactions []Transaction
 	Cosignatures      []*AggregateTransactionCosignature
 }
@@ -224,7 +224,7 @@ func NewCompleteAggregateTransaction(deadline *Deadline, innerTxs []Transaction,
 		return nil, errors.New("innerTransactions must not be nil")
 	}
 	return &AggregateTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Type:        AggregateCompleted,
 			Version:     2,
 			Deadline:    deadline,
@@ -239,7 +239,7 @@ func NewBondedAggregateTransaction(deadline *Deadline, innerTxs []Transaction, n
 		return nil, errors.New("innerTransactions must not be nil")
 	}
 	return &AggregateTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Type:        AggregateBonded,
 			Version:     2,
 			Deadline:    deadline,
@@ -249,18 +249,18 @@ func NewBondedAggregateTransaction(deadline *Deadline, innerTxs []Transaction, n
 	}, nil
 }
 
-func (tx *AggregateTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *AggregateTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *AggregateTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"InnerTransactions": %s,
 			"Cosignatures": %s
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.InnerTransactions,
 		tx.Cosignatures,
 	)
@@ -279,14 +279,14 @@ func (tx *AggregateTransaction) generateBytes() ([]byte, error) {
 	}
 	tV := transactions.TransactionBufferCreateByteVector(builder, txsb)
 
-	v, signatureV, signerV, dV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, dV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.AggregateTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 120+4+len(txsb))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, dV, fV)
 	transactions.AggregateTransactionBufferAddTransactionsSize(builder, len(txsb))
 	transactions.AggregateTransactionBufferAddTransactions(builder, tV)
 	t := transactions.TransactionBufferEnd(builder)
@@ -347,7 +347,7 @@ func (dto *aggregateTransactionDTO) toStruct() (*AggregateTransaction, error) {
 
 // MosaicDefinitionTransaction
 type MosaicDefinitionTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	*MosaicProperties
 	*NamespaceId
 	*MosaicId
@@ -386,7 +386,7 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaic *MosaicId, namesp
 	}
 
 	return &MosaicDefinitionTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     2,
 			Deadline:    deadline,
 			Type:        MosaicDefinition,
@@ -399,19 +399,19 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaic *MosaicId, namesp
 	}, nil
 }
 
-func (tx *MosaicDefinitionTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *MosaicDefinitionTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *MosaicDefinitionTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"MosaicProperties": %s,
 			"MosaicId": [ %s ],
 			"MosaicName": %s
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.MosaicProperties.String(),
 		tx.MosaicId,
 		tx.MosaicName,
@@ -437,14 +437,14 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 
 	n := builder.CreateString(tx.MosaicName)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.MosaicDefinitionTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 149+len(tx.MosaicName))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.MosaicDefinitionTransactionBufferAddMosaicId(builder, mV)
 	transactions.MosaicDefinitionTransactionBufferAddParentId(builder, nV)
 	transactions.MosaicDefinitionTransactionBufferAddMosaicNameLength(builder, len(tx.MosaicName))
@@ -492,7 +492,7 @@ func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransact
 
 // MosaicSupplyChangeTransaction
 type MosaicSupplyChangeTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	MosaicSupplyType
 	*MosaicId
 	Delta *big.Int
@@ -519,7 +519,7 @@ func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaic *MosaicId, supp
 	}
 
 	return &MosaicSupplyChangeTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     2,
 			Deadline:    deadline,
 			Type:        MosaicSupplyChange,
@@ -531,19 +531,19 @@ func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaic *MosaicId, supp
 	}, nil
 }
 
-func (tx *MosaicSupplyChangeTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *MosaicSupplyChangeTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *MosaicSupplyChangeTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"MosaicSupplyType": %s,
 			"MosaicId": [ %v ],
 			"Delta": %d
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.MosaicSupplyType.String(),
 		tx.MosaicId,
 		tx.Delta,
@@ -556,14 +556,14 @@ func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicId.Id))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Delta))
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.MosaicSupplyChangeTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 137)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.MosaicSupplyChangeTransactionBufferAddMosaicId(builder, mV)
 	transactions.MosaicSupplyChangeTransactionBufferAddDirection(builder, uint8(tx.MosaicSupplyType))
 	transactions.MosaicSupplyChangeTransactionBufferAddDelta(builder, dV)
@@ -599,7 +599,7 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 
 // TransferTransaction
 type TransferTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	*Message
 	Mosaics   Mosaics
 	Recipient *Address
@@ -618,7 +618,7 @@ func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosa
 	}
 
 	return &TransferTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     3,
 			Deadline:    deadline,
 			Type:        Transfer,
@@ -630,19 +630,19 @@ func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosa
 	}, nil
 }
 
-func (tx *TransferTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *TransferTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *TransferTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"Mosaics": %s,
 			"Address": %s,
 			"Message": %s,
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.Mosaics,
 		tx.Recipient,
 		tx.Message.String(),
@@ -679,14 +679,14 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	rV := transactions.TransactionBufferCreateByteVector(builder, r)
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, mb)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.TransferTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 149+(16*ml)+pl)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.TransferTransactionBufferAddRecipient(builder, rV)
 	transactions.TransferTransactionBufferAddNumMosaics(builder, ml)
 	transactions.TransferTransactionBufferAddMessageSize(builder, pl+1)
@@ -734,7 +734,7 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 
 // ModifyMultisigAccountTransaction
 type ModifyMultisigAccountTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	MinApprovalDelta int32
 	MinRemovalDelta  int32
 	Modifications    []*MultisigCosignatoryModification
@@ -746,7 +746,7 @@ func NewModifyMultisigAccountTransaction(deadline *Deadline, minApprovalDelta in
 	}
 
 	return &ModifyMultisigAccountTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     3,
 			Deadline:    deadline,
 			Type:        ModifyMultisig,
@@ -758,19 +758,19 @@ func NewModifyMultisigAccountTransaction(deadline *Deadline, minApprovalDelta in
 	}, nil
 }
 
-func (tx *ModifyMultisigAccountTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *ModifyMultisigAccountTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *ModifyMultisigAccountTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"MinApprovalDelta": %d,
 			"MinRemovalDelta": %d,
 			"Modifications": %s 
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.MinApprovalDelta,
 		tx.MinRemovalDelta,
 		tx.Modifications,
@@ -794,14 +794,14 @@ func (tx *ModifyMultisigAccountTransaction) generateBytes() ([]byte, error) {
 
 	mV := transactions.TransactionBufferCreateUOffsetVector(builder, msb)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.ModifyMultisigAccountTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 123+(33*len(tx.Modifications)))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.ModifyMultisigAccountTransactionBufferAddMinApprovalDelta(builder, tx.MinApprovalDelta)
 	transactions.ModifyMultisigAccountTransactionBufferAddMinRemovalDelta(builder, tx.MinRemovalDelta)
 	transactions.ModifyMultisigAccountTransactionBufferAddNumModifications(builder, len(tx.Modifications))
@@ -846,7 +846,7 @@ func (dto *modifyMultisigAccountTransactionDTO) toStruct() (*ModifyMultisigAccou
 
 // RegisterNamespaceTransaction
 type RegisterNamespaceTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	*NamespaceId
 	NamespaceType
 	NamspaceName string
@@ -873,7 +873,7 @@ func NewRegisterRootNamespaceTransaction(deadline *Deadline, namespace *Namespac
 	}
 
 	return &RegisterNamespaceTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     2,
 			Deadline:    deadline,
 			Type:        RegisterNamespace,
@@ -914,7 +914,7 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespace *Namespace
 	}
 
 	return &RegisterNamespaceTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     2,
 			Deadline:    deadline,
 			Type:        RegisterNamespace,
@@ -927,18 +927,18 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespace *Namespace
 	}, nil
 }
 
-func (tx *RegisterNamespaceTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *RegisterNamespaceTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *RegisterNamespaceTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"NamespaceName": %s,
 			"Duration": %d
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.NamspaceName,
 		tx.Duration,
 	)
@@ -956,14 +956,14 @@ func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	}
 	n := builder.CreateString(tx.NamspaceName)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.RegisterNamespaceTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 138+len(tx.NamspaceName))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.RegisterNamespaceTransactionBufferAddNamespaceType(builder, uint8(tx.NamespaceType))
 	transactions.RegisterNamespaceTransactionBufferAddDurationParentId(builder, dV)
 	transactions.RegisterNamespaceTransactionBufferAddNamespaceId(builder, nV)
@@ -1022,7 +1022,7 @@ func (dto *registerNamespaceTransactionDTO) toStruct() (*RegisterNamespaceTransa
 
 // LockFundsTransaction
 type LockFundsTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	*Mosaic
 	Duration *big.Int
 	*SignedTransaction
@@ -1043,7 +1043,7 @@ func NewLockFundsTransaction(deadline *Deadline, mosaic *Mosaic, duration *big.I
 	}
 
 	return &LockFundsTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     3,
 			Deadline:    deadline,
 			Type:        Lock,
@@ -1055,19 +1055,19 @@ func NewLockFundsTransaction(deadline *Deadline, mosaic *Mosaic, duration *big.I
 	}, nil
 }
 
-func (tx *LockFundsTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *LockFundsTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *LockFundsTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"Mosaic": %s,
 			"Duration": %d,
 			"SignedTxHash": %s
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.Mosaic.String(),
 		tx.Duration,
 		tx.SignedTransaction.Hash,
@@ -1087,14 +1087,14 @@ func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	}
 	hV := transactions.TransactionBufferCreateByteVector(builder, h)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.LockFundsTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 176)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.LockFundsTransactionBufferAddMosaicId(builder, mv)
 	transactions.LockFundsTransactionBufferAddMosaicAmount(builder, maV)
 	transactions.LockFundsTransactionBufferAddDuration(builder, dV)
@@ -1131,7 +1131,7 @@ func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
 
 // SecretLockTransaction
 type SecretLockTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	*Mosaic
 	HashType
 	Duration  *big.Int
@@ -1154,7 +1154,7 @@ func NewSecretLockTransaction(deadline *Deadline, mosaic *Mosaic, duration *big.
 	}
 
 	return &SecretLockTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     3,
 			Deadline:    deadline,
 			Type:        SecretLock,
@@ -1168,21 +1168,21 @@ func NewSecretLockTransaction(deadline *Deadline, mosaic *Mosaic, duration *big.
 	}, nil
 }
 
-func (tx *SecretLockTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *SecretLockTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *SecretLockTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"Mosaic": %s,
 			"Duration": %d,
 			"HashType": %s,
 			"Secret": %s,
 			"Recipient": %s
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.Mosaic.String(),
 		tx.Duration,
 		tx.HashType.String(),
@@ -1210,14 +1210,14 @@ func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	}
 	rV := transactions.TransactionBufferCreateByteVector(builder, addr)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.SecretLockTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 234)
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.SecretLockTransactionBufferAddMosaicId(builder, mV)
 	transactions.SecretLockTransactionBufferAddMosaicAmount(builder, maV)
 	transactions.SecretLockTransactionBufferAddDuration(builder, dV)
@@ -1266,7 +1266,7 @@ func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) 
 
 // SecretProofTransaction
 type SecretProofTransaction struct {
-	abstractTransaction
+	AbstractTransaction
 	HashType
 	Secret string
 	Proof  string
@@ -1281,7 +1281,7 @@ func NewSecretProofTransaction(deadline *Deadline, hashType HashType, secret str
 	}
 
 	return &SecretProofTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Version:     3,
 			Deadline:    deadline,
 			Type:        SecretProof,
@@ -1293,19 +1293,19 @@ func NewSecretProofTransaction(deadline *Deadline, hashType HashType, secret str
 	}, nil
 }
 
-func (tx *SecretProofTransaction) GetAbstractTransaction() *abstractTransaction {
-	return &tx.abstractTransaction
+func (tx *SecretProofTransaction) GetAbstractTransaction() *AbstractTransaction {
+	return &tx.AbstractTransaction
 }
 
 func (tx *SecretProofTransaction) String() string {
 	return fmt.Sprintf(
 		`
-			"abstractTransaction": %s,
+			"AbstractTransaction": %s,
 			"HashType": %s,
 			"Secret": %s,
 			"Proof": %s
 		`,
-		tx.abstractTransaction.String(),
+		tx.AbstractTransaction.String(),
 		tx.HashType.String(),
 		tx.Secret,
 		tx.Proof,
@@ -1327,14 +1327,14 @@ func (tx *SecretProofTransaction) generateBytes() ([]byte, error) {
 	}
 	pV := transactions.TransactionBufferCreateByteVector(builder, p)
 
-	v, signatureV, signerV, deadlineV, fV, err := tx.abstractTransaction.generateVectors(builder)
+	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
 	if err != nil {
 		return nil, err
 	}
 
 	transactions.SecretProofTransactionBufferStart(builder)
 	transactions.TransactionBufferAddSize(builder, 187+len(p))
-	tx.abstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
+	tx.AbstractTransaction.buildVectors(builder, v, signatureV, signerV, deadlineV, fV)
 	transactions.SecretProofTransactionBufferAddHashAlgorithm(builder, byte(tx.HashType))
 	transactions.SecretProofTransactionBufferAddSecret(builder, sV)
 	transactions.SecretProofTransactionBufferAddProofSize(builder, len(p))

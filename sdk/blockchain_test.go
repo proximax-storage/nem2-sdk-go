@@ -97,9 +97,9 @@ var bcRouters = map[string]sRouting{
 	fmt.Sprintf(pathBlockInfo, testHeight, testLimit):         {"[" + blockInfoJSON + "]", nil},
 	fmt.Sprintf(pathBlockGetTransaction, testHeight.String()): {blockTransactionsJSON, nil},
 	fmt.Sprintf(pathBlockByHeight, testHeight.String()):       {blockInfoJSON, nil},
-	pathBlockHeight:                                           {`{"height":[11235,0]}`, nil},
-	pathBlockScore:                                            {`{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`, nil},
-	pathBlockStorage:                                          {`{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`, nil},
+	pathBlockHeight:  {`{"height":[11235,0]}`, nil},
+	pathBlockScore:   {`{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`, nil},
+	pathBlockStorage: {`{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`, nil},
 }
 
 // Expected value for TestBlockchainService_GetBlockHeight
@@ -130,7 +130,7 @@ func init() {
 	}
 
 	wantBlockTransactions = append(wantBlockTransactions, &RegisterNamespaceTransaction{
-		abstractTransaction: abstractTransaction{
+		AbstractTransaction: AbstractTransaction{
 			Type:        RegisterNamespace,
 			Version:     uint64(2),
 			NetworkType: MijinTest,

@@ -19,7 +19,7 @@ const transactionId = "5B55E02EACCB7B00015DB6E1"
 const transactionHash = "7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F"
 
 var transaction = &TransferTransaction{
-	abstractTransaction: abstractTransaction{
+	AbstractTransaction: AbstractTransaction{
 		Type:        Transfer,
 		Version:     uint64(3),
 		NetworkType: MijinTest,
