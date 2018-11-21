@@ -58,6 +58,10 @@ func (tx *abstractTransaction) IsUnannounced() bool {
 	return tx.TransactionInfo == nil
 }
 
+func (tx *abstractTransaction) ToAggregate(signer *PublicAccount) {
+	tx.Signer = signer
+}
+
 func (tx *abstractTransaction) String() string {
 	return fmt.Sprintf(
 		`
@@ -154,9 +158,9 @@ type TransactionInfo struct {
 	Height              *big.Int
 	Index               uint32
 	Id                  string
-	Hash                string
-	MerkleComponentHash string
-	AggregateHash       string
+	Hash                Hash
+	MerkleComponentHash Hash
+	AggregateHash       Hash
 	AggregateId         string
 }
 
@@ -185,9 +189,9 @@ type transactionInfoDTO struct {
 	Height              *uint64DTO `json:"height"`
 	Index               uint32     `json:"index"`
 	Id                  string     `json:"id"`
-	Hash                string     `json:"hash"`
-	MerkleComponentHash string     `json:"merkleComponentHash"`
-	AggregateHash       string     `json:"aggregateHash,omitempty"`
+	Hash                Hash       `json:"hash"`
+	MerkleComponentHash Hash       `json:"merkleComponentHash"`
+	AggregateHash       Hash       `json:"aggregateHash,omitempty"`
 	AggregateId         string     `json:"aggregateId,omitempty"`
 }
 
@@ -630,12 +634,6 @@ func (tx *TransferTransaction) GetAbstractTransaction() *abstractTransaction {
 	return &tx.abstractTransaction
 }
 
-// Convert an aggregate transaction to an inner transaction including transaction signer
-func (tx *TransferTransaction) ToAggregate(publicAccount *PublicAccount) *abstractTransaction {
-	tx.Signer = publicAccount
-	return &tx.abstractTransaction
-}
-
 func (tx *TransferTransaction) String() string {
 	return fmt.Sprintf(
 		`
@@ -1067,12 +1065,12 @@ func (tx *LockFundsTransaction) String() string {
 			"abstractTransaction": %s,
 			"Mosaic": %s,
 			"Duration": %d,
-			"Hash": %s
+			"SignedTxHash": %s
 		`,
 		tx.abstractTransaction.String(),
 		tx.Mosaic.String(),
 		tx.Duration,
-		tx.Hash,
+		tx.SignedTransaction.Hash,
 	)
 }
 
@@ -1083,7 +1081,7 @@ func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	maV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.Amount))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 
-	h, err := hex.DecodeString(tx.SignedTransaction.Hash)
+	h, err := hex.DecodeString((string)(tx.SignedTransaction.Hash))
 	if err != nil {
 		return nil, err
 	}
@@ -1112,7 +1110,7 @@ type lockFundsTransactionDTO struct {
 		abstractTransactionDTO
 		Mosaic   mosaicDTO `json:"mosaic"`
 		Duration uint64DTO `json:"duration"`
-		Hash     string    `json:"hash"`
+		Hash     Hash      `json:"hash"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -1165,7 +1163,7 @@ func NewSecretLockTransaction(deadline *Deadline, mosaic *Mosaic, duration *big.
 		Mosaic:    mosaic,
 		Duration:  duration,
 		HashType:  hashType,
-		Secret:    secret, //TODO Add secret validation
+		Secret:    secret, // TODO Add secret validation
 		Recipient: recipient,
 	}, nil
 }
@@ -1290,7 +1288,7 @@ func NewSecretProofTransaction(deadline *Deadline, hashType HashType, secret str
 			NetworkType: networkType,
 		},
 		HashType: hashType,
-		Secret:   secret, //TODO Add secret validation
+		Secret:   secret, // TODO Add secret validation
 		Proof:    proof,
 	}, nil
 }
@@ -1390,12 +1388,12 @@ func (tx *CosignatureTransaction) String() string {
 type SignedTransaction struct {
 	TransactionType `json:"transactionType"`
 	Payload         string `json:"payload"`
-	Hash            string `json:"hash"`
+	Hash            Hash   `json:"hash"`
 }
 
 // CosignatureSignedTransaction
 type CosignatureSignedTransaction struct {
-	ParentHash string `json:"parentHash"`
+	ParentHash Hash   `json:"parentHash"`
 	Signature  string `json:"signature"`
 	Signer     string `json:"signer"`
 }
@@ -1469,11 +1467,11 @@ func (dto *multisigCosignatoryModificationDTO) toStruct(networkType NetworkType)
 
 // TransactionStatus
 type TransactionStatus struct {
-	*Deadline
-	Group  string
-	Status string
-	Hash   string
-	Height *big.Int
+	Deadline *Deadline
+	Group    string
+	Status   string
+	Hash     Hash
+	Height   *big.Int
 }
 
 func (ts *TransactionStatus) String() string {
@@ -1496,7 +1494,7 @@ func (ts *TransactionStatus) String() string {
 type transactionStatusDTO struct {
 	Group    string    `json:"group"`
 	Status   string    `json:"status"`
-	Hash     string    `json:"hash"`
+	Hash     Hash      `json:"hash"`
 	Deadline uint64DTO `json:"deadline"`
 	Height   uint64DTO `json:"height"`
 }
@@ -1632,6 +1630,12 @@ const (
 	Add MultisigCosignatoryModificationType = iota
 	Remove
 )
+
+type Hash string
+
+func (h Hash) String() string {
+	return (string)(h)
+}
 
 type HashType uint8
 
@@ -1905,7 +1909,7 @@ func signTransactionWith(tx Transaction, a *Account) (*SignedTransaction, error)
 	if err != nil {
 		return nil, err
 	}
-	return &SignedTransaction{tx.GetAbstractTransaction().Type, strings.ToUpper(ph), h}, nil
+	return &SignedTransaction{tx.GetAbstractTransaction().Type, strings.ToUpper(ph), (Hash)(h)}, nil
 }
 
 func signTransactionWithCosignatures(tx *AggregateTransaction, a *Account, cosignatories []*Account) (*SignedTransaction, error) {
@@ -1916,7 +1920,7 @@ func signTransactionWithCosignatures(tx *AggregateTransaction, a *Account, cosig
 
 	p := stx.Payload
 
-	b, err := hex.DecodeString(stx.Hash)
+	b, err := hex.DecodeString((string)(stx.Hash))
 	if err != nil {
 		return nil, err
 	}
@@ -1945,7 +1949,7 @@ func signTransactionWithCosignatures(tx *AggregateTransaction, a *Account, cosig
 
 func signCosignatureTransaction(a *Account, tx *CosignatureTransaction) (*CosignatureSignedTransaction, error) {
 	s := crypto.NewSignerFromKeyPair(a.KeyPair, nil)
-	b, err := hex.DecodeString(tx.TransactionToCosign.TransactionInfo.Hash)
+	b, err := hex.DecodeString((string)(tx.TransactionToCosign.TransactionInfo.Hash))
 	if err != nil {
 		return nil, err
 	}
