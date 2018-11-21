@@ -21,8 +21,16 @@ func init() {
 	testNamespaceId.Id = i
 }
 
+// test data
+const (
+	pageSize        = 32
+	mosaicNamespace = "84b3552d375ffa4b"
+	testNamespaceID = "5B55E02EACCB7B00015DB6EB"
+)
+
 var (
-	testAddresses = Addresses{
+	namespaceClient = NewMockServerWithRouters(nsRouters).Namespace
+	testAddresses   = Addresses{
 		List: []*Address{
 			{Address: "SDRDGFTDLLCB67D4HPGIMIHPNSRYRJRT7DOBGWZY"},
 			{Address: "SBCPGZ3S2SCC3YHBBTYDCUZV4ZZEPHM2KGCP4QXX"},
@@ -36,13 +44,7 @@ var (
 			testNamespaceId,
 		},
 	}
-	ad = &NamespaceIds{}
-)
-
-const pageSize = 32
-const mosaicNamespace = "84b3552d375ffa4b"
-
-var (
+	ad   = &NamespaceIds{}
 	meta = `"meta": {
 			"active": true,
 			"index": 0,
@@ -91,15 +93,9 @@ var (
 	}
 )
 
-func init() {
-	addRouters(nsRouters)
-}
-
-const testIDs = "84b3552d375ffa4b"
-
 func TestNamespaceService_GetNamespace(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, testNamespaceId)
+	nsInfo, resp, err := namespaceClient.GetNamespace(ctx, testNamespaceId)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateNamespaceInfo(nsInfo, t) {
@@ -107,11 +103,9 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 	}
 }
 
-const testNamespaceID = "5B55E02EACCB7B00015DB6EB"
-
 func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 
-	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
+	nsInfoArr, resp, err := namespaceClient.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -128,12 +122,13 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 		}
 	}
 
-	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
+	nsInfoArr, resp, err = namespaceClient.GetNamespacesFromAccount(ctx, nil, testNamespaceID, pageSize)
 	assert.NotNil(t, err, "request with empty Address must return error")
 }
+
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
-	nsInfoArr, resp, err := serv.Namespace.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
+	nsInfoArr, resp, err := namespaceClient.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -150,7 +145,7 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 		}
 	}
 
-	nsInfoArr, resp, err = serv.Namespace.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
+	nsInfoArr, resp, err = namespaceClient.GetNamespacesFromAccounts(ctx, nil, testNamespaceID, pageSize)
 	assert.NotNil(t, err, "request with empty Addresses must return error")
 	if resp != nil {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -159,7 +154,7 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 
-	nsInfo, resp, err := serv.Namespace.GetNamespaceNames(ctx, *testNamespaceIDs)
+	nsInfo, resp, err := namespaceClient.GetNamespaceNames(ctx, *testNamespaceIDs)
 	if err != nil {
 		t.Fatal(err)
 	} else if validateResp(resp, t) {
@@ -180,7 +175,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	}
 	t.Logf("%#v", nsInfo)
 
-	nsInfo, resp, err = serv.Namespace.GetNamespaceNames(ctx, NamespaceIds{})
+	nsInfo, resp, err = namespaceClient.GetNamespaceNames(ctx, NamespaceIds{})
 	assert.Equal(t, errEmptyNamespaceIds, err, "request with empty NamespaceIds must return error")
 	if resp != nil {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)

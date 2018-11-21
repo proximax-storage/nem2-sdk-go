@@ -8,7 +8,6 @@ import (
 	"errors"
 	"golang.org/x/net/context"
 	"net/http"
-	"strings"
 )
 
 type NetworkService service
@@ -29,9 +28,10 @@ func (ref *NetworkService) GetNetworkType(ctx context.Context) (mscInfo NetworkT
 		return 0, resp, err
 	}
 
-	if strings.ToLower(netDTO.Name) == "mijintest" {
-		return MijinTest, resp, nil
+	networkType := NetworkTypeFromString(netDTO.Name)
+	if networkType == NotSupportedNet {
+		err = errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
 	}
 
-	return NotSupportedNet, resp, errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
+	return networkType, resp, err
 }
