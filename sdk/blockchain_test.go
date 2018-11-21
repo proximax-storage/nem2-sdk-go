@@ -88,8 +88,9 @@ const (
 )
 
 var (
-	testHeight = big.NewInt(1)
-	testLimit  = big.NewInt(100)
+	blockClient = NewMockServerWithRouters(bcRouters).Blockchain
+	testHeight  = big.NewInt(1)
+	testLimit   = big.NewInt(100)
 )
 
 var bcRouters = map[string]sRouting{
@@ -108,7 +109,6 @@ var wantBlockTransactions []Transaction
 var wantBlockInfo *BlockInfo
 
 func init() {
-	addRouters(bcRouters)
 
 	pubAcc, _ := NewAccountFromPublicKey("321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E", MijinTest)
 
@@ -152,7 +152,7 @@ func init() {
 }
 
 func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
-	bcInfo, resp, err := serv.Blockchain.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
+	bcInfo, resp, err := blockClient.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateBlockInfo(bcInfo[0], t) {
@@ -161,7 +161,7 @@ func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockchainHeight(ctx)
+	got, resp, err := blockClient.GetBlockchainHeight(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainHeight returned error: %v", err)
 	} else if validateResp(resp, t) {
@@ -174,7 +174,7 @@ func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockchainStorage(ctx)
+	got, resp, err := blockClient.GetBlockchainStorage(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainStorage returned error: %v", err)
 	} else if validateResp(resp, t) {
@@ -186,7 +186,7 @@ func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockchainScore(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockchainScore(ctx)
+	got, resp, err := blockClient.GetBlockchainScore(ctx)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockchainScore returned error: %v", err)
 	} else if validateResp(resp, t) {
@@ -199,7 +199,7 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockByHeight(ctx, testHeight)
+	got, resp, err := blockClient.GetBlockByHeight(ctx, testHeight)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockByHeight returned error: %v", err)
 	} else if validateResp(resp, t) {
@@ -210,7 +210,7 @@ func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 }
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
-	got, resp, err := serv.Blockchain.GetBlockTransactions(ctx, testHeight)
+	got, resp, err := blockClient.GetBlockTransactions(ctx, testHeight)
 	if err != nil {
 		t.Errorf("Blockchain.GetBlockTransactions returned error: %v", err)
 	} else if validateResp(resp, t) {
