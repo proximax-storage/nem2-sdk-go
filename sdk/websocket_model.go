@@ -6,18 +6,18 @@ package sdk
 
 type StatusInfo struct {
 	Status string `json:"status"`
-	Hash   *Hash  `json:"hash"`
+	Hash   Hash   `json:"hash"`
 }
 
 type SignerInfo struct {
 	Signer     string `json:"signer"`
 	Signature  string `json:"signature"`
-	ParentHash *Hash  `json:"parentHash"`
+	ParentHash Hash   `json:"parentHash"`
 }
 
 // structure for Subscribe status
 type HashInfo struct {
-	Hash *Hash `json:"hash"`
+	Hash Hash `json:"hash"`
 }
 
 // structure for Subscribe PartialRemoved
