@@ -699,15 +699,13 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 }
 
 type transferTransactionDTO struct {
+	Tx struct {
+		abstractTransactionDTO
+		Message messageDTO   `json:"message"`
+		Mosaics []*mosaicDTO `json:"mosaics"`
+		Address string       `json:"recipient"`
+	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
-	Tx transaction `json:"transaction"`
-}
-
-type transaction struct {
-	abstractTransactionDTO
-	Message 		 messageDTO `json:"message"`
-	Mosaics          []*mosaicDTO `json:"mosaics"`
-	Address          string      `json:"recipient"`
 }
 
 func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
@@ -725,7 +723,6 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 	if err != nil {
 		return nil, err
 	}
-
 
 	return &TransferTransaction{
 		*atx,
@@ -1561,7 +1558,7 @@ func (m *Message) String() string {
 }
 
 type messageDTO struct {
-	Type uint8 `json:"type"`
+	Type    uint8  `json:"type"`
 	Payload string `json:"payload"`
 }
 
