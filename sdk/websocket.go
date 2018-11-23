@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type serviceWs struct {
@@ -23,6 +24,7 @@ type serviceWs struct {
 type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
+	timeout   time.Time
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
 	Subscribe *SubscribeService
@@ -101,7 +103,7 @@ func (c *ClientWebsocket) changeURLPort() {
 	c.config.BaseURL.Host = strings.Join([]string{host, port}, ":")
 }
 
-func NewConnectWs(host string) (*ClientWebsocket, error) {
+func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) {
 	u, err := url.Parse(host)
 	if err != nil {
 		return nil, err
@@ -110,6 +112,7 @@ func NewConnectWs(host string) (*ClientWebsocket, error) {
 	c := &ClientWebsocket{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
+	c.timeout = time.Now().Add(timeout * time.Millisecond)
 
 	err = c.wsConnect()
 	if err != nil {
@@ -133,6 +136,8 @@ func (c *ClientWebsocket) wsConnect() error {
 		return err
 	}
 	c.client = conn
+
+	conn.SetDeadline(c.timeout)
 
 	var msg []byte
 	if err = websocket.Message.Receive(c.client, &msg); err != nil {
