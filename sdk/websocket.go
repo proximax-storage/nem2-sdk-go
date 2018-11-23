@@ -34,6 +34,7 @@ type subscribe struct {
 	Uid       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
 	conn      *websocket.Conn
+	Ch        interface{}
 }
 
 type SubscribeBlock struct {
@@ -158,6 +159,7 @@ func (c *ClientWebsocket) wsConnect() error {
 }
 
 func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
+	fmt.Println(msg.Subscribe)
 	if err := websocket.JSON.Send(c.client, sendJson{
 		Uid:       msg.Uid,
 		Subscribe: msg.Subscribe,
@@ -189,8 +191,10 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 			}
 
 			subName, _ := restParser(resp)
+
 			e = c.buildType(subName, resp)
 		}
+
 	}()
 	return e
 }

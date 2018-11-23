@@ -4,7 +4,10 @@
 
 package sdk
 
-import "golang.org/x/net/websocket"
+import (
+	"golang.org/x/net/websocket"
+	"strings"
+)
 
 var ChanSubscribe struct {
 	Block              *SubscribeBlock
@@ -39,6 +42,7 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 	subBlock.Ch = make(chan *BlockInfo)
 	subscribe, err := c.newSubscribe(pathBlock)
 	subBlock.subscribe = subscribe
+	//subscribe.Ch = subBlock.Ch
 	return subBlock, err
 }
 
@@ -51,6 +55,7 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
+	//subscribe.Ch = subTransaction.Ch
 	return subTransaction, err
 }
 
@@ -86,6 +91,7 @@ func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 	subStatus.Ch = make(chan *StatusInfo)
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
 	subStatus.subscribe = subscribe
+	subStatus.subscribe.Ch = subStatus.Ch
 	return subStatus, err
 }
 
@@ -134,6 +140,12 @@ func (c *subscribe) unsubscribe() error {
 	}); err != nil {
 		return err
 	}
+
+	if strings.Split(c.Subscribe, "/")[0] == "status" {
+		chType := c.Ch.(chan *StatusInfo)
+		close(chType)
+	}
+
 	return nil
 }
 
