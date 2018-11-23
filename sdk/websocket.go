@@ -159,7 +159,6 @@ func (c *ClientWebsocket) wsConnect() error {
 }
 
 func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
-	fmt.Println(msg.Subscribe)
 	if err := websocket.JSON.Send(c.client, sendJson{
 		Uid:       msg.Uid,
 		Subscribe: msg.Subscribe,
