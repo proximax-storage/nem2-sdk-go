@@ -51,13 +51,13 @@ type SubscribeTransaction struct {
 	Ch chan Transaction
 }
 
-func (s *SubscribeTransaction) Unsubscribe() error {
-	return s.subscribe.unsubscribe()
-}
-
 type SubscribeHash struct {
 	*subscribe
 	Ch chan *HashInfo
+}
+
+func (s *SubscribeTransaction) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
 }
 
 func (s *SubscribeHash) Unsubscribe() error {

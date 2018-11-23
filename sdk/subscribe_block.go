@@ -6,7 +6,7 @@ package sdk
 
 import (
 	"golang.org/x/net/websocket"
-	"strings"
+	"reflect"
 )
 
 var ChanSubscribe struct {
@@ -42,7 +42,7 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 	subBlock.Ch = make(chan *BlockInfo)
 	subscribe, err := c.newSubscribe(pathBlock)
 	subBlock.subscribe = subscribe
-	//subscribe.Ch = subBlock.Ch
+	subscribe.Ch = subBlock.Ch
 	return subBlock, err
 }
 
@@ -55,7 +55,7 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
-	//subscribe.Ch = subTransaction.Ch
+	subscribe.Ch = subTransaction.Ch
 	return subTransaction, err
 }
 
@@ -68,6 +68,7 @@ func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, 
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
+	subscribe.Ch = subTransaction.Ch
 	return subTransaction, err
 }
 
@@ -80,6 +81,7 @@ func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error
 	subHash.Ch = make(chan *HashInfo)
 	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add)
 	subHash.subscribe = subscribe
+	subscribe.Ch = subHash.Ch
 	return subHash, err
 }
 
@@ -91,7 +93,7 @@ func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 	subStatus.Ch = make(chan *StatusInfo)
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
 	subStatus.subscribe = subscribe
-	subStatus.subscribe.Ch = subStatus.Ch
+	subscribe.Ch = subStatus.Ch
 	return subStatus, err
 }
 
@@ -104,6 +106,7 @@ func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, erro
 	subTransaction.Ch = make(chan Transaction)
 	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add)
 	subTransaction.subscribe = subscribe
+	subscribe.Ch = subTransaction.Ch
 	return subTransaction, err
 }
 
@@ -116,6 +119,7 @@ func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved,
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
 	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add)
 	subPartialRemoved.subscribe = subscribe
+	subscribe.Ch = subPartialRemoved.Ch
 	return ChanSubscribe.PartialRemoved, err
 }
 
@@ -128,6 +132,7 @@ func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
 	subCosignature.Ch = make(chan *SignerInfo)
 	subscribe, err := c.newSubscribe(pathCosignature + "/" + add)
 	subCosignature.subscribe = subscribe
+	subscribe.Ch = subCosignature.Ch
 	return ChanSubscribe.Cosignature, err
 }
 
@@ -141,10 +146,7 @@ func (c *subscribe) unsubscribe() error {
 		return err
 	}
 
-	if strings.Split(c.Subscribe, "/")[0] == "status" {
-		chType := c.Ch.(chan *StatusInfo)
-		close(chType)
-	}
+	closeChannel(c)
 
 	return nil
 }
@@ -160,4 +162,43 @@ func (c *SubscribeService) newSubscribe(route string) (*subscribe, error) {
 		return nil, err
 	}
 	return subMsg, nil
+}
+
+// Closes the subscription channel.
+func closeChannel(s *subscribe) {
+	var block chan *BlockInfo
+	var status chan *StatusInfo
+	var hashInfo chan *HashInfo
+	var signerInfo chan *SignerInfo
+	var partialRemovedInfo chan *PartialRemovedInfo
+
+	switch reflect.TypeOf(s.Ch) {
+	case getType(block):
+		chType := s.Ch.(chan *BlockInfo)
+		close(chType)
+
+	case getType(status):
+		chType := s.Ch.(chan *StatusInfo)
+		close(chType)
+
+	case getType(hashInfo):
+		chType := s.Ch.(chan *HashInfo)
+		close(chType)
+
+	case getType(partialRemovedInfo):
+		chType := s.Ch.(chan *PartialRemovedInfo)
+		close(chType)
+
+	case getType(signerInfo):
+		chType := s.Ch.(chan *SignerInfo)
+		close(chType)
+
+	default:
+		chType := s.Ch.(chan Transaction)
+		close(chType)
+	}
+}
+
+func getType(i interface{}) reflect.Type {
+	return reflect.TypeOf(i)
 }
