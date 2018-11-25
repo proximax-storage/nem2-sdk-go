@@ -6,7 +6,6 @@ package sdk
 
 import (
 	"golang.org/x/net/websocket"
-	"reflect"
 )
 
 var ChanSubscribe struct {
@@ -166,30 +165,24 @@ func (c *SubscribeService) newSubscribe(route string) (*subscribe, error) {
 
 // Closes the subscription channel.
 func closeChannel(s *subscribe) {
-	var block chan *BlockInfo
-	var status chan *StatusInfo
-	var hashInfo chan *HashInfo
-	var signerInfo chan *SignerInfo
-	var partialRemovedInfo chan *PartialRemovedInfo
-
-	switch reflect.TypeOf(s.Ch) {
-	case getType(block):
+	switch s.Ch.(type) {
+	case chan *BlockInfo:
 		chType := s.Ch.(chan *BlockInfo)
 		close(chType)
 
-	case getType(status):
+	case chan *StatusInfo:
 		chType := s.Ch.(chan *StatusInfo)
 		close(chType)
 
-	case getType(hashInfo):
+	case chan *HashInfo:
 		chType := s.Ch.(chan *HashInfo)
 		close(chType)
 
-	case getType(partialRemovedInfo):
+	case chan *PartialRemovedInfo:
 		chType := s.Ch.(chan *PartialRemovedInfo)
 		close(chType)
 
-	case getType(signerInfo):
+	case chan *SignerInfo:
 		chType := s.Ch.(chan *SignerInfo)
 		close(chType)
 
@@ -197,8 +190,4 @@ func closeChannel(s *subscribe) {
 		chType := s.Ch.(chan Transaction)
 		close(chType)
 	}
-}
-
-func getType(i interface{}) reflect.Type {
-	return reflect.TypeOf(i)
 }
