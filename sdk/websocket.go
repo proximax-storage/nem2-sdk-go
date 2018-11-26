@@ -168,10 +168,10 @@ func (c *ClientWebsocket) wsConnect() error {
 	return nil
 }
 
-func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
+func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 	if err := websocket.JSON.Send(c.client, sendJson{
-		Uid:       msg.Uid,
-		Subscribe: msg.Subscribe,
+		Uid:       s.Uid,
+		Subscribe: s.Subscribe,
 	}); err != nil {
 		return err
 	}
@@ -188,8 +188,8 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 					return
 				}
 				if err = websocket.JSON.Send(c.client, sendJson{
-					Uid:       msg.Uid,
-					Subscribe: msg.Subscribe,
+					Uid:       s.Uid,
+					Subscribe: s.Subscribe,
 				}); err != nil {
 					fmt.Println(err)
 					return
@@ -201,7 +201,7 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 
 			subName, _ := restParser(resp)
 
-			e = msg.buildType(subName, resp)
+			e = s.buildType(subName, resp)
 		}
 
 	}()
