@@ -8,16 +8,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var ChanSubscribe struct {
-	Block              *SubscribeBlock
-	ConfirmedAdded     *SubscribeTransaction
-	UnconfirmedAdded   *SubscribeTransaction
-	UnconfirmedRemoved *SubscribeHash
-	Status             *SubscribeStatus
-	PartialAdded       *SubscribeTransaction
-	PartialRemoved     *SubscribePartialRemoved
-	Cosignature        *SubscribeSigner
-}
+var Block *SubscribeBlock
 
 type SubscribeService serviceWs
 
@@ -37,7 +28,7 @@ const (
 // The message contains the BlockInfo struct.
 func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 	subBlock := new(SubscribeBlock)
-	ChanSubscribe.Block = subBlock
+	Block = subBlock
 	subBlock.Ch = make(chan *BlockInfo)
 	subscribe, err := c.newSubscribe(pathBlock)
 	subBlock.subscribe = subscribe
@@ -50,8 +41,8 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 // The message contains the transaction.
 func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChanSubscribe.ConfirmedAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
+	confirmedAddedChannels[add] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
 	subscribe.Ch = subTransaction.Ch
@@ -63,11 +54,11 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 // The message contains the transaction.
 func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChanSubscribe.UnconfirmedAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
+	unconfirmedAddedChannels[add] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add)
 	subTransaction.subscribe = subscribe
-	subscribe.Ch = subTransaction.Ch
+	subscribe.Ch = unconfirmedAddedChannels[add]
 	return subTransaction, err
 }
 
@@ -76,11 +67,11 @@ func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, 
 // The message contains the transaction hash.
 func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error) {
 	subHash := new(SubscribeHash)
-	ChanSubscribe.UnconfirmedRemoved = subHash
 	subHash.Ch = make(chan *HashInfo)
+	unconfirmedRemovedChannels[add] = subHash.Ch
 	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add)
 	subHash.subscribe = subscribe
-	subscribe.Ch = subHash.Ch
+	subscribe.Ch = unconfirmedRemovedChannels[add]
 	return subHash, err
 }
 
@@ -88,11 +79,12 @@ func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error
 // The message contains the error message and the transaction hash.
 func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 	subStatus := new(SubscribeStatus)
-	ChanSubscribe.Status = subStatus
 	subStatus.Ch = make(chan *StatusInfo)
+	statusInfoChannels[add] = subStatus.Ch
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
 	subStatus.subscribe = subscribe
-	subscribe.Ch = subStatus.Ch
+	subscribe.Ch = statusInfoChannels[add]
+
 	return subStatus, err
 }
 
@@ -101,11 +93,11 @@ func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 // The message contains a transaction.
 func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, error) {
 	subTransaction := new(SubscribeTransaction)
-	ChanSubscribe.PartialAdded = subTransaction
 	subTransaction.Ch = make(chan Transaction)
+	partialAddedChannels[add] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add)
 	subTransaction.subscribe = subscribe
-	subscribe.Ch = subTransaction.Ch
+	subscribe.Ch = partialAddedChannels[add]
 	return subTransaction, err
 }
 
@@ -114,12 +106,12 @@ func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, erro
 // The message contains the transaction hash.
 func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved, error) {
 	subPartialRemoved := new(SubscribePartialRemoved)
-	ChanSubscribe.PartialRemoved = subPartialRemoved
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
+	partialRemovedInfoChannels[add] = subPartialRemoved.Ch
 	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add)
 	subPartialRemoved.subscribe = subscribe
-	subscribe.Ch = subPartialRemoved.Ch
-	return ChanSubscribe.PartialRemoved, err
+	subscribe.Ch = partialRemovedInfoChannels[add]
+	return subPartialRemoved, err
 }
 
 // Cosignature notifies when a cosignature signed transaction related to an
@@ -127,12 +119,12 @@ func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved,
 // The message contains the cosignature signed transaction.
 func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
 	subCosignature := new(SubscribeSigner)
-	ChanSubscribe.Cosignature = subCosignature
 	subCosignature.Ch = make(chan *SignerInfo)
+	signerInfoChannels[add] = subCosignature.Ch
 	subscribe, err := c.newSubscribe(pathCosignature + "/" + add)
 	subCosignature.subscribe = subscribe
-	subscribe.Ch = subCosignature.Ch
-	return ChanSubscribe.Cosignature, err
+	subscribe.Ch = signerInfoChannels[add]
+	return subCosignature, err
 }
 
 // Unsubscribe terminates the specified subscription.
@@ -172,22 +164,33 @@ func closeChannel(s *subscribe) {
 
 	case chan *StatusInfo:
 		chType := s.Ch.(chan *StatusInfo)
+		delete(statusInfoChannels, s.getAdd())
 		close(chType)
 
 	case chan *HashInfo:
 		chType := s.Ch.(chan *HashInfo)
+		delete(unconfirmedRemovedChannels, s.getAdd())
 		close(chType)
 
 	case chan *PartialRemovedInfo:
 		chType := s.Ch.(chan *PartialRemovedInfo)
+		delete(partialRemovedInfoChannels, s.getAdd())
 		close(chType)
 
 	case chan *SignerInfo:
 		chType := s.Ch.(chan *SignerInfo)
+		delete(signerInfoChannels, s.getAdd())
 		close(chType)
 
 	default:
 		chType := s.Ch.(chan Transaction)
+		if s.getSubscribe() == "partialAdded" {
+			delete(partialAddedChannels, s.getAdd())
+		} else if s.getSubscribe() == "unconfirmedAdded" {
+			delete(unconfirmedAddedChannels, s.getAdd())
+		} else {
+			delete(confirmedAddedChannels, s.getAdd())
+		}
 		close(chType)
 	}
 }

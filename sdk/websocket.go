@@ -16,6 +16,16 @@ import (
 	"time"
 )
 
+var (
+	statusInfoChannels         = make(map[string]chan *StatusInfo)
+	partialRemovedInfoChannels = make(map[string]chan *PartialRemovedInfo)
+	signerInfoChannels         = make(map[string]chan *SignerInfo)
+	unconfirmedRemovedChannels = make(map[string]chan *HashInfo)
+	partialAddedChannels       = make(map[string]chan Transaction)
+	unconfirmedAddedChannels   = make(map[string]chan Transaction)
+	confirmedAddedChannels     = make(map[string]chan Transaction)
+)
+
 type serviceWs struct {
 	client *ClientWebsocket
 }
@@ -191,7 +201,7 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 
 			subName, _ := restParser(resp)
 
-			e = c.buildType(subName, resp)
+			e = msg.buildType(subName, resp)
 		}
 
 	}()
@@ -238,7 +248,7 @@ func restParser(data []byte) (string, error) {
 	return subscribe, nil
 }
 
-func (c *ClientWebsocket) buildType(name string, t []byte) error {
+func (s *subscribe) buildType(name string, t []byte) error {
 	switch name {
 	case "block":
 		var b blockInfoDTO
@@ -250,7 +260,7 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Block.Ch <- data
+		Block.Ch <- data
 		return nil
 
 	case "status":
@@ -259,7 +269,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Status.Ch <- &data
+		ch := statusInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "signer":
@@ -268,7 +279,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Cosignature.Ch <- &data
+		ch := signerInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "unconfirmedRemoved":
@@ -277,7 +289,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedRemoved.Ch <- &data
+		ch := unconfirmedRemovedChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "partialRemoved":
@@ -286,7 +299,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.PartialRemoved.Ch <- &data
+		ch := partialRemovedInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "partialAdded":
@@ -294,7 +308,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedAdded.Ch <- data
+		ch := partialAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 
 	case "unconfirmedAdded":
@@ -302,7 +317,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedAdded.Ch <- data
+		ch := unconfirmedAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 
 	default:
@@ -310,7 +326,18 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.ConfirmedAdded.Ch <- data
+		ch := confirmedAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 	}
+}
+
+// Get address from subscribe struct
+func (s *subscribe) getAdd() string {
+	return strings.Split(s.Subscribe, "/")[1]
+}
+
+// Get subscribe name from subscribe struct
+func (s *subscribe) getSubscribe() string {
+	return strings.Split(s.Subscribe, "/")[0]
 }
