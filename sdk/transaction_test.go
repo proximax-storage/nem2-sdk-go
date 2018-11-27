@@ -682,3 +682,12 @@ func TestDeadline(t *testing.T) {
 		t.Error("now plus 2 hours and 2 seconds is after deadline localtime")
 	}
 }
+
+func TestMapTransaction_MosaicDefinitionTransaction(t *testing.T) {
+	txr := `{"transaction":{"signer":"9C2086FE49B7A00578009B705AD719DB7E02A27870C67966AAA40540C136E248","version":43010,"type":16717,"parentId":[2031553063,2912841636],"mosaicId":[1477049789,645988887],"properties":[{"key":0,"value":[2,0]},{"key":1,"value":[0,0]},{"key":2,"value":[5,0]}],"name":"storage_0"}}`
+
+	_, err := MapTransaction(bytes.NewBuffer([]byte(txr)))
+	if err != nil {
+		t.Errorf("Mapping failed: %s", err)
+	}
+}
