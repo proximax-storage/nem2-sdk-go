@@ -124,12 +124,34 @@ type mockService struct {
 	lock sync.Locker
 }
 
-func addRouters(routers map[string]sRouting) {
+func NewMockServerWithRouters(routers map[string]sRouting) *mockService {
 
-	if serv == nil {
-		serv = NewMockServer()
+	serv := NewMockServer()
+
+	serv.addRouters(routers)
+
+	return serv
+}
+
+func NewMockServer() *mockService {
+	client, mux, _, teardown, err := setupMockServer()
+
+	if err != nil {
+		panic(err)
 	}
 
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		//	mock router as default
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "%s not found in mock routers", r.URL)
+		fmt.Println(r.URL)
+	})
+	time.AfterFunc(time.Minute*5, teardown)
+
+	return &mockService{mux: mux, Client: client}
+}
+
+func (serv *mockService) addRouters(routers map[string]sRouting) {
 	for path, route := range routers {
 		apiRoute := route
 		serv.mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
@@ -153,28 +175,9 @@ func addRouters(routers map[string]sRouting) {
 }
 
 var (
-	serv          *mockService
 	ctx           = context.TODO()
 	routeNeedBody = map[string]sParam{"body": {desc: "required body"}}
 )
-
-func NewMockServer() *mockService {
-	client, mux, _, teardown, err := setupMockServer()
-
-	if err != nil {
-		panic(err)
-	}
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//	mock router as default
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "%s not found in mock routers", r.URL)
-		fmt.Println(r.URL)
-	})
-	time.AfterFunc(time.Minute*5, teardown)
-
-	return &mockService{mux: mux, Client: client}
-}
 
 func validateResp(resp *http.Response, t *testing.T) bool {
 	if !assert.NotNil(t, resp) {

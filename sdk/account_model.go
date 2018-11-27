@@ -85,10 +85,7 @@ func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
 	var err error
 	ms := make(Mosaics, len(dto.Account.Mosaics))
 	for i, m := range dto.Account.Mosaics {
-		ms[i], err = m.toStruct()
-	}
-	if err != nil {
-		return nil, err
+		ms[i] = m.toStruct()
 	}
 
 	add, err := NewAddressFromEncoded(dto.Account.Address)
