@@ -19,7 +19,7 @@ const transactionId = "5B55E02EACCB7B00015DB6E1"
 const transactionHash = "7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F"
 
 var transaction = &TransferTransaction{
-	abstractTransaction: abstractTransaction{
+	AbstractTransaction: AbstractTransaction{
 		Type:        Transfer,
 		Version:     uint64(3),
 		NetworkType: MijinTest,
@@ -285,7 +285,7 @@ func TestMosaicDefinitionTransactionSerialization(t *testing.T) {
 	want := []byte{156, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 77, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 155, 138, 22, 28, 245, 9, 35, 144, 21, 153, 17, 174, 167, 46, 189, 60, 7, 1, 7, 4, 109, 111, 115, 97, 105, 99, 115, 2, 16, 39, 0, 0, 0, 0, 0, 0}
 
-	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, "mosaics", "sname", NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
+	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, &MosaicId{FullName: "mosaics"}, &NamespaceId{FullName: "sname"}, NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
 
 	b, err := tx.generateBytes()
 
@@ -302,7 +302,7 @@ func TestMosaicSupplyChangeTransactionSerialization(t *testing.T) {
 	want := []byte{137, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		2, 144, 77, 66, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 136, 105, 116, 110, 155, 26, 112, 87, 1, 10, 0, 0, 0, 0, 0, 0, 0}
 
-	id, _ := NewMosaicId(big.NewInt(6300565133566699912), "")
+	id := NewMosaicId(big.NewInt(6300565133566699912))
 	tx, err := NewMosaicSupplyChangeTransaction(fakeDeadline, id, Increase, big.NewInt(10), MijinTest)
 
 	b, err := tx.generateBytes()
@@ -369,7 +369,6 @@ func TestTransferTransactionSigning(t *testing.T) {
 		"94933C673D12DE60E4BC05ABA56F750E1026D70E1954775749C6811084D6450A3184D977383F0E4282CD47118AF377550390544100000" +
 		"00000000000010000000000000090E8FEBD671DD41BEE94EC3BA5831CB608A312C2F203BA84AC01000100672B0000CE56000064000000" +
 		"00000000"
-	want1 := "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424"
 	a, err := NewAccountFromPrivateKey("787225aaff3d2c71f4ffa32d4f19ec4922f3cd869747f267378f81f8e3fcb12d", MijinTest)
 
 	tx, err := NewTransferTransaction(
@@ -388,8 +387,8 @@ func TestTransferTransactionSigning(t *testing.T) {
 		t.Errorf("TransaferTransaction signing returned wrong payload: \n %s, want: \n %s", stx.Payload, want)
 	}
 
-	if !reflect.DeepEqual(stx.Hash, want1) {
-		t.Errorf("TransaferTransaction signing returned wrong hash: \n %s, want: \n %s", stx.Hash, want1)
+	if stx.Hash != "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424" {
+		t.Errorf("TransaferTransaction signing returned wrong hash: \n %s, want: \n %s", stx.Hash, "350AE56BC97DB805E2098AB2C596FA4C6B37EF974BF24DFD61CD9F77C7687424")
 	}
 }
 
@@ -433,7 +432,7 @@ func TestRegisterRootNamespaceTransactionSerialization(t *testing.T) {
 		2, 144, 78, 65, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 126, 233, 179, 184, 175, 223, 83, 64, 12, 110, 101, 119, 110, 97, 109, 101, 115, 112, 97, 99, 101}
 	tx, err := NewRegisterRootNamespaceTransaction(
 		fakeDeadline,
-		"newnamespace",
+		&NamespaceId{FullName: "newnamespace"},
 		big.NewInt(10000),
 		MijinTest,
 	)
@@ -453,7 +452,7 @@ func TestRegisterSubNamespaceTransactionSerialization(t *testing.T) {
 
 	tx, err := NewRegisterSubNamespaceTransaction(
 		fakeDeadline,
-		"subnamespace",
+		&NamespaceId{FullName: "subnamespace"},
 		&NamespaceId{Id: big.NewInt(4635294387305441662)},
 		MijinTest,
 	)
@@ -529,7 +528,7 @@ func TestLockFundsTransactionSigning(t *testing.T) {
 		t.Errorf("LockFundsTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
 	}
 
-	if !reflect.DeepEqual(b.Hash, "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A") {
+	if b.Hash != "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A" {
 		t.Errorf("LockFundsTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Hash, "1F8A695B23F595646D43307DE0C6487AC642520FD31ACC6E6F8163AD2DD98B5A")
 	}
 }
@@ -597,7 +596,7 @@ func TestSecretLockTransactionSigning(t *testing.T) {
 	if !reflect.DeepEqual(b.Payload, want) {
 		t.Errorf("SecretLockTransaction signing returned wrong result: \n %+v, want: \n %+v", b.Payload, want)
 	}
-	if !reflect.DeepEqual(b.Hash, "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5") {
+	if b.Hash != "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5" {
 		t.Errorf("SecretLockTransaction signing returned wrong hash: \n %+v, want: \n %+v", b.Hash, "B3AF46027909CD24204AF4E7B5B43C3116307D90A1F83A5DE6DBDF1F7759ABC5")
 	}
 }

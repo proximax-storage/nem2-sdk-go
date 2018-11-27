@@ -13,6 +13,17 @@ import (
 	"io"
 	"net/url"
 	"strings"
+	"time"
+)
+
+var (
+	statusInfoChannels         = make(map[string]chan *StatusInfo)
+	partialRemovedInfoChannels = make(map[string]chan *PartialRemovedInfo)
+	signerInfoChannels         = make(map[string]chan *SignerInfo)
+	unconfirmedRemovedChannels = make(map[string]chan *HashInfo)
+	partialAddedChannels       = make(map[string]chan Transaction)
+	unconfirmedAddedChannels   = make(map[string]chan Transaction)
+	confirmedAddedChannels     = make(map[string]chan Transaction)
 )
 
 type serviceWs struct {
@@ -23,6 +34,7 @@ type serviceWs struct {
 type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
+	timeout   time.Time
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
 	Subscribe *SubscribeService
@@ -32,6 +44,7 @@ type subscribe struct {
 	Uid       string `json:"uid"`
 	Subscribe string `json:"subscribe"`
 	conn      *websocket.Conn
+	Ch        interface{}
 }
 
 type SubscribeBlock struct {
@@ -48,13 +61,13 @@ type SubscribeTransaction struct {
 	Ch chan Transaction
 }
 
-func (s *SubscribeTransaction) Unsubscribe() error {
-	return s.subscribe.unsubscribe()
-}
-
 type SubscribeHash struct {
 	*subscribe
 	Ch chan *HashInfo
+}
+
+func (s *SubscribeTransaction) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
 }
 
 func (s *SubscribeHash) Unsubscribe() error {
@@ -101,7 +114,7 @@ func (c *ClientWebsocket) changeURLPort() {
 	c.config.BaseURL.Host = strings.Join([]string{host, port}, ":")
 }
 
-func NewConnectWs(host string) (*ClientWebsocket, error) {
+func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) {
 	u, err := url.Parse(host)
 	if err != nil {
 		return nil, err
@@ -110,6 +123,7 @@ func NewConnectWs(host string) (*ClientWebsocket, error) {
 	c := &ClientWebsocket{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
+	c.timeout = time.Now().Add(timeout * time.Millisecond)
 
 	err = c.wsConnect()
 	if err != nil {
@@ -134,6 +148,8 @@ func (c *ClientWebsocket) wsConnect() error {
 	}
 	c.client = conn
 
+	conn.SetDeadline(c.timeout)
+
 	var msg []byte
 	if err = websocket.Message.Receive(c.client, &msg); err != nil {
 		return err
@@ -152,10 +168,10 @@ func (c *ClientWebsocket) wsConnect() error {
 	return nil
 }
 
-func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
+func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 	if err := websocket.JSON.Send(c.client, sendJson{
-		Uid:       msg.Uid,
-		Subscribe: msg.Subscribe,
+		Uid:       s.Uid,
+		Subscribe: s.Subscribe,
 	}); err != nil {
 		return err
 	}
@@ -172,8 +188,8 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 					return
 				}
 				if err = websocket.JSON.Send(c.client, sendJson{
-					Uid:       msg.Uid,
-					Subscribe: msg.Subscribe,
+					Uid:       s.Uid,
+					Subscribe: s.Subscribe,
 				}); err != nil {
 					fmt.Println(err)
 					return
@@ -184,8 +200,10 @@ func (c *ClientWebsocket) subsChannel(msg *subscribe) error {
 			}
 
 			subName, _ := restParser(resp)
-			e = c.buildType(subName, resp)
+
+			e = s.buildType(subName, resp)
 		}
+
 	}()
 	return e
 }
@@ -230,7 +248,7 @@ func restParser(data []byte) (string, error) {
 	return subscribe, nil
 }
 
-func (c *ClientWebsocket) buildType(name string, t []byte) error {
+func (s *subscribe) buildType(name string, t []byte) error {
 	switch name {
 	case "block":
 		var b blockInfoDTO
@@ -242,7 +260,7 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Block.Ch <- data
+		Block.Ch <- data
 		return nil
 
 	case "status":
@@ -251,7 +269,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Status.Ch <- &data
+		ch := statusInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "signer":
@@ -260,7 +279,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.Cosignature.Ch <- &data
+		ch := signerInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "unconfirmedRemoved":
@@ -269,7 +289,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedRemoved.Ch <- &data
+		ch := unconfirmedRemovedChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "partialRemoved":
@@ -278,7 +299,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.PartialRemoved.Ch <- &data
+		ch := partialRemovedInfoChannels[s.getAdd()]
+		ch <- &data
 		return nil
 
 	case "partialAdded":
@@ -286,7 +308,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedAdded.Ch <- data
+		ch := partialAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 
 	case "unconfirmedAdded":
@@ -294,7 +317,8 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.UnconfirmedAdded.Ch <- data
+		ch := unconfirmedAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 
 	default:
@@ -302,7 +326,18 @@ func (c *ClientWebsocket) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ChanSubscribe.ConfirmedAdded.Ch <- data
+		ch := confirmedAddedChannels[s.getAdd()]
+		ch <- data
 		return nil
 	}
+}
+
+// Get address from subscribe struct
+func (s *subscribe) getAdd() string {
+	return strings.Split(s.Subscribe, "/")[1]
+}
+
+// Get subscribe name from subscribe struct
+func (s *subscribe) getSubscribe() string {
+	return strings.Split(s.Subscribe, "/")[0]
 }

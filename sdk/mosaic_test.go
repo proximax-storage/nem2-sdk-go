@@ -13,12 +13,12 @@ import (
 )
 
 func init() {
-	addRouters(mscRouters)
 	i, _ := (&big.Int{}).SetString("15358872602548358953", 10)
 	testMosaicId.Id = i
 }
 
 var (
+	mosaicClient  = NewMockServerWithRouters(mscRouters).Mosaic
 	testMosaicId  = &MosaicId{}
 	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{
 		testMosaicId,
@@ -26,11 +26,15 @@ var (
 	}}
 )
 
-const testMosaicPathID = "d525ad41d95fcf29"
-const testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
+const (
+	testMosaicPathID         = "d525ad41d95fcf29"
+	testMosaicNamespaceEmpty = "a887d82dfeb659b0"
+	testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
+)
 
 var (
-	tplMosaic = `{
+	tplMosaic = `
+{
   "meta": {
     "active": true,
     "index": 0,
@@ -87,13 +91,14 @@ var (
 							]
 						  }
 						]`, routeNeedBody},
-		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace): {"[" + tplMosaic + "]", nil},
+		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace):          {"[" + tplMosaic + "]", nil},
+		fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty): {"[]", nil},
 	}
 )
 
 func TestMosaicService_GetMosaic(t *testing.T) {
 
-	mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, testMosaicId)
+	mscInfo, resp, err := mosaicClient.GetMosaic(ctx, testMosaicId)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
@@ -103,7 +108,7 @@ func TestMosaicService_GetMosaic(t *testing.T) {
 }
 func TestMosaicService_GetMosaics(t *testing.T) {
 
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaics(ctx, testMosaicIds)
+	mscInfoArr, resp, err := mosaicClient.GetMosaics(ctx, testMosaicIds)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -116,7 +121,7 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 		}
 	}
 
-	mscInfoArr, resp, err = serv.Mosaic.GetMosaics(ctx, MosaicIds{})
+	mscInfoArr, resp, err = mosaicClient.GetMosaics(ctx, MosaicIds{})
 
 	assert.Equal(t, errEmptyMosaicIds, err, "request with empty MosaicIds must return error")
 	if resp != nil {
@@ -127,7 +132,7 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 func TestMosaicService_GetMosaicNames(t *testing.T) {
 
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, testMosaicIds)
+	mscInfoArr, resp, err := mosaicClient.GetMosaicNames(ctx, testMosaicIds)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -137,7 +142,7 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 }
 
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
-	mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
+	mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
@@ -145,107 +150,12 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 	}
 
 	nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
-	mscInfoArr, resp, err = serv.Mosaic.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
+	mscInfoArr, resp, err = mosaicClient.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
 	if err != nil {
 		t.Error(err)
 	} else if validateResp(resp, t) {
 		t.Log(t)
 		t.Logf("%v", mscInfoArr)
-
-	}
-
-}
-
-const iter = 1000
-
-func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
-	h, _, err := serv.Blockchain.GetBlockchainHeight(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for i := uint64(1); i < h.Uint64() && i <= iter; i++ {
-
-		h := big.NewInt(int64(i))
-		trans, _, err := serv.Blockchain.GetBlockTransactions(ctx, h)
-		if err != nil {
-			t.Fatal(err)
-			continue
-		}
-
-		if len(trans) == 0 {
-			t.Logf("%d block, empty transactiona", h)
-		}
-
-		for j, val := range trans {
-			if val == nil {
-				t.Logf("empty trans #%d", j)
-				continue
-			}
-			//t.Log(val.String())
-			switch val.GetAbstractTransaction().Type {
-			case MosaicDefinition:
-				tran := val.(*MosaicDefinitionTransaction)
-
-				if tran.NamespaceId == nil {
-					t.Logf("empty nsId or MosaicId")
-					t.Log(tran)
-					continue
-				}
-				mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, tran.NamespaceId, tran.MosaicId, pageSize)
-				if err != nil {
-					t.Error(err)
-				} else if validateResp(resp, t) {
-					for _, mscInfo := range mscInfoArr {
-						t.Logf("%+v", mscInfo)
-					}
-				}
-			case MosaicSupplyChange:
-				tran := val.(*MosaicSupplyChangeTransaction)
-
-				if tran.MosaicId == nil {
-					t.Logf("empty MosaicId")
-					t.Log(tran)
-					continue
-				}
-				mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, tran.MosaicId)
-				if err != nil {
-					t.Error(err)
-				} else if validateResp(resp, t) {
-					t.Logf("%+v", mscInfo)
-				}
-			case Transfer:
-				tran := val.(*TransferTransaction)
-				if tran.Mosaics == nil {
-					t.Logf("empty Mosaics")
-					t.Log(tran)
-					continue
-				}
-				mosaicIDs := MosaicIds{}
-				for _, val := range tran.Mosaics {
-					mosaicIDs.MosaicIds = append(mosaicIDs.MosaicIds, val.MosaicId)
-				}
-				mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, mosaicIDs)
-				if err != nil {
-					t.Error(err)
-				} else if validateResp(resp, t) {
-					for _, mscInfo := range mscInfoArr {
-						t.Logf("%+v", mscInfo)
-
-					}
-				}
-			case RegisterNamespace:
-				tran := val.(*RegisterNamespaceTransaction)
-				nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, tran.NamespaceId)
-				if err != nil {
-					t.Error(err)
-				} else if validateResp(resp, t) {
-					t.Logf("%#v", nsInfo)
-				}
-			default:
-				t.Log(val)
-			}
-		}
 
 	}
 
