@@ -462,10 +462,10 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 type mosaicDefinitionTransactionDTO struct {
 	Tx struct {
 		abstractTransactionDTO
-		Properties mosaicPropertiesDTO `json:"properties"`
-		ParentId   *uint64DTO          `json:"parentId"`
-		MosaicId   *uint64DTO          `json:"mosaicId"`
-		MosaicName string              `json:"name"`
+		Properties mosaicDefinitonTransactionPropertiesDTO `json:"properties"`
+		ParentId   *uint64DTO                              `json:"parentId"`
+		MosaicId   *uint64DTO                              `json:"mosaicId"`
+		MosaicName string                                  `json:"name"`
 	} `json:"transaction"`
 	TDto transactionInfoDTO `json:"meta"`
 }
@@ -1463,6 +1463,28 @@ func (dto *multisigCosignatoryModificationDTO) toStruct(networkType NetworkType)
 		dto.Type,
 		acc,
 	}, nil
+}
+
+type mosaicDefinitonTransactionPropertiesDTO []struct {
+	Key   int
+	Value uint64DTO
+}
+
+func (dto mosaicDefinitonTransactionPropertiesDTO) toStruct() *MosaicProperties {
+	flags := "00" + dto[0].Value.toBigInt().Text(2)
+	bitMapFlags := flags[len(flags)-3:]
+
+	duration := big.NewInt(0)
+	if len(dto) == 3 {
+		duration = dto[2].Value.toBigInt()
+	}
+
+	return NewMosaicProperties(bitMapFlags[2] == '1',
+		bitMapFlags[1] == '1',
+		bitMapFlags[0] == '1',
+		dto[1].Value.toBigInt().Int64(),
+		duration,
+	)
 }
 
 // TransactionStatus
