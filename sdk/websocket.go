@@ -26,6 +26,10 @@ var (
 	confirmedAddedChannels     = make(map[string]chan Transaction)
 )
 
+type subscribeInfo struct {
+	name, account string
+}
+
 type serviceWs struct {
 	client *ClientWebsocket
 }
@@ -200,8 +204,12 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 			}
 
 			subName, _ := restParser(resp)
+			b := subscribeInfo{
+				name:    subName,
+				account: s.getAdd(),
+			}
 
-			e = s.buildType(subName, resp)
+			e = b.buildType(resp)
 		}
 
 	}()
@@ -248,8 +256,8 @@ func restParser(data []byte) (string, error) {
 	return subscribe, nil
 }
 
-func (s *subscribe) buildType(name string, t []byte) error {
-	switch name {
+func (s *subscribeInfo) buildType(t []byte) error {
+	switch s.name {
 	case "block":
 		var b blockInfoDTO
 		err := json.Unmarshal(t, &b)
@@ -269,7 +277,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := statusInfoChannels[s.getAdd()]
+		ch := statusInfoChannels[s.account]
 		ch <- &data
 		return nil
 
@@ -279,7 +287,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := signerInfoChannels[s.getAdd()]
+		ch := signerInfoChannels[s.account]
 		ch <- &data
 		return nil
 
@@ -289,7 +297,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := unconfirmedRemovedChannels[s.getAdd()]
+		ch := unconfirmedRemovedChannels[s.account]
 		ch <- &data
 		return nil
 
@@ -299,7 +307,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := partialRemovedInfoChannels[s.getAdd()]
+		ch := partialRemovedInfoChannels[s.account]
 		ch <- &data
 		return nil
 
@@ -308,7 +316,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := partialAddedChannels[s.getAdd()]
+		ch := partialAddedChannels[s.account]
 		ch <- data
 		return nil
 
@@ -317,7 +325,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := unconfirmedAddedChannels[s.getAdd()]
+		ch := unconfirmedAddedChannels[s.account]
 		ch <- data
 		return nil
 
@@ -326,7 +334,7 @@ func (s *subscribe) buildType(name string, t []byte) error {
 		if err != nil {
 			return err
 		}
-		ch := confirmedAddedChannels[s.getAdd()]
+		ch := confirmedAddedChannels[s.account]
 		ch <- data
 		return nil
 	}
