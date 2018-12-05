@@ -203,7 +203,10 @@ func closeChannel(s *subscribe) {
 }
 
 func (c *SubscribeService) getClient(add string) *ClientWebsocket {
-	if _, exist := connectsWs[add]; exist {
+	if len(connectsWs) == 0 {
+		connectsWs[add] = c.client.client
+		return c.client
+	} else if _, exist := connectsWs[add]; exist {
 		return c.client
 	} else {
 		client, err := NewConnectWs(c.client.config.BaseURL.String(), *c.client.duration)
