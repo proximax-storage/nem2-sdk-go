@@ -5,6 +5,7 @@
 package sdk
 
 import (
+	"fmt"
 	"golang.org/x/net/websocket"
 )
 
@@ -40,6 +41,7 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 // address is included in a block.
 // The message contains the transaction.
 func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
 	confirmedAddedChannels[add] = subTransaction.Ch
@@ -53,6 +55,7 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 // address is in unconfirmed state and waiting to be included in a block.
 // The message contains the transaction.
 func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
 	unconfirmedAddedChannels[add] = subTransaction.Ch
@@ -66,6 +69,7 @@ func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, 
 // address was in unconfirmed state but not anymore.
 // The message contains the transaction hash.
 func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error) {
+	c.client = c.getClient(add)
 	subHash := new(SubscribeHash)
 	subHash.Ch = make(chan *HashInfo)
 	unconfirmedRemovedChannels[add] = subHash.Ch
@@ -78,13 +82,13 @@ func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error
 // Status notifies when a transaction related to an address rises an error.
 // The message contains the error message and the transaction hash.
 func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
+	c.client = c.getClient(add)
 	subStatus := new(SubscribeStatus)
 	subStatus.Ch = make(chan *StatusInfo)
 	statusInfoChannels[add] = subStatus.Ch
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
 	subStatus.subscribe = subscribe
 	subscribe.Ch = statusInfoChannels[add]
-
 	return subStatus, err
 }
 
@@ -92,6 +96,7 @@ func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
 // address is in partial state and waiting to have all required cosigners.
 // The message contains a transaction.
 func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
 	partialAddedChannels[add] = subTransaction.Ch
@@ -105,6 +110,7 @@ func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, erro
 // address was in partial state but not anymore.
 // The message contains the transaction hash.
 func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved, error) {
+	c.client = c.getClient(add)
 	subPartialRemoved := new(SubscribePartialRemoved)
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
 	partialRemovedInfoChannels[add] = subPartialRemoved.Ch
@@ -118,6 +124,7 @@ func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved,
 // address is added to an aggregate bonded transaction with partial state.
 // The message contains the cosignature signed transaction.
 func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
+	c.client = c.getClient(add)
 	subCosignature := new(SubscribeSigner)
 	subCosignature.Ch = make(chan *SignerInfo)
 	signerInfoChannels[add] = subCosignature.Ch
@@ -192,5 +199,18 @@ func closeChannel(s *subscribe) {
 			delete(confirmedAddedChannels, s.getAdd())
 		}
 		close(chType)
+	}
+}
+
+func (c *SubscribeService) getClient(add string) *ClientWebsocket {
+	if _, exist := connectsWs[add]; exist {
+		return c.client
+	} else {
+		client, err := NewConnectWs(c.client.config.BaseURL.String(), *c.client.duration)
+		if err != nil {
+			fmt.Println(err)
+		}
+		connectsWs[add] = client.client
+		return client
 	}
 }

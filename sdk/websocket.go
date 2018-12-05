@@ -24,6 +24,7 @@ var (
 	partialAddedChannels       = make(map[string]chan Transaction)
 	unconfirmedAddedChannels   = make(map[string]chan Transaction)
 	confirmedAddedChannels     = make(map[string]chan Transaction)
+	connectsWs                 = make(map[string]*websocket.Conn)
 )
 
 type subscribeInfo struct {
@@ -38,7 +39,8 @@ type serviceWs struct {
 type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
-	timeout   time.Time
+	timeout   *time.Time
+	duration  *time.Duration
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
 	Subscribe *SubscribeService
@@ -127,7 +129,9 @@ func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) 
 	c := &ClientWebsocket{config: newconf}
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
-	c.timeout = time.Now().Add(timeout * time.Millisecond)
+	c.duration = &timeout
+	tout := time.Now().Add(*c.duration * time.Millisecond)
+	c.timeout = &tout
 
 	err = c.wsConnect()
 	if err != nil {
@@ -140,7 +144,6 @@ func (c *ClientWebsocket) buildSubscribe(destination string) *subscribe {
 	b := new(subscribe)
 	b.Uid = c.Uid
 	b.Subscribe = destination
-	b.conn = c.client
 	return b
 }
 
@@ -152,7 +155,7 @@ func (c *ClientWebsocket) wsConnect() error {
 	}
 	c.client = conn
 
-	conn.SetDeadline(c.timeout)
+	conn.SetDeadline(*c.timeout)
 
 	var msg []byte
 	if err = websocket.Message.Receive(c.client, &msg); err != nil {
@@ -202,7 +205,6 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 			} else if err != nil {
 				e = errors.Wrap(err, "Error occurred while trying to receive message")
 			}
-
 			subName, _ := restParser(resp)
 			b := subscribeInfo{
 				name:    subName,
