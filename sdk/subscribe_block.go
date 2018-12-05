@@ -25,6 +25,90 @@ const (
 	pathCosignature        = "cosignature"
 )
 
+// Closes the subscription channel.
+func closeChannel(s *subscribe) {
+	switch s.Ch.(type) {
+	case chan *BlockInfo:
+		chType := s.Ch.(chan *BlockInfo)
+		close(chType)
+
+	case chan *StatusInfo:
+		chType := s.Ch.(chan *StatusInfo)
+		delete(statusInfoChannels, s.getAdd())
+		close(chType)
+
+	case chan *HashInfo:
+		chType := s.Ch.(chan *HashInfo)
+		delete(unconfirmedRemovedChannels, s.getAdd())
+		close(chType)
+
+	case chan *PartialRemovedInfo:
+		chType := s.Ch.(chan *PartialRemovedInfo)
+		delete(partialRemovedInfoChannels, s.getAdd())
+		close(chType)
+
+	case chan *SignerInfo:
+		chType := s.Ch.(chan *SignerInfo)
+		delete(signerInfoChannels, s.getAdd())
+		close(chType)
+
+	default:
+		chType := s.Ch.(chan Transaction)
+		if s.getSubscribe() == "partialAdded" {
+			delete(partialAddedChannels, s.getAdd())
+		} else if s.getSubscribe() == "unconfirmedAdded" {
+			delete(unconfirmedAddedChannels, s.getAdd())
+		} else {
+			delete(confirmedAddedChannels, s.getAdd())
+		}
+		close(chType)
+	}
+}
+
+// Unsubscribe terminates the specified subscription.
+// It does not have any specific param.
+func (c *subscribe) unsubscribe() error {
+	if err := websocket.JSON.Send(c.conn, sendJson{
+		Uid:       c.Uid,
+		Subscribe: c.Subscribe,
+	}); err != nil {
+		return err
+	}
+
+	closeChannel(c)
+
+	return nil
+}
+
+// Generate a new channel and subscribe to the websocket.
+// param route A subscription channel route.
+// return A pointer Subscribe struct or an error.
+func (c *SubscribeService) newSubscribe(route string) (*subscribe, error) {
+	subMsg := c.client.buildSubscribe(route)
+
+	err := c.client.subsChannel(subMsg)
+	if err != nil {
+		return nil, err
+	}
+	return subMsg, nil
+}
+
+func (c *SubscribeService) getClient(add string) *ClientWebsocket {
+	if len(connectsWs) == 0 {
+		connectsWs[add] = c.client.client
+		return c.client
+	} else if _, exist := connectsWs[add]; exist {
+		return c.client
+	} else {
+		client, err := NewConnectWs(c.client.config.BaseURL.String(), *c.client.duration)
+		if err != nil {
+			fmt.Println(err)
+		}
+		connectsWs[add] = client.client
+		return client
+	}
+}
+
 // Block notifies for every new block.
 // The message contains the BlockInfo struct.
 func (c *SubscribeService) Block() (*SubscribeBlock, error) {
@@ -132,88 +216,4 @@ func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
 	subCosignature.subscribe = subscribe
 	subscribe.Ch = signerInfoChannels[add]
 	return subCosignature, err
-}
-
-// Unsubscribe terminates the specified subscription.
-// It does not have any specific param.
-func (c *subscribe) unsubscribe() error {
-	if err := websocket.JSON.Send(c.conn, sendJson{
-		Uid:       c.Uid,
-		Subscribe: c.Subscribe,
-	}); err != nil {
-		return err
-	}
-
-	closeChannel(c)
-
-	return nil
-}
-
-// Generate a new channel and subscribe to the websocket.
-// param route A subscription channel route.
-// return A pointer Subscribe struct or an error.
-func (c *SubscribeService) newSubscribe(route string) (*subscribe, error) {
-	subMsg := c.client.buildSubscribe(route)
-
-	err := c.client.subsChannel(subMsg)
-	if err != nil {
-		return nil, err
-	}
-	return subMsg, nil
-}
-
-// Closes the subscription channel.
-func closeChannel(s *subscribe) {
-	switch s.Ch.(type) {
-	case chan *BlockInfo:
-		chType := s.Ch.(chan *BlockInfo)
-		close(chType)
-
-	case chan *StatusInfo:
-		chType := s.Ch.(chan *StatusInfo)
-		delete(statusInfoChannels, s.getAdd())
-		close(chType)
-
-	case chan *HashInfo:
-		chType := s.Ch.(chan *HashInfo)
-		delete(unconfirmedRemovedChannels, s.getAdd())
-		close(chType)
-
-	case chan *PartialRemovedInfo:
-		chType := s.Ch.(chan *PartialRemovedInfo)
-		delete(partialRemovedInfoChannels, s.getAdd())
-		close(chType)
-
-	case chan *SignerInfo:
-		chType := s.Ch.(chan *SignerInfo)
-		delete(signerInfoChannels, s.getAdd())
-		close(chType)
-
-	default:
-		chType := s.Ch.(chan Transaction)
-		if s.getSubscribe() == "partialAdded" {
-			delete(partialAddedChannels, s.getAdd())
-		} else if s.getSubscribe() == "unconfirmedAdded" {
-			delete(unconfirmedAddedChannels, s.getAdd())
-		} else {
-			delete(confirmedAddedChannels, s.getAdd())
-		}
-		close(chType)
-	}
-}
-
-func (c *SubscribeService) getClient(add string) *ClientWebsocket {
-	if len(connectsWs) == 0 {
-		connectsWs[add] = c.client.client
-		return c.client
-	} else if _, exist := connectsWs[add]; exist {
-		return c.client
-	} else {
-		client, err := NewConnectWs(c.client.config.BaseURL.String(), *c.client.duration)
-		if err != nil {
-			fmt.Println(err)
-		}
-		connectsWs[add] = client.client
-		return client
-	}
 }
