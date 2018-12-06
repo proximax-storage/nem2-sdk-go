@@ -68,6 +68,7 @@ func closeChannel(s *subscribe) {
 // Unsubscribe terminates the specified subscription.
 // It does not have any specific param.
 func (c *subscribe) unsubscribe() error {
+	c.conn = connectsWs[c.getAdd()]
 	if err := websocket.JSON.Send(c.conn, sendJson{
 		Uid:       c.Uid,
 		Subscribe: c.Subscribe,
