@@ -124,7 +124,6 @@ type Addresses struct {
 }
 
 func (tx *AccountInfo) String() string {
-
 	return fmt.Sprintf(
 		`
 			"Address": %s,
@@ -152,7 +151,6 @@ func (ref *Addresses) AddAddress(address *Address) {
 	ref.List = append(ref.List, address)
 }
 func (ref *Addresses) GetAddress(i int) (*Address, error) {
-
 	if (i >= 0) && (i < len(ref.List)) {
 		ref.lock.RLock()
 		defer ref.lock.RUnlock()

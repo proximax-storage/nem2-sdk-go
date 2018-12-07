@@ -8,9 +8,10 @@ import "errors"
 
 var (
 	errNamespaceToManyPart = errors.New("too many parts")
-	errNilIdNamespace      = errors.New("id nust not null")
+	errNilIdNamespace      = errors.New("id must not be null")
 	errEmptyNamespaceIds   = errors.New("list namespace ids must not by empty")
-	errEmptyMosaicIds      = errors.New("list namespace ids must not by empty")
+	errEmptyMosaicIds      = errors.New("list mosaics ids must not by empty")
+	errEmptyAddressesIds   = errors.New("list of addresses should not be nil")
 	errNullAddress         = errors.New("address is null")
 	errNilMosaicId         = errors.New("mosaicId must be not null")
 	errNilMosaicAmount     = errors.New("amount must be not null")

@@ -37,7 +37,6 @@ func HexDecodeStringOdd(s string) ([]byte, error) {
 
 //BigIntToByteArray converts a BigInteger to a little endian byte array.
 func BigIntToByteArray(value *big.Int, numBytes int) []byte {
-
 	// output must tohave lenght NumBytes!
 	outputBytes := make([]byte, numBytes)
 	bigIntegerBytes := value.Bytes()
@@ -74,6 +73,7 @@ func BytesToBigInteger(bytes []byte) *big.Int {
 
 	return (&big.Int{}).SetBytes(bigEndianBytes)
 }
+
 func HexDecode(src []byte) ([]byte, error) {
 	dst := make([]byte, len(src))
 	_, err := hex.Decode(dst, src)

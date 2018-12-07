@@ -57,28 +57,6 @@ const (
 	transactionStatusesRoute           = "statuses"
 )
 
-const tplNamespaceInfo = `"active": %v,
-    "index": %d,
-    "id": "%s",
-	"type": %d,
-    "depth": %d,
-    "levels": [
-      %v
-    ],
-    "parentId": [
-      %v
-    ],
-    "owner": "%v",
-    "ownerAddress": "%s",
-    "startHeight": [
-      %v
-    ],
-    "endHeight": [
-      %v
-    ]
-  }
-`
-
 type NamespaceType uint8
 
 const (

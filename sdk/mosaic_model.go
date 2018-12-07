@@ -7,6 +7,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 	"regexp"
 	"strings"
@@ -19,7 +20,6 @@ type Mosaic struct {
 }
 
 func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
-
 	if mosaicId == nil {
 		return nil, errNilMosaicAmount
 	}
@@ -61,6 +61,14 @@ func (ref Mosaics) String() string {
 type MosaicId struct {
 	Id       *big.Int
 	FullName string
+}
+
+func (m *MosaicId) String() string {
+	return utils.StructToString(
+		"MosaicId",
+		utils.NewField("Id", utils.StringPattern, m.Id),
+		utils.NewField("FullName", utils.StringPattern, m.FullName),
+	)
 }
 
 func NewMosaicIdFromName(name string) (*MosaicId, error) {
@@ -140,6 +148,22 @@ type MosaicInfo struct {
 	Owner       *PublicAccount
 	Properties  *MosaicProperties
 }
+
+func (m *MosaicInfo) String() string {
+	return utils.StructToString(
+		"MosaicInfo",
+		utils.NewField("Active", utils.BooleanPattern, m.Active),
+		utils.NewField("Index", utils.IntPattern, m.Index),
+		utils.NewField("MetaId", utils.StringPattern, m.MetaId),
+		utils.NewField("NamespaceId", utils.StringPattern, m.NamespaceId),
+		utils.NewField("MosaicId", utils.StringPattern, m.MosaicId),
+		utils.NewField("Supply", utils.StringPattern, m.Supply),
+		utils.NewField("Height", utils.StringPattern, m.Height),
+		utils.NewField("Owner", utils.StringPattern, m.Owner),
+		utils.NewField("Properties", utils.StringPattern, m.Properties),
+	)
+}
+
 type MosaicsInfo []*MosaicInfo
 
 func (ref MosaicsInfo) String() string {
@@ -209,6 +233,15 @@ type MosaicName struct {
 	MosaicId *MosaicId
 	Name     string
 	ParentId *NamespaceId
+}
+
+func (m *MosaicName) String() string {
+	return utils.StructToString(
+		"MosaicName",
+		utils.NewField("MosaicId", utils.StringPattern, m.MosaicId),
+		utils.NewField("Name", utils.StringPattern, m.Name),
+		utils.NewField("ParentId", utils.StringPattern, m.ParentId),
+	)
 }
 
 var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")

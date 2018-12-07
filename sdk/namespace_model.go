@@ -22,6 +22,14 @@ type NamespaceId struct {
 	FullName string
 }
 
+func (n *NamespaceId) String() string {
+	return utils.StructToString(
+		"NamespaceId",
+		utils.NewField("Id", utils.StringPattern, n.Id),
+		utils.NewField("FullName", utils.StringPattern, n.FullName),
+	)
+}
+
 func (n *NamespaceId) toHexString() string {
 	return BigIntegerToHex(n.Id)
 }
@@ -107,6 +115,19 @@ type NamespaceName struct {
 	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
 }
 
+func (n *NamespaceName) String() string {
+	return fmt.Sprintf(
+		`
+			"NamespaceId": %s,
+			"Name": %s,
+			"ParentId": %s,
+		`,
+		n.NamespaceId,
+		n.Name,
+		n.ParentId,
+	)
+}
+
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
 	Active      bool
@@ -122,18 +143,18 @@ type NamespaceInfo struct {
 }
 
 func (ref *NamespaceInfo) String() string {
-	return fmt.Sprintf(tplNamespaceInfo,
-		ref.Active,
-		ref.Index,
-		ref.MetaId,
-		ref.TypeSpace,
-		ref.Depth,
-		ref.Levels,
-		ref.ParentId,
-		ref.Owner,
-		ref.Owner.Address.Address,
-		ref.StartHeight,
-		ref.EndHeight,
+	return utils.StructToString(
+		"NamespaceInfo",
+		utils.NewField("Active", utils.BooleanPattern, ref.Active),
+		utils.NewField("Index", utils.IntPattern, ref.Index),
+		utils.NewField("MetaId", utils.StringPattern, ref.MetaId),
+		utils.NewField("TypeSpace", utils.IntPattern, ref.TypeSpace),
+		utils.NewField("Depth", utils.IntPattern, ref.Depth),
+		utils.NewField("Levels", utils.StringPattern, ref.Levels),
+		utils.NewField("ParentId", utils.StringPattern, ref.ParentId),
+		utils.NewField("Owner", utils.StringPattern, ref.Owner),
+		utils.NewField("StartHeight", utils.StringPattern, ref.StartHeight),
+		utils.NewField("EndHeight", utils.StringPattern, ref.EndHeight),
 	)
 }
 
@@ -144,8 +165,8 @@ type ListNamespaceInfo struct {
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*big.Int, error) {
-
 	list, err := GenerateNamespacePath(namespaceName)
+
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
@@ -94,22 +95,23 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 // @/account/namespaces
 func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
-
-	url, comma := "", "?"
-
-	if nsId > "" {
-		url = comma + "id=" + nsId
-		comma = "&"
+	if addresses == nil || len(addresses.List) == 0 {
+		return nsList, nil, errEmptyAddressesIds
 	}
+
+	url := utils.NewUrl(pathNamespacesFromAccounts)
 
 	if pageSize > 0 {
-		url += comma + "pageSize=" + strconv.Itoa(pageSize)
+		url.AddParam("pageSize", strconv.Itoa(pageSize))
 	}
 
-	url = pathNamespacesFromAccounts + url
+	if len(nsId) != 0 {
+		url.AddParam("id", nsId)
+	}
 
 	res := make([]*namespaceInfoDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", url, &addresses, &res)
+
+	resp, err = ref.client.DoNewRequest(ctx, "POST", url.Encode(), &addresses, &res)
 
 	if (err != nil) || (listNamespaceInfoFromDTO(res, &nsList) != nil) {
 		//	err occurent

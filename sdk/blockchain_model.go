@@ -6,6 +6,7 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"math/big"
 )
 
@@ -120,6 +121,15 @@ type BlockchainStorageInfo struct {
 	NumBlocks       int `json:"numBlocks"`
 	NumTransactions int `json:"numTransactions"`
 	NumAccounts     int `json:"numAccounts"`
+}
+
+func (b *BlockchainStorageInfo) String() string {
+	return utils.StructToString(
+		"BlockchainStorageInfo",
+		utils.NewField("NumBlocks", utils.IntPattern, b.NumBlocks),
+		utils.NewField("NumTransactions", utils.IntPattern, b.NumTransactions),
+		utils.NewField("NumAccounts", utils.IntPattern, b.NumAccounts),
+	)
 }
 
 // Chain Score

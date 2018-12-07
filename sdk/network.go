@@ -6,6 +6,7 @@ package sdk
 
 import (
 	"errors"
+	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
 )
@@ -19,18 +20,19 @@ type networkDTO struct {
 
 // mosaics get mosaics Info
 // @get /network
-func (ref *NetworkService) GetNetworkType(ctx context.Context) (mscInfo NetworkType, resp *http.Response, err error) {
-
+func (ref *NetworkService) GetNetworkType(ctx context.Context) (networkType NetworkType, resp *http.Response, err error) {
 	netDTO := &networkDTO{}
+
 	resp, err = ref.client.DoNewRequest(ctx, "GET", pathNetwork, nil, netDTO)
 
 	if err != nil {
 		return 0, resp, err
 	}
 
-	networkType := NetworkTypeFromString(netDTO.Name)
+	networkType = NetworkTypeFromString(netDTO.Name)
+
 	if networkType == NotSupportedNet {
-		err = errors.New("network " + netDTO.Name + " is not supported yet by the sdk")
+		err = errors.New(fmt.Sprintf("network %s is not supported yet by the sdk", netDTO.Name))
 	}
 
 	return networkType, resp, err

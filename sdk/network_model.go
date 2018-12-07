@@ -31,7 +31,7 @@ func NetworkTypeFromString(networkType string) NetworkType {
 	case "TEST_NET":
 		return TestNet
 	case "MAIN_NET":
-		return MijinTest
+		return MainNet
 	}
 	return NotSupportedNet
 }
