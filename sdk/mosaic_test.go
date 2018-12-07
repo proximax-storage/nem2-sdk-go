@@ -6,6 +6,8 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"net/http"
@@ -114,24 +116,26 @@ var (
 )
 
 func TestMosaicService_GetMosaic(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     pathMosaic + testMosaicPathID,
-		respBody: tplMosaic,
+	mockServer.AddRouter(&mock.Router{
+		Path:     pathMosaic + testMosaicPathID,
+		RespBody: tplMosaic,
 	})
 
 	mscInfo, resp, err := mosaicClient.GetMosaic(ctx, mosaicCorr.MosaicId)
 
 	assert.Nilf(t, err, "MosaicService.GetMosaic returned error: %s", err)
-	validateResponse(t, resp)
-	validateStringers(t, mosaicCorr, mscInfo)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, mosaicCorr, mscInfo)
+	}
 }
 
 func TestMosaicService_GetMosaics(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		mockServer.addRouter(&router{
-			path:     pathMosaic,
-			respBody: "[" + tplMosaic + "]",
-			reqJsonBodyStruct: struct {
+		mockServer.AddRouter(&mock.Router{
+			Path:     pathMosaic,
+			RespBody: "[" + tplMosaic + "]",
+			ReqJsonBodyStruct: struct {
 				MosaicIds []string `json:"mosaicIds"`
 			}{},
 		})
@@ -140,10 +144,10 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 		assert.Nilf(t, err, "MosaicService.GetMosaics returned error: %s", err)
 
-		validateResponse(t, resp)
-
-		for _, mscInfo := range mscInfoArr {
-			validateStringers(t, mosaicCorr, mscInfo)
+		if tests.IsOkResponse(t, resp) {
+			for _, mscInfo := range mscInfoArr {
+				tests.ValidateStringers(t, mosaicCorr, mscInfo)
+			}
 		}
 	})
 
@@ -159,9 +163,9 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 }
 
 func TestMosaicService_GetMosaicNames(t *testing.T) {
-	mockServer.addRouter(&router{
-		path: pathMosaicNames,
-		respBody: `[
+	mockServer.AddRouter(&mock.Router{
+		Path: pathMosaicNames,
+		RespBody: `[
 						  {
 							"mosaicId": [
 							  3646934825,
@@ -174,7 +178,7 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 							]
 						  }
 						]`,
-		reqJsonBodyStruct: struct {
+		ReqJsonBodyStruct: struct {
 			MosaicIds []string `json:"mosaicIds"`
 		}{},
 	})
@@ -182,35 +186,36 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 	mscInfoArr, resp, err := mosaicClient.GetMosaicNames(ctx, testMosaicIds)
 
 	assert.Nil(t, err, "MosaicService.GetMosaicNames returned error: %s", err)
-	validateResponse(t, resp)
 
-	for _, mscInfo := range mscInfoArr {
-		validateStringers(t, mosaicName, mscInfo)
+	if tests.IsOkResponse(t, resp) {
+		for _, mscInfo := range mscInfoArr {
+			tests.ValidateStringers(t, mosaicName, mscInfo)
+		}
 	}
 }
 
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 	t.Run("regular case", func(t *testing.T) {
-		mockServer.addRouter(&router{
-			path:     fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace),
-			respBody: "[" + tplMosaic + "]",
+		mockServer.AddRouter(&mock.Router{
+			Path:     fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace),
+			RespBody: "[" + tplMosaic + "]",
 		})
 
 		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
 
 		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
 
-		validateResponse(t, resp)
-
-		for _, mscInfo := range mscInfoArr {
-			validateStringers(t, mosaicCorr, mscInfo)
+		if tests.IsOkResponse(t, resp) {
+			for _, mscInfo := range mscInfoArr {
+				tests.ValidateStringers(t, mosaicCorr, mscInfo)
+			}
 		}
 	})
 
 	t.Run("no mosaic id", func(t *testing.T) {
-		mockServer.addRouter(&router{
-			path:     fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty),
-			respBody: "[]",
+		mockServer.AddRouter(&mock.Router{
+			Path:     fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty),
+			RespBody: "[]",
 		})
 
 		nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
@@ -219,7 +224,8 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 
 		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
 
-		validateResponse(t, resp)
-		assert.Equal(t, len(mscInfoArr), 0)
+		if tests.IsOkResponse(t, resp) {
+			assert.Equal(t, len(mscInfoArr), 0)
+		}
 	})
 }

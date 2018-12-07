@@ -6,6 +6,8 @@ package sdk
 
 import "regexp"
 
+var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
+
 // const routers path for methods AccountService
 const (
 	mainAccountRoute              = "account"

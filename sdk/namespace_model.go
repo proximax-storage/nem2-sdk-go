@@ -7,9 +7,9 @@ package sdk
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"github.com/json-iterator/go"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"strings"
@@ -23,10 +23,10 @@ type NamespaceId struct {
 }
 
 func (n *NamespaceId) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"NamespaceId",
-		utils.NewField("Id", utils.StringPattern, n.Id),
-		utils.NewField("FullName", utils.StringPattern, n.FullName),
+		str.NewField("Id", str.StringPattern, n.Id),
+		str.NewField("FullName", str.StringPattern, n.FullName),
 	)
 }
 
@@ -116,15 +116,11 @@ type NamespaceName struct {
 }
 
 func (n *NamespaceName) String() string {
-	return fmt.Sprintf(
-		`
-			"NamespaceId": %s,
-			"Name": %s,
-			"ParentId": %s,
-		`,
-		n.NamespaceId,
-		n.Name,
-		n.ParentId,
+	return str.StructToString(
+		"NamespaceName",
+		str.NewField("NamespaceId", str.StringPattern, n.NamespaceId),
+		str.NewField("Name", str.StringPattern, n.Name),
+		str.NewField("ParentId", str.StringPattern, n.ParentId),
 	)
 }
 
@@ -143,18 +139,18 @@ type NamespaceInfo struct {
 }
 
 func (ref *NamespaceInfo) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"NamespaceInfo",
-		utils.NewField("Active", utils.BooleanPattern, ref.Active),
-		utils.NewField("Index", utils.IntPattern, ref.Index),
-		utils.NewField("MetaId", utils.StringPattern, ref.MetaId),
-		utils.NewField("TypeSpace", utils.IntPattern, ref.TypeSpace),
-		utils.NewField("Depth", utils.IntPattern, ref.Depth),
-		utils.NewField("Levels", utils.StringPattern, ref.Levels),
-		utils.NewField("ParentId", utils.StringPattern, ref.ParentId),
-		utils.NewField("Owner", utils.StringPattern, ref.Owner),
-		utils.NewField("StartHeight", utils.StringPattern, ref.StartHeight),
-		utils.NewField("EndHeight", utils.StringPattern, ref.EndHeight),
+		str.NewField("Active", str.BooleanPattern, ref.Active),
+		str.NewField("Index", str.IntPattern, ref.Index),
+		str.NewField("MetaId", str.StringPattern, ref.MetaId),
+		str.NewField("TypeSpace", str.IntPattern, ref.TypeSpace),
+		str.NewField("Depth", str.IntPattern, ref.Depth),
+		str.NewField("Levels", str.StringPattern, ref.Levels),
+		str.NewField("ParentId", str.StringPattern, ref.ParentId),
+		str.NewField("Owner", str.StringPattern, ref.Owner),
+		str.NewField("StartHeight", str.StringPattern, ref.StartHeight),
+		str.NewField("EndHeight", str.StringPattern, ref.EndHeight),
 	)
 }
 

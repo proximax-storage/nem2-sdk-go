@@ -6,16 +6,9 @@ package sdk
 
 import (
 	"context"
-	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"io/ioutil"
 	"math/big"
-	"net/http"
-	"net/http/httptest"
-	"reflect"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 )
@@ -25,8 +18,8 @@ const (
 )
 
 var (
-	ctx        = context.TODO()
-	mockServer = newMock(5 * time.Minute)
+	ctx        = context.Background()
+	mockServer = newSdkMock(5 * time.Minute)
 )
 
 func setupWithAddress(adr string) *Client {
@@ -81,60 +74,24 @@ func testBigInt(t *testing.T, str, hexStr string) {
 	assert.Equal(t, hexStr, result)
 }
 
-type mock struct {
-	server *httptest.Server
-	mux    *http.ServeMux
-	lock   sync.Mutex
+type sdkMock struct {
+	*mock.Mock
 }
 
-type router struct {
-	path              string
-	respHttpCode      int
-	respBody          string
-	reqJsonBodyStruct interface{}
-	formParams        []formParam
+func newSdkMock(closeAfter time.Duration) *sdkMock {
+	return &sdkMock{mock.NewMock(closeAfter)}
 }
 
-type formParam struct {
-	name       string
-	isRequired bool
+func newSdkMockWithRouter(router *mock.Router) *sdkMock {
+	sdkMock := &sdkMock{mock.NewMock(0)}
+
+	sdkMock.AddRouter(router)
+
+	return sdkMock
 }
 
-func newMock(closeAfter time.Duration) *mock {
-	mux := http.NewServeMux()
-	server := httptest.NewServer(mux)
-
-	mux.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
-		//	mock router as default
-		resp.WriteHeader(http.StatusNotFound)
-
-		writeStringToResp(resp, fmt.Sprintf("%s not found in mock routers", req.URL))
-	})
-
-	if closeAfter != 0 {
-		time.AfterFunc(closeAfter, server.Close)
-	}
-
-	return &mock{
-		mux:    mux,
-		server: server,
-	}
-}
-
-func newMockWithRoute(router *router) *mock {
-	mockServer := newMock(0)
-
-	mockServer.addRouter(router)
-
-	return mockServer
-}
-
-func (m *mock) close() {
-	m.server.Close()
-}
-
-func (m *mock) getClientByNetworkType(networkType NetworkType) (*Client, error) {
-	conf, err := NewConfig(m.server.URL, networkType)
+func (m sdkMock) getClientByNetworkType(networkType NetworkType) (*Client, error) {
+	conf, err := NewConfig(m.GetServerURL(), networkType)
 
 	if err != nil {
 		return nil, err
@@ -145,95 +102,12 @@ func (m *mock) getClientByNetworkType(networkType NetworkType) (*Client, error) 
 	return client, nil
 }
 
-func (m *mock) getTestNetClient() (*Client, error) {
+func (m *sdkMock) getTestNetClient() (*Client, error) {
 	return m.getClientByNetworkType(TestNet)
 }
 
-func (m *mock) getTestNetClientUnsafe() *Client {
+func (m *sdkMock) getTestNetClientUnsafe() *Client {
 	client, _ := m.getTestNetClient()
 
 	return client
-}
-
-func (m *mock) addHandler(path string, handler func(resp http.ResponseWriter, req *http.Request)) {
-	m.mux.HandleFunc(path, handler)
-}
-
-func (m *mock) addRouter(routers ...*router) {
-	if len(routers) == 0 {
-		return
-	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	for _, router := range routers {
-		if router == nil {
-			continue
-		}
-
-		m.addHandler(
-			router.path,
-			func(resp http.ResponseWriter, req *http.Request) {
-				// Checking json body
-				if router.reqJsonBodyStruct != nil {
-					bodyBytes, err := ioutil.ReadAll(req.Body)
-
-					if len(bodyBytes) == 0 || err != nil {
-						resp.WriteHeader(http.StatusBadRequest)
-
-						return
-					}
-
-					jsonStructType := reflect.TypeOf(router.reqJsonBodyStruct)
-
-					newObj := reflect.New(jsonStructType).Elem().Addr()
-
-					err = json.Unmarshal(bodyBytes, newObj.Interface())
-
-					if err != nil {
-						resp.WriteHeader(http.StatusBadRequest)
-
-						writeStringToResp(resp, err.Error())
-
-						return
-					}
-				} else if len(router.formParams) != 0 { // If not json maybe are there form parameters ?
-					errors := make([]string, 0, 1)
-
-					for _, param := range router.formParams {
-						val := req.Form[param.name]
-
-						if param.isRequired && len(val) == 0 {
-							errors = append(errors, fmt.Sprintf("value of %s is blank", param.name))
-						}
-					}
-
-					if len(errors) != 0 {
-						resp.WriteHeader(http.StatusBadRequest)
-
-						writeStringToResp(resp, strings.Join(errors, ", "))
-
-						return
-					}
-				}
-
-				if router.respHttpCode != 0 {
-					resp.WriteHeader(router.respHttpCode)
-				}
-
-				if len(router.respBody) != 0 {
-					writeStringToResp(resp, router.respBody)
-				}
-			},
-		)
-	}
-}
-
-func writeStringToResp(resp http.ResponseWriter, str string) {
-	n, err := io.WriteString(resp, str)
-
-	if n != len(str) || err != nil {
-		fmt.Printf("failed within writing response body [str=%s, wroteCount=%d, err=%v]\n", str, n, err)
-	}
 }

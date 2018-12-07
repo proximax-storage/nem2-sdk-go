@@ -7,6 +7,8 @@ package sdk
 import (
 	"fmt"
 	"github.com/json-iterator/go"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"net/http"
@@ -111,49 +113,51 @@ var (
 )
 
 func TestNamespaceService_GetNamespace(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     fmt.Sprintf("/namespace/%s", testNamespaceId.toHexString()),
-		respBody: tplInfo,
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf("/namespace/%s", testNamespaceId.toHexString()),
+		RespBody: tplInfo,
 	})
 
 	nsInfo, resp, err := namespaceClient.GetNamespace(ctx, testNamespaceId)
 
 	assert.Nilf(t, err, "NamespaceService.GetNamespace returned error: %s", err)
-	validateResponse(t, resp)
-	validateStringers(t, namespaceCorr, nsInfo)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, namespaceCorr, nsInfo)
+	}
 }
 
 func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address),
-		respBody: tplInfoArr,
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address),
+		RespBody: tplInfoArr,
 	})
 
 	nsInfoArr, resp, err := namespaceClient.GetNamespacesFromAccount(ctx, &testAddress, testNamespaceID, pageSize)
 
 	assert.Nilf(t, err, "NamespaceService.GetNamespacesFromAccount returned error: %s", err)
-	validateResponse(t, resp)
-
-	for _, nsInfo := range nsInfoArr.List {
-		validateStringers(t, namespaceCorr, nsInfo)
+	if tests.IsOkResponse(t, resp) {
+		for _, nsInfo := range nsInfoArr.List {
+			tests.ValidateStringers(t, namespaceCorr, nsInfo)
+		}
 	}
 }
 
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		mockServer.addRouter(&router{
-			path:     pathNamespacesFromAccounts,
-			respBody: tplInfoArr,
+		mockServer.AddRouter(&mock.Router{
+			Path:     pathNamespacesFromAccounts,
+			RespBody: tplInfoArr,
 		})
 
 		nsInfoArr, resp, err := namespaceClient.GetNamespacesFromAccounts(ctx, &testAddresses, testNamespaceID, pageSize)
 
 		assert.Nilf(t, err, "NamespaceService.GetNamespacesFromAccounts returned error: %s", err)
 
-		validateResponse(t, resp)
-
-		for _, nsInfo := range nsInfoArr.List {
-			validateStringers(t, namespaceCorr, nsInfo)
+		if tests.IsOkResponse(t, resp) {
+			for _, nsInfo := range nsInfoArr.List {
+				tests.ValidateStringers(t, namespaceCorr, nsInfo)
+			}
 		}
 	})
 
@@ -170,9 +174,9 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		mockServer.addRouter(&router{
-			path: pathNamespacenames,
-			respBody: `[
+		mockServer.AddRouter(&mock.Router{
+			Path: pathNamespacenames,
+			RespBody: `[
 			  {
 				"namespaceId": [
 				  929036875,
@@ -186,10 +190,10 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 		nsInfoArr, resp, err := namespaceClient.GetNamespaceNames(ctx, *testNamespaceIDs)
 
 		assert.Nilf(t, err, "NamespaceService.GetNamespaceNames returned error: %s", err)
-		validateResponse(t, resp)
-
-		for _, nsInfo := range nsInfoArr {
-			validateStringers(t, namespaceNameCorr, nsInfo)
+		if tests.IsOkResponse(t, resp) {
+			for _, nsInfo := range nsInfoArr {
+				tests.ValidateStringers(t, namespaceNameCorr, nsInfo)
+			}
 		}
 	})
 

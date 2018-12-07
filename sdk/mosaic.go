@@ -24,33 +24,13 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId *MosaicId) (ms
 		return nil, resp, err
 	}
 
-	mContext, err := prepareMosaicContext(ref.client)
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "client is not configured correctly")
-	}
-
-	mscInfo, err = mscInfoDTO.setMosaicInfo(mContext)
+	mscInfo, err = mscInfoDTO.toStruct(ref.client.config.NetworkType)
 
 	if err != nil {
 		return nil, resp, err
 	}
 
 	return mscInfo, resp, nil
-}
-
-func prepareMosaicContext(client *Client) (*mosaicContext, error) {
-	if client == nil {
-		return nil, errors.New("client should not be nil")
-	}
-
-	mContext := &mosaicContext{}
-
-	if client.config != nil {
-		mContext.networkType = client.config.NetworkType
-	}
-
-	return mContext, nil
 }
 
 // GetMosaics get list mosaics Info
@@ -68,16 +48,10 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds MosaicIds) (
 		return nil, resp, err
 	}
 
-	mContext, err := prepareMosaicContext(ref.client)
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "client is not configured correctly")
-	}
-
 	mscInfoArr = make([]*MosaicInfo, len(nsInfosDTO))
 
 	for i, nsInfoDTO := range nsInfosDTO {
-		mscInfoArr[i], err = nsInfoDTO.setMosaicInfo(mContext)
+		mscInfoArr[i], err = nsInfoDTO.toStruct(ref.client.config.NetworkType)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -130,16 +104,10 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 		return nil, resp, err
 	}
 
-	mContext, err := prepareMosaicContext(ref.client)
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "client is not configured correctly")
-	}
-
 	mscInfo = make([]*MosaicInfo, len(mscInfoDTOArr))
 	for i, mscInfoDTO := range mscInfoDTOArr {
 
-		mscInfo[i], err = mscInfoDTO.setMosaicInfo(mContext)
+		mscInfo[i], err = mscInfoDTO.toStruct(ref.client.config.NetworkType)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -185,12 +153,8 @@ func (dto mosaicPropertiesDTO) toStruct() *MosaicProperties {
 	)
 }
 
-type mosaicContext struct {
-	networkType NetworkType
-}
-
-func (ref *mosaicInfoDTO) setMosaicInfo(context *mosaicContext) (*MosaicInfo, error) {
-	publicAcc, err := NewAccountFromPublicKey(ref.Mosaic.Owner, context.networkType)
+func (ref *mosaicInfoDTO) toStruct(networkType NetworkType) (*MosaicInfo, error) {
+	publicAcc, err := NewAccountFromPublicKey(ref.Mosaic.Owner, networkType)
 
 	if err != nil {
 		return nil, err

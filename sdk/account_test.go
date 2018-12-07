@@ -4,6 +4,8 @@ package sdk
 import (
 	"context"
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -66,62 +68,66 @@ const (
 )
 
 var (
-	testAddress1 = "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"
-	testAddress2 = "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"
-	publicKey1   = "27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9"
+	nemTestAddress1 = "SAONSOGFZZHNEIBRYXHDTDTBR2YSAXKTITRFHG2Y"
+	nemTestAddress2 = "SBJ5D7TFIJWPY56JBEX32MUWI5RU6KVKZYITQ2HA"
+	publicKey1      = "27F6BEF9A7F75E33AE2EB2EBA10EF1D6BEA4D30EBD5E39AF8EE06E96E11AE2A9"
 )
 
 func TestAccountService_GetAccountInfo(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     fmt.Sprintf("/account/%s", testAddress1),
-		respBody: accountInfoJson,
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf("/account/%s", nemTestAddress1),
+		RespBody: accountInfoJson,
 	})
 
-	acc, resp, err := accountClient.GetAccountInfo(context.Background(), &Address{MijinTest, testAddress1})
+	acc, resp, err := accountClient.GetAccountInfo(context.Background(), &Address{MijinTest, nemTestAddress1})
 
 	assert.Nilf(t, err, "AccountService.GetAccountInfo returned error: %s", err)
-	validateResponse(t, resp)
-	assert.Equal(t, account.String(), acc.String())
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, account, acc)
+	}
 }
 
 func TestAccountService_GetAccountsInfo(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     "/account",
-		respBody: "[" + accountInfoJson + "]",
+	mockServer.AddRouter(&mock.Router{
+		Path:     "/account",
+		RespBody: "[" + accountInfoJson + "]",
 	})
 
 	accounts, resp, err := accountClient.GetAccountsInfo(
 		context.Background(),
-		[]*Address{{MijinTest, testAddress1}},
+		[]*Address{{MijinTest, nemTestAddress1}},
 	)
 
 	assert.Nilf(t, err, "AccountService.GetAccountsInfo returned error: %s", err)
-	validateResponse(t, resp)
 
-	for _, acc := range accounts {
-		assert.Equal(t, account.String(), acc.String())
+	if tests.IsOkResponse(t, resp) {
+		for _, acc := range accounts {
+			tests.ValidateStringers(t, account, acc)
+		}
 	}
 }
 
 func TestAccountService_Transactions(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     fmt.Sprintf("/account/%s/transactions", publicKey1),
-		respBody: "[" + transactionJson + "]",
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf("/account/%s/transactions", publicKey1),
+		RespBody: "[" + transactionJson + "]",
 	})
 
 	transactions, resp, err := accountClient.Transactions(
 		context.Background(),
 		&PublicAccount{
-			&Address{MijinTest, testAddress2},
+			&Address{MijinTest, nemTestAddress2},
 			publicKey1,
 		},
 		&AccountTransactionsOption{},
 	)
 
 	assert.Nilf(t, err, "AccountService.Transactions returned error: %s", err)
-	validateResponse(t, resp)
 
-	for _, tx := range transactions {
-		assert.Equal(t, transaction.String(), tx.String())
+	if tests.IsOkResponse(t, resp) {
+		for _, tx := range transactions {
+			tests.ValidateStringers(t, transaction, tx)
+		}
 	}
 }

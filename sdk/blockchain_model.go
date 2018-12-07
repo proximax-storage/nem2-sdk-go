@@ -5,8 +5,7 @@
 package sdk
 
 import (
-	"fmt"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 )
 
@@ -30,37 +29,22 @@ type BlockInfo struct {
 }
 
 func (b *BlockInfo) String() string {
-	return fmt.Sprintf(
-		`
-			"NetworkType:" %d,
-			"Hash": %s,
-			"GenerationHash": %s,
-			"TotalFee": %s,
-			"NumTransactions": %d,
-			"Signature": %s,
-			"Signer": %s,
-			"Version": %d,
-			"Type": %d,
-			"Height": %s,
-			"Timestamp": %s,
-			"Difficulty": %s,
-			"PreviousBlockHash": %s,
-			"BlockTransactionHash": %s
-		`,
-		b.NetworkType,
-		b.Hash,
-		b.GenerationHash,
-		b.TotalFee,
-		b.NumTransactions,
-		b.Signature,
-		b.Signer,
-		b.Version,
-		b.Type,
-		b.Height,
-		b.Timestamp,
-		b.Difficulty,
-		b.PreviousBlockHash,
-		b.BlockTransactionsHash,
+	return str.StructToString(
+		"BlockInfo",
+		str.NewField("NetworkType", str.IntPattern, b.NetworkType),
+		str.NewField("Hash", str.StringPattern, b.Hash),
+		str.NewField("GenerationHash", str.StringPattern, b.GenerationHash),
+		str.NewField("TotalFee", str.StringPattern, b.TotalFee),
+		str.NewField("NumTransactions", str.IntPattern, b.NumTransactions),
+		str.NewField("Signature", str.StringPattern, b.Signature),
+		str.NewField("Signer", str.StringPattern, b.Signer),
+		str.NewField("Version", str.IntPattern, b.Version),
+		str.NewField("Type", str.IntPattern, b.Type),
+		str.NewField("Height", str.StringPattern, b.Height),
+		str.NewField("Timestamp", str.StringPattern, b.Timestamp),
+		str.NewField("Difficulty", str.StringPattern, b.Difficulty),
+		str.NewField("PreviousBlockHash", str.StringPattern, b.PreviousBlockHash),
+		str.NewField("BlockTransactionsHash", str.StringPattern, b.BlockTransactionsHash),
 	)
 }
 
@@ -124,11 +108,11 @@ type BlockchainStorageInfo struct {
 }
 
 func (b *BlockchainStorageInfo) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"BlockchainStorageInfo",
-		utils.NewField("NumBlocks", utils.IntPattern, b.NumBlocks),
-		utils.NewField("NumTransactions", utils.IntPattern, b.NumTransactions),
-		utils.NewField("NumAccounts", utils.IntPattern, b.NumAccounts),
+		str.NewField("NumBlocks", str.IntPattern, b.NumBlocks),
+		str.NewField("NumTransactions", str.IntPattern, b.NumTransactions),
+		str.NewField("NumAccounts", str.IntPattern, b.NumAccounts),
 	)
 }
 

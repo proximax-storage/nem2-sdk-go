@@ -7,7 +7,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 	"regexp"
 	"strings"
@@ -64,10 +64,10 @@ type MosaicId struct {
 }
 
 func (m *MosaicId) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"MosaicId",
-		utils.NewField("Id", utils.StringPattern, m.Id),
-		utils.NewField("FullName", utils.StringPattern, m.FullName),
+		str.NewField("Id", str.StringPattern, m.Id),
+		str.NewField("FullName", str.StringPattern, m.FullName),
 	)
 }
 
@@ -150,17 +150,17 @@ type MosaicInfo struct {
 }
 
 func (m *MosaicInfo) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"MosaicInfo",
-		utils.NewField("Active", utils.BooleanPattern, m.Active),
-		utils.NewField("Index", utils.IntPattern, m.Index),
-		utils.NewField("MetaId", utils.StringPattern, m.MetaId),
-		utils.NewField("NamespaceId", utils.StringPattern, m.NamespaceId),
-		utils.NewField("MosaicId", utils.StringPattern, m.MosaicId),
-		utils.NewField("Supply", utils.StringPattern, m.Supply),
-		utils.NewField("Height", utils.StringPattern, m.Height),
-		utils.NewField("Owner", utils.StringPattern, m.Owner),
-		utils.NewField("Properties", utils.StringPattern, m.Properties),
+		str.NewField("Active", str.BooleanPattern, m.Active),
+		str.NewField("Index", str.IntPattern, m.Index),
+		str.NewField("MetaId", str.StringPattern, m.MetaId),
+		str.NewField("NamespaceId", str.StringPattern, m.NamespaceId),
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Supply", str.StringPattern, m.Supply),
+		str.NewField("Height", str.StringPattern, m.Height),
+		str.NewField("Owner", str.StringPattern, m.Owner),
+		str.NewField("Properties", str.StringPattern, m.Properties),
 	)
 }
 
@@ -236,15 +236,13 @@ type MosaicName struct {
 }
 
 func (m *MosaicName) String() string {
-	return utils.StructToString(
+	return str.StructToString(
 		"MosaicName",
-		utils.NewField("MosaicId", utils.StringPattern, m.MosaicId),
-		utils.NewField("Name", utils.StringPattern, m.Name),
-		utils.NewField("ParentId", utils.StringPattern, m.ParentId),
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Name", str.StringPattern, m.Name),
+		str.NewField("ParentId", str.StringPattern, m.ParentId),
 	)
 }
-
-var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
 
 // Create xem with using xem as unit
 func Xem(amount int64) *Mosaic {

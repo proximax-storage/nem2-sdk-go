@@ -6,7 +6,7 @@ package sdk
 
 import (
 	"fmt"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/net"
 	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
@@ -99,7 +99,7 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 		return nsList, nil, errEmptyAddressesIds
 	}
 
-	url := utils.NewUrl(pathNamespacesFromAccounts)
+	url := net.NewUrl(pathNamespacesFromAccounts)
 
 	if pageSize > 0 {
 		url.AddParam("pageSize", strconv.Itoa(pageSize))

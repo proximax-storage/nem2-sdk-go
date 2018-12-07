@@ -15,6 +15,7 @@ import (
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
 	"github.com/proximax-storage/nem2-sdk-go/transactions"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 	"strconv"
 	"strings"
@@ -1569,13 +1570,10 @@ func NewPlainMessage(payload string) *Message {
 }
 
 func (m *Message) String() string {
-	return fmt.Sprintf(
-		`
-			"Type": %d,
-			"Payload": %s
-		`,
-		m.Type,
-		m.Payload,
+	return str.StructToString(
+		"Message",
+		str.NewField("Type", str.IntPattern, m.Type),
+		str.NewField("Payload", str.StringPattern, m.Payload),
 	)
 }
 

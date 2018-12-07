@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
@@ -181,23 +183,26 @@ var (
 )
 
 func TestTransactionService_GetTransaction_TransferTransaction(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     fmt.Sprintf("/transaction/%s", transactionId),
-		respBody: transactionJson,
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf("/transaction/%s", transactionId),
+		RespBody: transactionJson,
 	})
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	tx, _, err := cl.Transaction.GetTransaction(context.Background(), transactionId)
+	tx, resp, err := cl.Transaction.GetTransaction(context.Background(), transactionId)
 
 	assert.Nilf(t, err, "TransactionService.GetTransaction returned error: %v", err)
-	validateStringers(t, transaction, tx)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, transaction, tx)
+	}
 }
 
 func TestTransactionService_GetTransactions(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     "/transaction",
-		respBody: "[" + transactionJson + "]",
+	mockServer.AddRouter(&mock.Router{
+		Path:     "/transaction",
+		RespBody: "[" + transactionJson + "]",
 	})
 
 	cl := mockServer.getTestNetClientUnsafe()
@@ -207,17 +212,18 @@ func TestTransactionService_GetTransactions(t *testing.T) {
 	})
 
 	assert.Nilf(t, err, "TransactionService.GetTransactions returned error: %v", err)
-	validateResponse(t, resp)
 
-	for _, tx := range transactions {
-		validateStringers(t, transaction, tx)
+	if tests.IsOkResponse(t, resp) {
+		for _, tx := range transactions {
+			tests.ValidateStringers(t, transaction, tx)
+		}
 	}
 }
 
 func TestTransactionService_GetTransactionStatus(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     "/transaction/7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F/status",
-		respBody: statusJson,
+	mockServer.AddRouter(&mock.Router{
+		Path:     "/transaction/7D354E056A10E7ADAC66741D1021B0E79A57998EAD7E17198821141CE87CF63F/status",
+		RespBody: statusJson,
 	})
 
 	cl := mockServer.getTestNetClientUnsafe()
@@ -225,24 +231,28 @@ func TestTransactionService_GetTransactionStatus(t *testing.T) {
 	txStatus, resp, err := cl.Transaction.GetTransactionStatus(context.Background(), transactionHash)
 
 	assert.Nilf(t, err, "TransactionService.GetTransactionStatus returned error: %v", err)
-	validateResponse(t, resp)
-	validateStringers(t, status, txStatus)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, status, txStatus)
+	}
 }
 
 func TestTransactionService_GetTransactionStatuses(t *testing.T) {
-	mockServer.addRouter(&router{
-		path:     "/transaction/statuses",
-		respBody: "[" + statusJson + "]",
+	mockServer.AddRouter(&mock.Router{
+		Path:     "/transaction/statuses",
+		RespBody: "[" + statusJson + "]",
 	})
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	txStatuses, _, err := cl.Transaction.GetTransactionStatuses(context.Background(), []string{transactionHash})
+	txStatuses, resp, err := cl.Transaction.GetTransactionStatuses(context.Background(), []string{transactionHash})
 
 	assert.Nilf(t, err, "TransactionService.GetTransactionStatuses returned error: %v", err)
 
-	for _, txStatus := range txStatuses {
-		validateStringers(t, status, txStatus)
+	if tests.IsOkResponse(t, resp) {
+		for _, txStatus := range txStatuses {
+			tests.ValidateStringers(t, status, txStatus)
+		}
 	}
 }
 

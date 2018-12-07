@@ -19,7 +19,6 @@ const (
 )
 
 func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
-
 	cfg, _ := sdk.NewConfig("http://190.216.224.11:3000", sdk.MijinTest)
 	ctx := context.TODO()
 
