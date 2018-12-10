@@ -6,6 +6,8 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"net/http"
@@ -18,8 +20,8 @@ func init() {
 }
 
 var (
-	mosaicClient  = NewMockServerWithRouters(mscRouters).Mosaic
-	testMosaicId  = &MosaicId{}
+	mosaicClient  = mockServer.getTestNetClientUnsafe().Mosaic
+	testMosaicId  = &MosaicId{Id: uint64DTO{3646934825, 3576016193}.toBigInt()}
 	testMosaicIds = MosaicIds{MosaicIds: []*MosaicId{
 		testMosaicId,
 		{Id: big.NewInt(5734678065854194365)},
@@ -75,10 +77,95 @@ var (
     "levy": {}
   }
 }`
-	mscRouters = map[string]sRouting{
-		pathMosaic + testMosaicPathID: {tplMosaic, nil},
-		pathMosaic:                    {"[" + tplMosaic + "]", routeNeedBody},
-		pathMosaicNames: {`[
+
+	mosaicCorr = &MosaicInfo{
+		MosaicId: &MosaicId{
+			Id: uint64DTO{3646934825, 3576016193}.toBigInt(),
+		},
+		MetaId: "5B55E02EACCB7B00015DB6EC",
+		NamespaceId: &NamespaceId{
+			Id: uint64DTO{929036875, 2226345261}.toBigInt(),
+		},
+		Supply: uint64DTO{3403414400, 2095475}.toBigInt(),
+		Active: true,
+		Height: big.NewInt(1),
+		Owner: &PublicAccount{
+			Address: &Address{
+				Type:    mosaicClient.client.config.NetworkType,
+				Address: "TBFBW6TUGLEWQIBCMTBMXXQORZKUP3WTVVPAYGJN",
+			},
+
+			PublicKey: "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
+		},
+		Properties: &MosaicProperties{
+			Transferable: true,
+			Divisibility: 6,
+			Duration:     big.NewInt(0),
+		},
+	}
+
+	mosaicName = &MosaicName{
+		MosaicId: &MosaicId{
+			Id: uint64DTO{3646934825, 3576016193}.toBigInt(),
+		},
+		Name: "xem",
+		ParentId: &NamespaceId{
+			Id: uint64DTO{929036875, 2226345261}.toBigInt(),
+		},
+	}
+)
+
+func TestMosaicService_GetMosaic(t *testing.T) {
+	mockServer.AddRouter(&mock.Router{
+		Path:     pathMosaic + testMosaicPathID,
+		RespBody: tplMosaic,
+	})
+
+	mscInfo, resp, err := mosaicClient.GetMosaic(ctx, mosaicCorr.MosaicId)
+
+	assert.Nilf(t, err, "MosaicService.GetMosaic returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, mosaicCorr, mscInfo)
+	}
+}
+
+func TestMosaicService_GetMosaics(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		mockServer.AddRouter(&mock.Router{
+			Path:     pathMosaic,
+			RespBody: "[" + tplMosaic + "]",
+			ReqJsonBodyStruct: struct {
+				MosaicIds []string `json:"mosaicIds"`
+			}{},
+		})
+
+		mscInfoArr, resp, err := mosaicClient.GetMosaics(ctx, MosaicIds{[]*MosaicId{mosaicCorr.MosaicId}})
+
+		assert.Nilf(t, err, "MosaicService.GetMosaics returned error: %s", err)
+
+		if tests.IsOkResponse(t, resp) {
+			for _, mscInfo := range mscInfoArr {
+				tests.ValidateStringers(t, mosaicCorr, mscInfo)
+			}
+		}
+	})
+
+	t.Run("empty url params", func(t *testing.T) {
+		_, resp, err := mosaicClient.GetMosaics(ctx, MosaicIds{})
+
+		assert.NotNil(t, err, "MosaicService.GetMosaics returned error: %s", err)
+
+		if resp != nil {
+			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		}
+	})
+}
+
+func TestMosaicService_GetMosaicNames(t *testing.T) {
+	mockServer.AddRouter(&mock.Router{
+		Path: pathMosaicNames,
+		RespBody: `[
 						  {
 							"mosaicId": [
 							  3646934825,
@@ -90,106 +177,55 @@ var (
 							  2226345261
 							]
 						  }
-						]`, routeNeedBody},
-		fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace):          {"[" + tplMosaic + "]", nil},
-		fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty): {"[]", nil},
-	}
-)
-
-func TestMosaicService_GetMosaic(t *testing.T) {
-
-	mscInfo, resp, err := mosaicClient.GetMosaic(ctx, testMosaicId)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) && validateMosaicInfo(mscInfo, t) {
-		t.Logf("%#v", mscInfo)
-	}
-
-}
-func TestMosaicService_GetMosaics(t *testing.T) {
-
-	mscInfoArr, resp, err := mosaicClient.GetMosaics(ctx, testMosaicIds)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		isValid := true
-		for _, mscInfo := range mscInfoArr {
-			isValid = isValid && validateMosaicInfo(mscInfo, t)
-		}
-		if isValid {
-			t.Logf("%s", mscInfoArr)
-		}
-	}
-
-	mscInfoArr, resp, err = mosaicClient.GetMosaics(ctx, MosaicIds{})
-
-	assert.Equal(t, errEmptyMosaicIds, err, "request with empty MosaicIds must return error")
-	if resp != nil {
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	}
-
-}
-
-func TestMosaicService_GetMosaicNames(t *testing.T) {
+						]`,
+		ReqJsonBodyStruct: struct {
+			MosaicIds []string `json:"mosaicIds"`
+		}{},
+	})
 
 	mscInfoArr, resp, err := mosaicClient.GetMosaicNames(ctx, testMosaicIds)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		t.Logf("%s", mscInfoArr)
 
+	assert.Nil(t, err, "MosaicService.GetMosaicNames returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		for _, mscInfo := range mscInfoArr {
+			tests.ValidateStringers(t, mosaicName, mscInfo)
+		}
 	}
 }
 
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
-	mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		t.Logf("%v", mscInfoArr)
-	}
+	t.Run("regular case", func(t *testing.T) {
+		mockServer.AddRouter(&mock.Router{
+			Path:     fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace),
+			RespBody: "[" + tplMosaic + "]",
+		})
 
-	nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
-	mscInfoArr, resp, err = mosaicClient.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) {
-		t.Log(t)
-		t.Logf("%v", mscInfoArr)
+		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
 
-	}
+		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
 
-}
+		if tests.IsOkResponse(t, resp) {
+			for _, mscInfo := range mscInfoArr {
+				tests.ValidateStringers(t, mosaicCorr, mscInfo)
+			}
+		}
+	})
 
-func validateMosaicInfo(mscInfo *MosaicInfo, t *testing.T) bool {
-	result := true
+	t.Run("no mosaic id", func(t *testing.T) {
+		mockServer.AddRouter(&mock.Router{
+			Path:     fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty),
+			RespBody: "[]",
+		})
 
-	if !assert.NotNil(t, mscInfo) {
-		result = false
-	} else if metaId := mscInfo.MetaId; metaId != "5B55E02EACCB7B00015DB6EC" {
-		t.Error(fmt.Sprintf("failed MetaId data Convertion = '%s' (%#v)", metaId, mscInfo))
-		result = false
-	} else if fullname := mscInfo.NamespaceId.FullName; fullname != "" {
-		t.Error(fmt.Sprintf("failed namespaseName data Convertion = '%s' (%#v)", fullname, mscInfo))
-		result = false
-	} else if !mscInfo.Active {
-		t.Error(fmt.Sprintf("failed Active data Convertion = '%v' (%#v)", mscInfo.Active, mscInfo))
-		result = false
-	} else if nsId := mscInfo.NamespaceId.Id; !(nsId.Uint64() == uint64DTO{929036875, 2226345261}.toBigInt().Uint64()) {
-		t.Error(fmt.Sprintf("failed NamespaceId data Convertion = '%v' (%#v)", nsId, mscInfo))
-		result = false
-	} else if mscId := mscInfo.MosaicId.Id; !(mscId.Uint64() == uint64DTO{3646934825, 3576016193}.toBigInt().Uint64()) {
-		t.Error(fmt.Sprintf("failed MosaicId data Convertion = '%v' (%#v)", mscId, mscInfo))
-		result = false
-	} else if nsId := mscInfo.Supply; !(nsId.Uint64() == uint64DTO{3403414400, 2095475}.toBigInt().Uint64()) {
-		t.Error(fmt.Sprintf("failed Supply data Convertion = '%v' (%#v)", nsId, mscInfo))
-		result = false
-	} else if nsId := mscInfo.Height; !(nsId.Uint64() == 1) {
-		t.Error(fmt.Sprintf("failed Height data Convertion = '%v' (%#v)", nsId, mscInfo))
-		result = false
-	} else if publicKey := mscInfo.Owner.PublicKey; publicKey != "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E" {
-		t.Error(fmt.Sprintf("failed Owner data Convertion = '%s' (%#v)", publicKey, mscInfo))
-		result = false
-	}
-	return result
+		nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
+
+		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
+
+		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
+
+		if tests.IsOkResponse(t, resp) {
+			assert.Equal(t, len(mscInfoArr), 0)
+		}
+	})
 }

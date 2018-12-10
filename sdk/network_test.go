@@ -5,76 +5,60 @@
 package sdk
 
 import (
-	"errors"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 const (
-	mijinRoute = `{
-  			"name": "MIJIN",
+	testNetRoute = `{
+  			"name": "TEST_NET",
   			"description": "catapult development network"
   	}`
-	mijinTestRoute = `{
-  			"name": "MIJIN_TEST",
-  			"description": "catapult development network"
-  	}`
+	notSupportedRoute = `{
+			"name": "",
+			"description": "catapult development network"
+	}`
 )
 
 func TestNetworkService_GetNetworkType(t *testing.T) {
+	t.Run("TEST_NET", func(t *testing.T) {
+		mockServ := newSdkMockWithRouter(&mock.Router{
+			Path:     pathNetwork,
+			RespBody: testNetRoute,
+		})
 
-	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinTestRoute}})
+		defer mockServ.Close()
 
-	netType, resp, err := serv.Network.GetNetworkType(ctx)
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if netType != MijinTest {
-		t.Errorf("%d", netType)
-	}
+		netType, resp, err := mockServ.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
 
+		assert.Nilf(t, err, "NetworkService.GetNetworkType returned error=%s", err)
+
+		if tests.IsOkResponse(t, resp) {
+			assert.Equal(t, netType, TestNet)
+		}
+	})
+
+	t.Run("NotSupportedNet", func(t *testing.T) {
+		mock := newSdkMockWithRouter(&mock.Router{
+			Path:     pathNetwork,
+			RespBody: notSupportedRoute,
+		})
+
+		defer mock.Close()
+
+		netType, _, err := mock.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
+
+		assert.NotNil(t, err, "NetworkService.GetNetworkType should return error")
+		assert.Equal(t, netType, NotSupportedNet)
+	})
 }
-func TestNetworkService_GetNetworkType_MIJIN(t *testing.T) {
 
-	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {resp: mijinRoute}})
-
-	netType, resp, err := serv.Network.GetNetworkType(ctx)
-	if err != nil {
-		t.Error(err)
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if netType != Mijin {
-		t.Errorf("%d", netType)
-	}
-
-}
-func TestNetworkService_GetNetworkType_Unknow(t *testing.T) {
-
-	serv := NewMockServerWithRouters(map[string]sRouting{pathNetwork: {
-		resp: `{
- 				 "name": "",
-  				"description": "catapult development network"
-  				}`}})
-
-	netType, resp, err := serv.Network.GetNetworkType(ctx)
-	if err == nil {
-		t.Error(errors.New("Must be errror"))
-	} else if resp.StatusCode != 200 {
-		t.Error(resp.Status)
-		t.Logf("%#v", resp)
-	} else if netType != NotSupportedNet {
-		t.Errorf("%d", netType)
-	}
-
-}
 func TestExtractNetworkType(t *testing.T) {
 	i := uint64(36888)
 
 	nt := ExtractNetworkType(i)
-	if nt != MijinTest {
-		t.Errorf("wrong convert %d (%d - %d)", i, nt, MijinTest)
-	}
 
+	assert.Equal(t, MijinTest, nt)
 }

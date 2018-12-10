@@ -6,9 +6,10 @@ package sdk
 
 import (
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/mock"
+	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"math/big"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -88,19 +89,10 @@ const (
 )
 
 var (
-	blockClient = NewMockServerWithRouters(bcRouters).Blockchain
+	blockClient = mockServer.getTestNetClientUnsafe().Blockchain
 	testHeight  = big.NewInt(1)
 	testLimit   = big.NewInt(100)
 )
-
-var bcRouters = map[string]sRouting{
-	fmt.Sprintf(pathBlockInfo, testHeight, testLimit):         {"[" + blockInfoJSON + "]", nil},
-	fmt.Sprintf(pathBlockGetTransaction, testHeight.String()): {blockTransactionsJSON, nil},
-	fmt.Sprintf(pathBlockByHeight, testHeight.String()):       {blockInfoJSON, nil},
-	pathBlockHeight:  {`{"height":[11235,0]}`, nil},
-	pathBlockScore:   {`{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`, nil},
-	pathBlockStorage: {`{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`, nil},
-}
 
 // Expected value for TestBlockchainService_GetBlockHeight
 var wantBlockTransactions []Transaction
@@ -109,7 +101,6 @@ var wantBlockTransactions []Transaction
 var wantBlockInfo *BlockInfo
 
 func init() {
-
 	pubAcc, _ := NewAccountFromPublicKey("321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E", MijinTest)
 
 	wantBlockInfo = &BlockInfo{
@@ -152,81 +143,99 @@ func init() {
 }
 
 func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf(pathBlockInfo, testHeight, testLimit),
+		RespBody: "[" + blockInfoJSON + "]",
+	})
+
 	bcInfo, resp, err := blockClient.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
-	if err != nil {
-		t.Error(err)
-	} else if validateResp(resp, t) && validateBlockInfo(bcInfo[0], t) {
-		t.Logf("%#v", bcInfo)
+
+	assert.Nilf(t, err, "GetBlocksByHeightWithLimit returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, wantBlockInfo, bcInfo[0])
 	}
 }
 
 func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
-	got, resp, err := blockClient.GetBlockchainHeight(ctx)
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainHeight returned error: %v", err)
-	} else if validateResp(resp, t) {
+	want := uint64DTO{11235, 0}.toBigInt()
 
-		want := uint64DTO{11235, 0}.toBigInt()
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Blockchain.GetBlockchainHeight returned %+v, want %+v", got, want)
-		}
+	mockServer.AddRouter(&mock.Router{
+		Path:     pathBlockHeight,
+		RespBody: `{"height":[11235,0]}`,
+	})
+
+	got, resp, err := blockClient.GetBlockchainHeight(ctx)
+
+	assert.Nilf(t, err, "GetBlockchainHeight returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, want, got)
 	}
 }
 
 func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
+	want := &BlockchainStorageInfo{NumBlocks: 62094, NumTransactions: 56, NumAccounts: 25}
+
+	mockServer.AddRouter(&mock.Router{
+		Path:     pathBlockStorage,
+		RespBody: `{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`,
+	})
+
 	got, resp, err := blockClient.GetBlockchainStorage(ctx)
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainStorage returned error: %v", err)
-	} else if validateResp(resp, t) {
-		want := &BlockchainStorageInfo{NumBlocks: 62094, NumTransactions: 56, NumAccounts: 25}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Blockchain.GetBlockchainStorage returned %+v, want %+v", got, want)
-		}
+
+	assert.Nilf(t, err, "GetBlockchainStorage returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, want, got)
 	}
 }
 
 func TestBlockchainService_GetBlockchainScore(t *testing.T) {
+	dto := chainScoreDTO{ScoreHigh: uint64DTO{0, 0}, ScoreLow: uint64DTO{3999308498, 121398739}}
+
+	mockServer.AddRouter(&mock.Router{
+		Path:     pathBlockScore,
+		RespBody: `{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`,
+	})
+
 	got, resp, err := blockClient.GetBlockchainScore(ctx)
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockchainScore returned error: %v", err)
-	} else if validateResp(resp, t) {
-		dto := &chainScoreDTO{ScoreHigh: uint64DTO{0, 0}, ScoreLow: uint64DTO{3999308498, 121398739}}
-		want := dto.toStruct()
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Blockchain.GetChainScore returned %+v, want %+v", got, want)
-		}
+
+	assert.Nilf(t, err, "GetBlockchainScore returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, dto.toStruct(), got)
 	}
 }
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf(pathBlockByHeight, testHeight.String()),
+		RespBody: blockInfoJSON,
+	})
+
 	got, resp, err := blockClient.GetBlockByHeight(ctx, testHeight)
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockByHeight returned error: %v", err)
-	} else if validateResp(resp, t) {
-		if want := wantBlockInfo; !reflect.DeepEqual(got, want) {
-			t.Errorf("Blockchain.GetBlockByHeight returned %+v, want %+v", got, want)
-		}
+
+	assert.Nilf(t, err, "GetBlockByHeight returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		tests.ValidateStringers(t, wantBlockInfo, got)
 	}
 }
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
-	got, resp, err := blockClient.GetBlockTransactions(ctx, testHeight)
-	if err != nil {
-		t.Errorf("Blockchain.GetBlockTransactions returned error: %v", err)
-	} else if validateResp(resp, t) {
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf(pathBlockGetTransaction, testHeight.String()),
+		RespBody: blockTransactionsJSON,
+	})
 
-		for key, tranz := range got {
-			assert.Equal(t, wantBlockTransactions[key].GetAbstractTransaction().Signature, tranz.GetAbstractTransaction().Signature, "Blockchain.GetBlockTransactions returned %+v", got)
+	got, resp, err := blockClient.GetBlockTransactions(ctx, testHeight)
+
+	assert.Nilf(t, err, "GetBlockByHeight returned error: %s", err)
+
+	if tests.IsOkResponse(t, resp) {
+		for key, transaction := range got {
+			assert.Equal(t, wantBlockTransactions[key].GetAbstractTransaction().Signature, transaction.GetAbstractTransaction().Signature)
 		}
 	}
-}
-
-func validateBlockInfo(bcInfo *BlockInfo, t *testing.T) bool {
-	result := true
-	if bcInfo.Signature != wantBlockInfo.Signature {
-		result = false
-		t.Error("block signature is wrong")
-	}
-
-	return result && (reflect.DeepEqual(bcInfo, wantBlockInfo))
 }

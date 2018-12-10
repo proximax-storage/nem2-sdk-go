@@ -6,6 +6,8 @@ package sdk
 
 import "regexp"
 
+var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
+
 // const routers path for methods AccountService
 const (
 	mainAccountRoute              = "account"
@@ -56,28 +58,6 @@ const (
 	transactionStatusRoute             = "status"
 	transactionStatusesRoute           = "statuses"
 )
-
-const tplNamespaceInfo = `"active": %v,
-    "index": %d,
-    "id": "%s",
-	"type": %d,
-    "depth": %d,
-    "levels": [
-      %v
-    ],
-    "parentId": [
-      %v
-    ],
-    "owner": "%v",
-    "ownerAddress": "%s",
-    "startHeight": [
-      %v
-    ],
-    "endHeight": [
-      %v
-    ]
-  }
-`
 
 type NamespaceType uint8
 

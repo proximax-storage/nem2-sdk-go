@@ -7,9 +7,9 @@ package sdk
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"github.com/json-iterator/go"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"strings"
@@ -20,6 +20,14 @@ import (
 type NamespaceId struct {
 	Id       *big.Int
 	FullName string
+}
+
+func (n *NamespaceId) String() string {
+	return str.StructToString(
+		"NamespaceId",
+		str.NewField("Id", str.StringPattern, n.Id),
+		str.NewField("FullName", str.StringPattern, n.FullName),
+	)
 }
 
 func (n *NamespaceId) toHexString() string {
@@ -107,6 +115,15 @@ type NamespaceName struct {
 	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
 }
 
+func (n *NamespaceName) String() string {
+	return str.StructToString(
+		"NamespaceName",
+		str.NewField("NamespaceId", str.StringPattern, n.NamespaceId),
+		str.NewField("Name", str.StringPattern, n.Name),
+		str.NewField("ParentId", str.StringPattern, n.ParentId),
+	)
+}
+
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
 	Active      bool
@@ -122,18 +139,18 @@ type NamespaceInfo struct {
 }
 
 func (ref *NamespaceInfo) String() string {
-	return fmt.Sprintf(tplNamespaceInfo,
-		ref.Active,
-		ref.Index,
-		ref.MetaId,
-		ref.TypeSpace,
-		ref.Depth,
-		ref.Levels,
-		ref.ParentId,
-		ref.Owner,
-		ref.Owner.Address.Address,
-		ref.StartHeight,
-		ref.EndHeight,
+	return str.StructToString(
+		"NamespaceInfo",
+		str.NewField("Active", str.BooleanPattern, ref.Active),
+		str.NewField("Index", str.IntPattern, ref.Index),
+		str.NewField("MetaId", str.StringPattern, ref.MetaId),
+		str.NewField("TypeSpace", str.IntPattern, ref.TypeSpace),
+		str.NewField("Depth", str.IntPattern, ref.Depth),
+		str.NewField("Levels", str.StringPattern, ref.Levels),
+		str.NewField("ParentId", str.StringPattern, ref.ParentId),
+		str.NewField("Owner", str.StringPattern, ref.Owner),
+		str.NewField("StartHeight", str.StringPattern, ref.StartHeight),
+		str.NewField("EndHeight", str.StringPattern, ref.EndHeight),
 	)
 }
 
@@ -144,8 +161,8 @@ type ListNamespaceInfo struct {
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*big.Int, error) {
-
 	list, err := GenerateNamespacePath(namespaceName)
+
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 	"regexp"
 	"strings"
@@ -19,7 +20,6 @@ type Mosaic struct {
 }
 
 func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
-
 	if mosaicId == nil {
 		return nil, errNilMosaicAmount
 	}
@@ -61,6 +61,14 @@ func (ref Mosaics) String() string {
 type MosaicId struct {
 	Id       *big.Int
 	FullName string
+}
+
+func (m *MosaicId) String() string {
+	return str.StructToString(
+		"MosaicId",
+		str.NewField("Id", str.StringPattern, m.Id),
+		str.NewField("FullName", str.StringPattern, m.FullName),
+	)
 }
 
 func NewMosaicIdFromName(name string) (*MosaicId, error) {
@@ -140,6 +148,22 @@ type MosaicInfo struct {
 	Owner       *PublicAccount
 	Properties  *MosaicProperties
 }
+
+func (m *MosaicInfo) String() string {
+	return str.StructToString(
+		"MosaicInfo",
+		str.NewField("Active", str.BooleanPattern, m.Active),
+		str.NewField("Index", str.IntPattern, m.Index),
+		str.NewField("MetaId", str.StringPattern, m.MetaId),
+		str.NewField("NamespaceId", str.StringPattern, m.NamespaceId),
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Supply", str.StringPattern, m.Supply),
+		str.NewField("Height", str.StringPattern, m.Height),
+		str.NewField("Owner", str.StringPattern, m.Owner),
+		str.NewField("Properties", str.StringPattern, m.Properties),
+	)
+}
+
 type MosaicsInfo []*MosaicInfo
 
 func (ref MosaicsInfo) String() string {
@@ -211,7 +235,14 @@ type MosaicName struct {
 	ParentId *NamespaceId
 }
 
-var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
+func (m *MosaicName) String() string {
+	return str.StructToString(
+		"MosaicName",
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Name", str.StringPattern, m.Name),
+		str.NewField("ParentId", str.StringPattern, m.ParentId),
+	)
+}
 
 // Create xem with using xem as unit
 func Xem(amount int64) *Mosaic {
