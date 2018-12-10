@@ -219,7 +219,10 @@ func (s *subscribeInfo) buildType(t []byte) error {
 
 // Get address from subscribe struct
 func (s *subscribe) getAdd() string {
-	return strings.Split(s.Subscribe, "/")[1]
+	if s.Subscribe != "block" {
+		return strings.Split(s.Subscribe, "/")[1]
+	}
+	return s.Subscribe
 }
 
 // Get subscribe name from subscribe struct
@@ -312,7 +315,13 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 				}
 				break
 			}
-			subName, _ := restParser(resp)
+			subName, err := restParser(resp)
+			if err != nil {
+				errCh <- &ErrorInfo{
+					Error: err,
+				}
+				break
+			}
 			b := subscribeInfo{
 				name:    subName,
 				account: s.getAdd(),
@@ -323,7 +332,6 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 					Error: err,
 				}
 			}
-
 		}
 	}()
 	return nil
