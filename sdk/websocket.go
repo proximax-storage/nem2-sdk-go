@@ -8,7 +8,6 @@ import (
 	"bytes"
 	j "encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"golang.org/x/net/websocket"
 	"io"
 	"net/url"
@@ -25,6 +24,7 @@ var (
 	unconfirmedAddedChannels   = make(map[string]chan Transaction)
 	confirmedAddedChannels     = make(map[string]chan Transaction)
 	connectsWs                 = make(map[string]*websocket.Conn)
+	errChannels                = make(map[string]chan *ErrorInfo)
 )
 
 type sendJson struct {
@@ -86,6 +86,11 @@ type SubscribeStatus struct {
 type SubscribeSigner struct {
 	*subscribe
 	Ch chan *SignerInfo
+}
+
+type SubscribeError struct {
+	*subscribe
+	Ch chan *ErrorInfo
 }
 
 func msgParser(msg []byte) (*subscribe, error) {
@@ -273,27 +278,39 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 		return err
 	}
 
-	var e error
 	go func() {
 		var resp []byte
+
+		var address string
+		if s.Subscribe != "block" {
+			address = s.getAdd()
+		}
+		errCh := errChannels[address]
 
 		for {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
 				err = c.wsConnect()
 				if err != nil {
-					fmt.Println(err)
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
 					return
 				}
 				if err = websocket.JSON.Send(c.client, sendJson{
 					Uid:       s.Uid,
 					Subscribe: s.Subscribe,
 				}); err != nil {
-					fmt.Println(err)
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
 					return
 				}
 				continue
 			} else if err != nil {
-				e = errors.Wrap(err, "Error occurred while trying to receive message")
+				errCh <- &ErrorInfo{
+					Error: err,
+				}
+				break
 			}
 			subName, _ := restParser(resp)
 			b := subscribeInfo{
@@ -301,11 +318,15 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 				account: s.getAdd(),
 			}
 
-			e = b.buildType(resp)
-		}
+			if err := b.buildType(resp); err != nil {
+				errCh <- &ErrorInfo{
+					Error: err,
+				}
+			}
 
+		}
 	}()
-	return e
+	return nil
 }
 
 func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) {
@@ -349,5 +370,9 @@ func (s *SubscribeStatus) Unsubscribe() error {
 }
 
 func (s *SubscribeSigner) Unsubscribe() error {
+	return s.subscribe.unsubscribe()
+}
+
+func (s *SubscribeError) Unsubscribe() error {
 	return s.subscribe.unsubscribe()
 }

@@ -52,6 +52,11 @@ func closeChannel(s *subscribe) {
 		delete(signerInfoChannels, s.getAdd())
 		close(chType)
 
+	case chan *ErrorInfo:
+		chType := s.Ch.(chan *ErrorInfo)
+		delete(errChannels, s.getAdd())
+		close(chType)
+
 	default:
 		chType := s.Ch.(chan Transaction)
 		if s.getSubscribe() == "partialAdded" {
@@ -217,4 +222,16 @@ func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
 	subCosignature.subscribe = subscribe
 	subscribe.Ch = signerInfoChannels[add]
 	return subCosignature, err
+}
+
+func (c *SubscribeService) Error(add string) *SubscribeError {
+	c.client = c.getClient(add)
+	subError := new(SubscribeError)
+	subError.Ch = make(chan *ErrorInfo)
+	errChannels[add] = subError.Ch
+	subscribe := new(subscribe)
+	subscribe.Subscribe = "error/" + add
+	subError.subscribe = subscribe
+	subscribe.Ch = errChannels[add]
+	return subError
 }
