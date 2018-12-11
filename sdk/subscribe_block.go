@@ -5,6 +5,7 @@
 package sdk
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/net/websocket"
 )
@@ -26,7 +27,7 @@ const (
 )
 
 // Closes the subscription channel.
-func closeChannel(s *subscribe) {
+func (s *subscribe) closeChannel() error {
 	switch s.Ch.(type) {
 	case chan *BlockInfo:
 		chType := s.Ch.(chan *BlockInfo)
@@ -57,7 +58,7 @@ func closeChannel(s *subscribe) {
 		delete(errChannels, s.getAdd())
 		close(chType)
 
-	default:
+	case chan Transaction:
 		chType := s.Ch.(chan Transaction)
 		if s.getSubscribe() == "partialAdded" {
 			delete(partialAddedChannels, s.getAdd())
@@ -67,7 +68,11 @@ func closeChannel(s *subscribe) {
 			delete(confirmedAddedChannels, s.getAdd())
 		}
 		close(chType)
+
+	default:
+		return errors.New("WRONG TYPE CHANNEL")
 	}
+	return nil
 }
 
 // Unsubscribe terminates the specified subscription.
@@ -81,7 +86,9 @@ func (c *subscribe) unsubscribe() error {
 		return err
 	}
 
-	closeChannel(c)
+	if err := c.closeChannel(); err != nil {
+		return err
+	}
 
 	return nil
 }
