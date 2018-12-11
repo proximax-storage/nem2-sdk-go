@@ -47,9 +47,9 @@ func TestNamespacePathSupportsMultiLevelNamespaces(t *testing.T) {
 // @Test
 func TestNamespacePathRejectsNamesWithTooManyParts(t *testing.T) {
 	_, err := GenerateNamespacePath("a.b.c.d")
-	assert.Equal(t, errNamespaceToManyPart, err, "Err 'too many parts' must return")
+	assert.Equal(t, ErrNamespaceToManyPart, err, "Err 'too many parts' must return")
 	_, err = GenerateNamespacePath("a.b.c.d.e")
-	assert.Equal(t, errNamespaceToManyPart, err, "Err 'too many parts' must return")
+	assert.Equal(t, ErrNamespaceToManyPart, err, "Err 'too many parts' must return")
 
 }
 

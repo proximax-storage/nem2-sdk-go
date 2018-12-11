@@ -183,7 +183,7 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 		}{},
 	})
 
-	mscInfoArr, resp, err := mosaicClient.GetMosaicNames(ctx, testMosaicIds)
+	mscInfoArr, resp, err := mosaicClient.Get(ctx, testMosaicIds)
 
 	assert.Nil(t, err, "MosaicService.GetMosaicNames returned error: %s", err)
 
@@ -201,7 +201,7 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 			RespBody: "[" + tplMosaic + "]",
 		})
 
-		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, testNamespaceId, testMosaicId, pageSize)
+		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespaceUpToMosaic(ctx, testNamespaceId, testMosaicId, pageSize)
 
 		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
 
@@ -220,7 +220,7 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 
 		nsId, _ := (&big.Int{}).SetString("12143912612286323120", 10)
 
-		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespace(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
+		mscInfoArr, resp, err := mosaicClient.GetMosaicsFromNamespaceUpToMosaic(ctx, &NamespaceId{Id: nsId}, nil, pageSize)
 
 		assert.Nil(t, err, "MosaicService.GetMosaicsFromNamespace returned error: %s", err)
 

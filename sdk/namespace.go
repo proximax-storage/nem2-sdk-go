@@ -39,7 +39,7 @@ func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
 
 	if len(nsIds.List) == 0 {
-		return nil, nil, errEmptyNamespaceIds
+		return nil, nil, ErrEmptyNamespaceIds
 	}
 	res := make([]*namespaceNameDTO, 0)
 	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
@@ -64,7 +64,7 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
 
 	if address == nil {
-		return nsList, nil, errNullAddress
+		return nsList, nil, ErrNilAddress
 	}
 
 	url, comma := "", "?"
@@ -96,7 +96,7 @@ func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, addre
 func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,
 	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
 	if addresses == nil || len(addresses.List) == 0 {
-		return nsList, nil, errEmptyAddressesIds
+		return nsList, nil, ErrEmptyAddressesIds
 	}
 
 	url := net.NewUrl(pathNamespacesFromAccounts)
@@ -153,12 +153,14 @@ func (ref *namespaceNameDTO) getNamespaceName() (*NamespaceName, error) {
 
 // namespaceDTO temporary struct for reading responce & fill NamespaceInfo
 type namespaceDTO struct {
+	FullName     string
 	Type         int
 	Depth        int
-	Level0       *uint64DTO
-	Level1       *uint64DTO
-	Level2       *uint64DTO
+	Level0       uint64DTO
+	Level1       uint64DTO
+	Level2       uint64DTO
 	ParentId     uint64DTO
+	MosaicIds    []uint64DTO
 	Owner        string
 	OwnerAddress string
 	StartHeight  uint64DTO
@@ -187,6 +189,7 @@ func (ref *namespaceInfoDTO) getNamespaceInfo() (*NamespaceInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &NamespaceInfo{
 		ref.Meta.Active,
 		ref.Meta.Index,

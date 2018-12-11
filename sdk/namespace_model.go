@@ -16,46 +16,52 @@ import (
 	"unsafe"
 )
 
-// 	NamespaceId
-type NamespaceId struct {
+type NamespaceId big.Int
+
+/*type NamespaceId struct {
 	Id       *big.Int
 	FullName string
+}*/
+
+func bigIntToNamespaceId(bigInt *big.Int) *NamespaceId {
+	if bigInt == nil {
+		return nil
+	}
+
+	nsId := NamespaceId(*bigInt)
+
+	return &nsId
 }
 
-func (n *NamespaceId) String() string {
-	return str.StructToString(
-		"NamespaceId",
-		str.NewField("Id", str.StringPattern, n.Id),
-		str.NewField("FullName", str.StringPattern, n.FullName),
-	)
+func namespaceIdToBigInt(nsId *NamespaceId) *big.Int {
+	if nsId == nil {
+		return nil
+	}
+
+	return (*big.Int)(nsId)
 }
 
 func (n *NamespaceId) toHexString() string {
-	return BigIntegerToHex(n.Id)
+	return BigIntegerToHex(namespaceIdToBigInt(n))
 }
 
 //NewNamespaceId generate new NamespaceId from bigInt
 func NewNamespaceId(id *big.Int) (*NamespaceId, error) {
-
 	if id == nil {
-		return nil, errNilIdNamespace
+		return nil, ErrNilIdNamespace
 	}
-	return &NamespaceId{id, ""}, nil
+
+	return &NamespaceId{Id: id}, nil
 }
 
 //NewNamespaceIdFromName generate Id from namespaceName
 func NewNamespaceIdFromName(namespaceName string) (*NamespaceId, error) {
-
 	id, err := generateNamespaceId(namespaceName)
 	if err != nil {
 		return nil, err
 	}
-	return &NamespaceId{id, namespaceName}, nil
-}
 
-// Equals compares namespaceIds for equality
-func (ref *NamespaceId) Equals(nsId NamespaceId) bool {
-	return (ref.Id == nsId.Id) && (ref.FullName == nsId.FullName)
+	return bigIntToNamespaceId(id), nil
 }
 
 // NamespaceIds is a list of NamespaceId
@@ -65,6 +71,7 @@ type NamespaceIds struct {
 
 func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 	buf = []byte(`{"namespaceIds": [`)
+
 	for i, nsId := range ref.List {
 		if i > 0 {
 			buf = append(buf, ',')
@@ -75,14 +82,16 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 	buf = append(buf, ']', '}')
 	return
 }
+
 func (ref *NamespaceIds) IsEmpty(ptr unsafe.Pointer) bool {
 	return len((*NamespaceIds)(ptr).List) == 0
 }
-func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 
+func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	if (*NamespaceIds)(ptr) == nil {
 		ptr = (unsafe.Pointer)(&NamespaceIds{})
 	}
+
 	if iter.ReadNil() {
 		*((*unsafe.Pointer)(ptr)) = nil
 	} else {
@@ -99,6 +108,7 @@ func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 		}
 	}
 }
+
 func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
 	if err == nil {
@@ -109,10 +119,12 @@ func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 }
 
 // NamespaceName name info structure describes basic information of a namespace and name.
+
+/*
 type NamespaceName struct {
 	NamespaceId *NamespaceId
 	Name        string
-	ParentId    *NamespaceId /* Optional NamespaceId my be nil */
+	ParentId    *NamespaceId /* Optional NamespaceId my be nil
 }
 
 func (n *NamespaceName) String() string {
@@ -122,20 +134,22 @@ func (n *NamespaceName) String() string {
 		str.NewField("Name", str.StringPattern, n.Name),
 		str.NewField("ParentId", str.StringPattern, n.ParentId),
 	)
-}
+}*/
 
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
-	Active      bool
-	Index       int
-	MetaId      string
-	TypeSpace   NamespaceType
-	Depth       int
-	Levels      []*NamespaceId
-	ParentId    *NamespaceId
-	Owner       *PublicAccount
-	StartHeight *big.Int
-	EndHeight   *big.Int
+	NamespaceId   *big.Int
+	Active        bool
+	Index         int
+	MetaId        string
+	TypeSpace     NamespaceType
+	Depth         int
+	MosaicIds     []*big.Int
+	SubNamespaces []*NamespaceId
+	ParentId      NamespaceId
+	Owner         *PublicAccount
+	StartHeight   *big.Int
+	EndHeight     *big.Int
 }
 
 func (ref *NamespaceInfo) String() string {
@@ -146,7 +160,7 @@ func (ref *NamespaceInfo) String() string {
 		str.NewField("MetaId", str.StringPattern, ref.MetaId),
 		str.NewField("TypeSpace", str.IntPattern, ref.TypeSpace),
 		str.NewField("Depth", str.IntPattern, ref.Depth),
-		str.NewField("Levels", str.StringPattern, ref.Levels),
+		//str.NewField("Levels", str.StringPattern, ref.Levels),
 		str.NewField("ParentId", str.StringPattern, ref.ParentId),
 		str.NewField("Owner", str.StringPattern, ref.Owner),
 		str.NewField("StartHeight", str.StringPattern, ref.StartHeight),
@@ -161,39 +175,38 @@ type ListNamespaceInfo struct {
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*big.Int, error) {
-	list, err := GenerateNamespacePath(namespaceName)
-
-	if err != nil {
+	if list, err := GenerateNamespacePath(namespaceName); err != nil {
 		return nil, err
+	} else {
+		return list[len(list)-1], nil
 	}
-
-	return list[len(list)-1], nil
 }
 
 // GenerateNamespacePath create list NamespaceId from string
 func GenerateNamespacePath(name string) ([]*big.Int, error) {
 	parts := strings.Split(name, ".")
-	path := make([]*big.Int, 0)
+
 	if len(parts) == 0 {
 		return nil, errors.New("invalid Namespace Name")
 	}
 
 	if len(parts) > 3 {
-		return nil, errNamespaceToManyPart
+		return nil, ErrNamespaceToManyPart
 	}
 
 	namespaceId := big.NewInt(0)
+	path := make([]*big.Int, 0)
+
 	for _, part := range parts {
 		if !regValidNamespace.MatchString(part) {
 			return nil, errors.New("invalid Namespace name")
 		}
 
-		var err error
-		namespaceId, err = generateId(part, namespaceId)
-		if err != nil {
+		if namespaceId, err := generateId(part, namespaceId); err != nil {
 			return nil, err
+		} else {
+			path = append(path, namespaceId)
 		}
-		path = append(path, namespaceId)
 	}
 
 	return path, nil
@@ -201,20 +214,23 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 
 func generateId(name string, parentId *big.Int) (*big.Int, error) {
 	b := make([]byte, 8)
+
 	if parentId.Int64() != 0 {
 		b = parentId.Bytes()
 	}
+
 	utils.ReverseByteArray(b)
 
 	result := sha3.New256()
-	_, err := result.Write(b)
-	if err != nil {
+
+	if _, err := result.Write(b); err != nil {
 		return nil, err
 	}
-	_, err = result.Write([]byte(name))
-	if err != nil {
+
+	if _, err := result.Write([]byte(name)); err != nil {
 		return nil, err
 	}
+
 	t := result.Sum(nil)
 
 	return uint64DTO{binary.LittleEndian.Uint32(t[0:4]), binary.LittleEndian.Uint32(t[4:8])}.toBigInt(), nil

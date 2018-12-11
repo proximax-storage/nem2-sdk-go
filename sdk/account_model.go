@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 	"strconv"
 	"strings"
@@ -45,20 +46,6 @@ func (ref *PublicAccount) String() string {
 	return fmt.Sprintf(`Address: %+v, PublicKey: "%s"`, ref.Address, ref.PublicKey)
 }
 
-func (ref *MultisigAccountInfo) String() string {
-	return fmt.Sprintf(
-		`Account: %s,
-				MinApproval: %d,
-				MinRemoval: %d,
-				MultisigAccounts: %v,
-				Cosignatories:  %v`,
-		ref.Account,
-		ref.MinApproval,
-		ref.MinRemoval,
-		ref.MultisigAccounts,
-		ref.Cosignatories)
-}
-
 type AccountInfo struct {
 	Address          *Address
 	AddressHeight    *big.Int
@@ -66,7 +53,7 @@ type AccountInfo struct {
 	PublicKeyHeight  *big.Int
 	Importance       *big.Int
 	ImportanceHeight *big.Int
-	Mosaics          []*Mosaic
+	Mosaics          Mosaics
 }
 
 type accountInfoDTO struct {
@@ -183,6 +170,17 @@ type MultisigAccountInfo struct {
 	MinRemoval       int32
 	Cosignatories    []*PublicAccount
 	MultisigAccounts []*PublicAccount
+}
+
+func (ref *MultisigAccountInfo) String() string {
+	return str.StructToString(
+		"MultisigAccountInfo",
+		str.NewField("Account", str.StringPattern, ref.Account),
+		str.NewField("MinApproval", str.IntPattern, ref.MinApproval),
+		str.NewField("MinRemoval", str.IntPattern, ref.MinRemoval),
+		str.NewField("Cosignatories", str.StringPattern, ref.Cosignatories),
+		str.NewField("MultisigAccounts", str.StringPattern, ref.MultisigAccounts),
+	)
 }
 
 type multisigAccountInfoDTO struct {

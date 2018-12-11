@@ -1064,7 +1064,7 @@ func (tx *LockFundsTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaic": %s,
+			"MosaicId": %s,
 			"Duration": %d,
 			"SignedTxHash": %s
 		`,
@@ -1177,7 +1177,7 @@ func (tx *SecretLockTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaic": %s,
+			"MosaicId": %s,
 			"Duration": %d,
 			"HashType": %s,
 			"Secret": %s,

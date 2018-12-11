@@ -200,7 +200,7 @@ func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	t.Run("empty namespaceIds", func(t *testing.T) {
 		_, resp, err := namespaceClient.GetNamespaceNames(ctx, NamespaceIds{})
 
-		assert.Equal(t, errEmptyNamespaceIds, err, "request with empty NamespaceIds must return error")
+		assert.Equal(t, ErrEmptyNamespaceIds, err, "request with empty NamespaceIds must return error")
 
 		if resp != nil {
 			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
