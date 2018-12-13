@@ -253,7 +253,9 @@ func (c *ClientWebsocket) wsConnect() error {
 	}
 	c.client = conn
 
-	conn.SetDeadline(*c.timeout)
+	if *c.duration != time.Duration(0) {
+		conn.SetDeadline(*c.timeout)
+	}
 
 	var msg []byte
 	if err = websocket.Message.Receive(c.client, &msg); err != nil {
@@ -347,6 +349,7 @@ func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) 
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
 	c.duration = &timeout
+
 	tout := time.Now().Add(*c.duration * time.Millisecond)
 	c.timeout = &tout
 
