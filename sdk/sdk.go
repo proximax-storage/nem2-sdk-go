@@ -186,10 +186,14 @@ func handleResponseStatusCode(resp *http.Response, codeToErrs map[int]error) err
 		return ErrInternalError
 	}
 
-	err, ok := codeToErrs[resp.StatusCode]
+	if codeToErrs != nil {
+		if err, ok := codeToErrs[resp.StatusCode]; ok {
+			return err
+		}
+	}
 
-	if ok {
-		return err
+	if resp.StatusCode != http.StatusOK {
+		return ErrNotAcceptedResponseStatusCode
 	}
 
 	return nil

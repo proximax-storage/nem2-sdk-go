@@ -23,14 +23,14 @@ const (
 // const routers path for methods NamespaceService
 const (
 	pathNamespacesFromAccounts = "/account/namespaces"
-	pathNamespace              = "/namespace/"
-	pathNamespacenames         = "/namespace/names"
+	pathNamespace              = "/namespace"
+	pathNamespaceNames         = "/namespace/names"
 	pathNamespacesFromAccount  = "/account/%s/namespaces"
 )
 
 // const routers path for methods MosaicService
 const (
-	pathMosaic              = "/mosaic/"
+	pathMosaic              = "/mosaic"
 	pathMosaicNames         = "/mosaic/names"
 	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
 )
@@ -52,11 +52,11 @@ const (
 
 // const routers path for methods TransactionService
 const (
-	mainTransactionRoute               = "transaction"
-	announceAggreagateRoute            = "partial"
-	announceAggreagateCosignatureRoute = "cosignature"
-	transactionStatusRoute             = "status"
-	transactionStatusesRoute           = "statuses"
+	mainTransactionRoute              = "transaction"
+	announceAggregateRoute            = "partial"
+	announceAggregateCosignatureRoute = "cosignature"
+	transactionStatusRoute            = "status"
+	transactionStatusesRoute          = "statuses"
 )
 
 type NamespaceType uint8
@@ -67,4 +67,7 @@ const (
 )
 
 // regValidNamespace check namespace on valid symbols
-var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+var (
+	regValidNamespace  = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+	regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+)

@@ -6,7 +6,6 @@ package sdk
 
 import (
 	"github.com/proximax-storage/proximax-utils-go/mock"
-	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -31,13 +30,11 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 
 		defer mockServ.Close()
 
-		netType, resp, err := mockServ.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
+		netType, err := mockServ.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
 
 		assert.Nilf(t, err, "NetworkService.GetNetworkType returned error=%s", err)
 
-		if tests.IsOkResponse(t, resp) {
-			assert.Equal(t, netType, TestNet)
-		}
+		assert.Equal(t, netType, TestNet)
 	})
 
 	t.Run("NotSupportedNet", func(t *testing.T) {
@@ -48,7 +45,7 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 
 		defer mock.Close()
 
-		netType, _, err := mock.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
+		netType, err := mock.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
 
 		assert.NotNil(t, err, "NetworkService.GetNetworkType should return error")
 		assert.Equal(t, netType, NotSupportedNet)

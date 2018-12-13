@@ -148,13 +148,11 @@ func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
 		RespBody: "[" + blockInfoJSON + "]",
 	})
 
-	bcInfo, resp, err := blockClient.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
+	bcInfo, err := blockClient.GetBlocksByHeightWithLimit(ctx, testHeight, testLimit)
 
 	assert.Nilf(t, err, "GetBlocksByHeightWithLimit returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, wantBlockInfo, bcInfo[0])
-	}
+	tests.ValidateStringers(t, wantBlockInfo, bcInfo[0])
 }
 
 func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
@@ -165,13 +163,11 @@ func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
 		RespBody: `{"height":[11235,0]}`,
 	})
 
-	got, resp, err := blockClient.GetBlockchainHeight(ctx)
+	got, err := blockClient.GetBlockchainHeight(ctx)
 
 	assert.Nilf(t, err, "GetBlockchainHeight returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, want, got)
-	}
+	tests.ValidateStringers(t, want, got)
 }
 
 func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
@@ -182,13 +178,11 @@ func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
 		RespBody: `{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`,
 	})
 
-	got, resp, err := blockClient.GetBlockchainStorage(ctx)
+	got, err := blockClient.GetBlockchainStorage(ctx)
 
 	assert.Nilf(t, err, "GetBlockchainStorage returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, want, got)
-	}
+	tests.ValidateStringers(t, want, got)
 }
 
 func TestBlockchainService_GetBlockchainScore(t *testing.T) {
@@ -199,13 +193,11 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 		RespBody: `{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`,
 	})
 
-	got, resp, err := blockClient.GetBlockchainScore(ctx)
+	got, err := blockClient.GetBlockchainScore(ctx)
 
 	assert.Nilf(t, err, "GetBlockchainScore returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, dto.toStruct(), got)
-	}
+	tests.ValidateStringers(t, dto.toStruct(), got)
 }
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
@@ -214,13 +206,11 @@ func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 		RespBody: blockInfoJSON,
 	})
 
-	got, resp, err := blockClient.GetBlockByHeight(ctx, testHeight)
+	got, err := blockClient.GetBlockByHeight(ctx, testHeight)
 
 	assert.Nilf(t, err, "GetBlockByHeight returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, wantBlockInfo, got)
-	}
+	tests.ValidateStringers(t, wantBlockInfo, got)
 }
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
@@ -229,13 +219,11 @@ func TestBlockchainService_GetBlockTransactions(t *testing.T) {
 		RespBody: blockTransactionsJSON,
 	})
 
-	got, resp, err := blockClient.GetBlockTransactions(ctx, testHeight)
+	got, err := blockClient.GetBlockTransactions(ctx, testHeight)
 
 	assert.Nilf(t, err, "GetBlockByHeight returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		for key, transaction := range got {
-			assert.Equal(t, wantBlockTransactions[key].GetAbstractTransaction().Signature, transaction.GetAbstractTransaction().Signature)
-		}
+	for key, transaction := range got {
+		assert.Equal(t, wantBlockTransactions[key].GetAbstractTransaction().Signature, transaction.GetAbstractTransaction().Signature)
 	}
 }

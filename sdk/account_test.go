@@ -19,7 +19,7 @@ var (
 		uint64DTO{409090909, 0}.toBigInt(),
 		uint64DTO{1, 0}.toBigInt(),
 		Mosaics{
-			&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toBigInt(), ""}, uint64DTO{3863990592, 95248}.toBigInt()},
+			&Mosaic{MosaicId: bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), Amount: uint64DTO{3863990592, 95248}.toBigInt()},
 		},
 	}
 
@@ -79,13 +79,11 @@ func TestAccountService_GetAccountInfo(t *testing.T) {
 		RespBody: accountInfoJson,
 	})
 
-	acc, resp, err := accountClient.GetAccountInfo(context.Background(), &Address{MijinTest, nemTestAddress1})
+	acc, err := accountClient.GetAccountInfo(context.Background(), &Address{MijinTest, nemTestAddress1})
 
 	assert.Nilf(t, err, "AccountService.GetAccountInfo returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, account, acc)
-	}
+	tests.ValidateStringers(t, account, acc)
 }
 
 func TestAccountService_GetAccountsInfo(t *testing.T) {
@@ -94,17 +92,15 @@ func TestAccountService_GetAccountsInfo(t *testing.T) {
 		RespBody: "[" + accountInfoJson + "]",
 	})
 
-	accounts, resp, err := accountClient.GetAccountsInfo(
+	accounts, err := accountClient.GetAccountsInfo(
 		context.Background(),
 		[]*Address{{MijinTest, nemTestAddress1}},
 	)
 
 	assert.Nilf(t, err, "AccountService.GetAccountsInfo returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		for _, acc := range accounts {
-			tests.ValidateStringers(t, account, acc)
-		}
+	for _, acc := range accounts {
+		tests.ValidateStringers(t, account, acc)
 	}
 }
 
@@ -114,7 +110,7 @@ func TestAccountService_Transactions(t *testing.T) {
 		RespBody: "[" + transactionJson + "]",
 	})
 
-	transactions, resp, err := accountClient.Transactions(
+	transactions, err := accountClient.Transactions(
 		context.Background(),
 		&PublicAccount{
 			&Address{MijinTest, nemTestAddress2},
@@ -125,9 +121,7 @@ func TestAccountService_Transactions(t *testing.T) {
 
 	assert.Nilf(t, err, "AccountService.Transactions returned error: %s", err)
 
-	if tests.IsOkResponse(t, resp) {
-		for _, tx := range transactions {
-			tests.ValidateStringers(t, transaction, tx)
-		}
+	for _, tx := range transactions {
+		tests.ValidateStringers(t, transaction, tx)
 	}
 }

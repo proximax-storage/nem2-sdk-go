@@ -56,6 +56,19 @@ type AccountInfo struct {
 	Mosaics          Mosaics
 }
 
+func (a *AccountInfo) String() string {
+	return str.StructToString(
+		"AccountInfo",
+		str.NewField("Address", str.StringPattern, a.Address),
+		str.NewField("AddressHeight", str.StringPattern, a.AddressHeight),
+		str.NewField("PublicKey", str.StringPattern, a.PublicKey),
+		str.NewField("PublicKeyHeight", str.StringPattern, a.PublicKeyHeight),
+		str.NewField("Importance", str.StringPattern, a.Importance),
+		str.NewField("ImportanceHeight", str.StringPattern, a.ImportanceHeight),
+		str.NewField("Mosaics", str.StringPattern, a.Mosaics),
+	)
+}
+
 type accountInfoDTO struct {
 	Account struct {
 		Address          string       `json:"address"`
@@ -72,7 +85,12 @@ func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
 	var err error
 	ms := make(Mosaics, len(dto.Account.Mosaics))
 	for i, m := range dto.Account.Mosaics {
-		ms[i] = m.toStruct()
+		msc, err := m.toStruct()
+		if err != nil {
+			return nil, err
+		}
+
+		ms[i] = msc
 	}
 
 	add, err := NewAddressFromEncoded(dto.Account.Address)
@@ -110,33 +128,13 @@ type Addresses struct {
 	lock sync.RWMutex
 }
 
-func (tx *AccountInfo) String() string {
-	return fmt.Sprintf(
-		`
-			"Address": %s,
-			"AddressHeight": %s,
-			"Mosaics": %s,
-			"PublicKey": %s,
-			"Importance": %d,
-			"ImportanceHeight": %d,
-			"PublicKeyHeight": %s,
-		`,
-		tx.Address,
-		tx.AddressHeight,
-		tx.Mosaics,
-		tx.PublicKey,
-		tx.Importance,
-		tx.ImportanceHeight,
-		tx.PublicKeyHeight,
-	)
-}
-
 func (ref *Addresses) AddAddress(address *Address) {
 	ref.lock.Lock()
 	defer ref.lock.Unlock()
 
 	ref.List = append(ref.List, address)
 }
+
 func (ref *Addresses) GetAddress(i int) (*Address, error) {
 	if (i >= 0) && (i < len(ref.List)) {
 		ref.lock.RLock()
@@ -160,6 +158,7 @@ func (ref *Addresses) MarshalJSON() (buf []byte, err error) {
 	buf = append(buf, ']', '}')
 	return
 }
+
 func (ref *Addresses) UnmarshalJSON(buf []byte) error {
 	return nil
 }

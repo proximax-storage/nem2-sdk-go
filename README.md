@@ -33,7 +33,7 @@ Using the client to call a method from a Service API
 
 ```go
 // Get the chain height
-chainHeight, resp, err := client.Blockchain.GetChainHeight(context.Background())
+chainHeight, err := client.Blockchain.GetChainHeight(context.Background())
 ```
 
 ## Context ##
@@ -42,7 +42,7 @@ A [Context](https://golang.org/pkg/context/) type is the first argument in any s
 deadlines, cancelation signals, and other request-scoped values
 ```go
 // Get the chain height
-chainHeight, resp, err := client.Blockchain.GetChainHeight(context.Background())
+chainHeight, err := client.Blockchain.GetChainHeight(context.Background())
 ```
 
 ## Wiki / Examples ##

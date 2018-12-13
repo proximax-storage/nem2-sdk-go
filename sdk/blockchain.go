@@ -6,8 +6,8 @@ package sdk
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/net"
 	"golang.org/x/net/context"
 	"math/big"
 	"net/http"
@@ -16,98 +16,119 @@ import (
 type BlockchainService service
 
 // Get Block Height
-func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height *big.Int) (*BlockInfo, *http.Response, error) {
+func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height *big.Int) (*BlockInfo, error) {
+	if height == nil || height.Int64() == 0 {
+		return nil, ErrNilOrZeroHeight
+	}
+
 	u := fmt.Sprintf(pathBlockByHeight, height.String())
 
-	bDto := &blockInfoDTO{}
-	resp, err := b.client.DoNewRequest(ctx, "GET", u, nil, &bDto)
+	dto := &blockInfoDTO{}
+
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, u, nil, &dto)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	bInfo, err := bDto.toStruct()
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return bInfo, resp, nil
+	return dto.toStruct()
 }
 
 // Get Transactions from a block information
-func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height *big.Int) ([]Transaction, *http.Response, error) { // TODO Add params
-	u := fmt.Sprintf(pathBlockGetTransaction, height.String())
+func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height *big.Int) ([]Transaction, error) { // TODO Add params
+	if height == nil || height.Int64() == 0 {
+		return nil, ErrNilOrZeroHeight
+	}
+
+	url := net.NewUrl(fmt.Sprintf(pathBlockGetTransaction, height.String()))
 
 	var data bytes.Buffer
-	resp, err := b.client.DoNewRequest(ctx, "GET", u, nil, &data)
+
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &data)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	tx, err := MapTransactions(&data)
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return tx, resp, nil
+	return MapTransactions(&data)
 }
 
 // GetBlocksByHeightWithLimit Returns blocks information for a given block height and limit
-func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, height, limit *big.Int) ([]*BlockInfo, *http.Response, error) {
-	if (height.Int64() == 0) || (limit.Int64() == 0) {
-		return nil, nil, errors.New("bad parameters - height, limit must be more then 0")
+func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, height, limit *big.Int) ([]*BlockInfo, error) {
+	if height == nil || height.Int64() == 0 {
+		return nil, ErrNilOrZeroHeight
 	}
 
-	url := fmt.Sprintf(pathBlockInfo, height.String(), limit.String())
+	if limit == nil || limit.Int64() == 0 {
+		return nil, ErrNilOrZeroLimit
+	}
 
-	var bDtos []blockInfoDTO
+	url := net.NewUrl(fmt.Sprintf(pathBlockInfo, height.String(), limit.String()))
 
-	resp, err := b.client.DoNewRequest(ctx, "GET", url, nil, &bDtos)
+	var dtos []*blockInfoDTO
+
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &dtos)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	bInfos := make([]*BlockInfo, limit.Int64())
-	for i, bDto := range bDtos {
-		bInfos[i], err = bDto.toStruct()
-	}
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return bInfos, resp, nil
+	return blockInfoDTOsToBlockInfos(dtos)
 }
 
 // Get the Chain Height
-func (b *BlockchainService) GetBlockchainHeight(ctx context.Context) (*big.Int, *http.Response, error) {
+func (b *BlockchainService) GetBlockchainHeight(ctx context.Context) (*big.Int, error) {
 	bh := &struct {
 		Height uint64DTO `json:"height"`
 	}{}
-	resp, err := b.client.DoNewRequest(ctx, "GET", pathBlockHeight, nil, &bh)
+
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, pathBlockHeight, nil, &bh)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return bh.Height.toBigInt(), resp, nil
+	if err = handleResponseStatusCode(resp, nil); err != nil {
+		return nil, err
+	}
+
+	return bh.Height.toBigInt(), nil
 }
 
 // Get the Chain Score
-func (b *BlockchainService) GetBlockchainScore(ctx context.Context) (*big.Int, *http.Response, error) {
+func (b *BlockchainService) GetBlockchainScore(ctx context.Context) (*big.Int, error) {
 	cs := &chainScoreDTO{}
-	resp, err := b.client.DoNewRequest(ctx, "GET", pathBlockScore, nil, &cs)
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, pathBlockScore, nil, &cs)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return cs.toStruct(), resp, nil
+	if err = handleResponseStatusCode(resp, nil); err != nil {
+		return nil, err
+	}
+
+	return cs.toStruct(), nil
 }
 
 // Get the Storage Information
-func (b *BlockchainService) GetBlockchainStorage(ctx context.Context) (*BlockchainStorageInfo, *http.Response, error) {
+func (b *BlockchainService) GetBlockchainStorage(ctx context.Context) (*BlockchainStorageInfo, error) {
 	bstorage := &BlockchainStorageInfo{}
-	resp, err := b.client.DoNewRequest(ctx, "GET", pathBlockStorage, nil, &bstorage)
+	resp, err := b.client.DoNewRequest(ctx, http.MethodGet, pathBlockStorage, nil, &bstorage)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return bstorage, resp, nil
+	if err = handleResponseStatusCode(resp, nil); err != nil {
+		return nil, err
+	}
+
+	return bstorage, nil
 }

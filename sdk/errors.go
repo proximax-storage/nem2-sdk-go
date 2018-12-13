@@ -6,32 +6,54 @@ package sdk
 
 import "errors"
 
+type RespErr struct {
+	msg string
+}
+
+func newRespError(msg string) error {
+	return &RespErr{msg: msg}
+}
+
+func (r *RespErr) Error() string {
+	return r.msg
+}
+
 // Catapult REST API errors
 
 var (
-	// TODO
-	ErrCatapultRestAPIError = errors.New("")
-	ErrResourceNotFound     = errors.New("resource is not found")
-	ErrArgumentNotValid     = errors.New("argument is not valid")
-	ErrInvalidRequest       = errors.New("request is not valid")
-	ErrInternalError        = errors.New("response is nil")
+	ErrResourceNotFound              = newRespError("resource is not found")
+	ErrArgumentNotValid              = newRespError("argument is not valid")
+	ErrInvalidRequest                = newRespError("request is not valid")
+	ErrInternalError                 = newRespError("response is nil")
+	ErrNotAcceptedResponseStatusCode = newRespError("not accepted response status code")
 )
 
-// MosaicId API errors
+// Mosaic errors
 var (
-	ErrEmptyMosaicIds  = errors.New("list mosaics ids must not by empty")
-	ErrNilMosaicId     = errors.New("mosaicId must not be nil")
-	ErrNilMosaicAmount = errors.New("amount must be not nil")
+	ErrEmptyMosaicIds      = errors.New("list mosaics ids must not by empty")
+	ErrNilMosaicId         = errors.New("mosaicId must not be nil")
+	ErrNilMosaicAmount     = errors.New("amount must be not nil")
+	ErrInvalidMosaicName   = errors.New("mosaic name is invalid")
+	ErrNilMosaicProperties = errors.New("mosaic properties must not be nil")
 )
 
-// Namespace API errors
+// Namespace errors
 var (
-	ErrNamespaceToManyPart = errors.New("too many parts")
-	ErrNilIdNamespace      = errors.New("namespaceId must not be nil")
-	ErrEmptyNamespaceIds   = errors.New("list namespace ids must not by empty")
+	ErrNamespaceTooManyPart = errors.New("too many parts")
+	ErrNilNamespaceId       = errors.New("namespaceId is nil or zero")
+	ErrEmptyNamespaceIds    = errors.New("list namespace ids must not by empty")
+	ErrInvalidNamespaceName = errors.New("namespace name is invalid")
+)
+
+// Blockchain errors
+var (
+	ErrNilOrZeroHeight = errors.New("block height should not be nil or zero")
+	ErrNilOrZeroLimit  = errors.New("limit should not be nil or zero")
 )
 
 var (
-	ErrEmptyAddressesIds = errors.New("list of addresses should not be nil")
+	ErrEmptyAddressesIds = errors.New("list of addresses should not be empty")
 	ErrNilAddress        = errors.New("address is nil")
+	ErrBlankAddress      = errors.New("address is blank")
+	ErrNilAccount        = errors.New("account should not be nil")
 )
