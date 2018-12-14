@@ -15,6 +15,10 @@ type SignerInfo struct {
 	ParentHash Hash   `json:"parentHash"`
 }
 
+type ErrorInfo struct {
+	Error error
+}
+
 // structure for Subscribe status
 type HashInfo struct {
 	Hash Hash `json:"hash"`
