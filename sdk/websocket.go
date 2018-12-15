@@ -286,7 +286,7 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 	go func() {
 		var resp []byte
 
-		var address string
+		address := "block"
 		if s.Subscribe != "block" {
 			address = s.getAdd()
 		}
