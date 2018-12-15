@@ -137,12 +137,12 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 // ConfirmedAdded notifies when a transaction related to an
 // address is included in a block.
 // The message contains the transaction.
-func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) ConfirmedAdded(add *Address) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add.Address)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
-	confirmedAddedChannels[add] = subTransaction.Ch
-	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add)
+	confirmedAddedChannels[add.Address] = subTransaction.Ch
+	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add.Address)
 	subTransaction.subscribe = subscribe
 	subscribe.Ch = subTransaction.Ch
 	return subTransaction, err
@@ -151,83 +151,83 @@ func (c *SubscribeService) ConfirmedAdded(add string) (*SubscribeTransaction, er
 // UnconfirmedAdded notifies when a transaction related to an
 // address is in unconfirmed state and waiting to be included in a block.
 // The message contains the transaction.
-func (c *SubscribeService) UnconfirmedAdded(add string) (*SubscribeTransaction, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) UnconfirmedAdded(add *Address) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add.Address)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
-	unconfirmedAddedChannels[add] = subTransaction.Ch
-	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add)
+	unconfirmedAddedChannels[add.Address] = subTransaction.Ch
+	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add.Address)
 	subTransaction.subscribe = subscribe
-	subscribe.Ch = unconfirmedAddedChannels[add]
+	subscribe.Ch = unconfirmedAddedChannels[add.Address]
 	return subTransaction, err
 }
 
 // UnconfirmedRemoved notifies when a transaction related to an
 // address was in unconfirmed state but not anymore.
 // The message contains the transaction hash.
-func (c *SubscribeService) UnconfirmedRemoved(add string) (*SubscribeHash, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) UnconfirmedRemoved(add *Address) (*SubscribeHash, error) {
+	c.client = c.getClient(add.Address)
 	subHash := new(SubscribeHash)
 	subHash.Ch = make(chan *HashInfo)
-	unconfirmedRemovedChannels[add] = subHash.Ch
-	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add)
+	unconfirmedRemovedChannels[add.Address] = subHash.Ch
+	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add.Address)
 	subHash.subscribe = subscribe
-	subscribe.Ch = unconfirmedRemovedChannels[add]
+	subscribe.Ch = unconfirmedRemovedChannels[add.Address]
 	return subHash, err
 }
 
 // Status notifies when a transaction related to an address rises an error.
 // The message contains the error message and the transaction hash.
-func (c *SubscribeService) Status(add string) (*SubscribeStatus, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) Status(add *Address) (*SubscribeStatus, error) {
+	c.client = c.getClient(add.Address)
 	subStatus := new(SubscribeStatus)
 	subStatus.Ch = make(chan *StatusInfo)
-	statusInfoChannels[add] = subStatus.Ch
-	subscribe, err := c.newSubscribe(pathStatus + "/" + add)
+	statusInfoChannels[add.Address] = subStatus.Ch
+	subscribe, err := c.newSubscribe(pathStatus + "/" + add.Address)
 	subStatus.subscribe = subscribe
-	subscribe.Ch = statusInfoChannels[add]
+	subscribe.Ch = statusInfoChannels[add.Address]
 	return subStatus, err
 }
 
 // PartialAdded notifies when an aggregate bonded transaction related to an
 // address is in partial state and waiting to have all required cosigners.
 // The message contains a transaction.
-func (c *SubscribeService) PartialAdded(add string) (*SubscribeTransaction, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) PartialAdded(add *Address) (*SubscribeTransaction, error) {
+	c.client = c.getClient(add.Address)
 	subTransaction := new(SubscribeTransaction)
 	subTransaction.Ch = make(chan Transaction)
-	partialAddedChannels[add] = subTransaction.Ch
-	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add)
+	partialAddedChannels[add.Address] = subTransaction.Ch
+	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add.Address)
 	subTransaction.subscribe = subscribe
-	subscribe.Ch = partialAddedChannels[add]
+	subscribe.Ch = partialAddedChannels[add.Address]
 	return subTransaction, err
 }
 
 // PartialRemoved notifies when a transaction related to an
 // address was in partial state but not anymore.
 // The message contains the transaction hash.
-func (c *SubscribeService) PartialRemoved(add string) (*SubscribePartialRemoved, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) PartialRemoved(add *Address) (*SubscribePartialRemoved, error) {
+	c.client = c.getClient(add.Address)
 	subPartialRemoved := new(SubscribePartialRemoved)
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
-	partialRemovedInfoChannels[add] = subPartialRemoved.Ch
-	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add)
+	partialRemovedInfoChannels[add.Address] = subPartialRemoved.Ch
+	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add.Address)
 	subPartialRemoved.subscribe = subscribe
-	subscribe.Ch = partialRemovedInfoChannels[add]
+	subscribe.Ch = partialRemovedInfoChannels[add.Address]
 	return subPartialRemoved, err
 }
 
 // Cosignature notifies when a cosignature signed transaction related to an
 // address is added to an aggregate bonded transaction with partial state.
 // The message contains the cosignature signed transaction.
-func (c *SubscribeService) Cosignature(add string) (*SubscribeSigner, error) {
-	c.client = c.getClient(add)
+func (c *SubscribeService) Cosignature(add *Address) (*SubscribeSigner, error) {
+	c.client = c.getClient(add.Address)
 	subCosignature := new(SubscribeSigner)
 	subCosignature.Ch = make(chan *SignerInfo)
-	signerInfoChannels[add] = subCosignature.Ch
-	subscribe, err := c.newSubscribe(pathCosignature + "/" + add)
+	signerInfoChannels[add.Address] = subCosignature.Ch
+	subscribe, err := c.newSubscribe(pathCosignature + "/" + add.Address)
 	subCosignature.subscribe = subscribe
-	subscribe.Ch = signerInfoChannels[add]
+	subscribe.Ch = signerInfoChannels[add.Address]
 	return subCosignature, err
 }
 
