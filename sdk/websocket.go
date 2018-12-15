@@ -219,7 +219,10 @@ func (s *subscribeInfo) buildType(t []byte) error {
 
 // Get address from subscribe struct
 func (s *subscribe) getAdd() string {
-	return strings.Split(s.Subscribe, "/")[1]
+	if s.Subscribe != "block" {
+		return strings.Split(s.Subscribe, "/")[1]
+	}
+	return s.Subscribe
 }
 
 // Get subscribe name from subscribe struct
@@ -250,7 +253,9 @@ func (c *ClientWebsocket) wsConnect() error {
 	}
 	c.client = conn
 
-	conn.SetDeadline(*c.timeout)
+	if *c.duration != time.Duration(0) {
+		conn.SetDeadline(*c.timeout)
+	}
 
 	var msg []byte
 	if err = websocket.Message.Receive(c.client, &msg); err != nil {
@@ -281,7 +286,7 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 	go func() {
 		var resp []byte
 
-		var address string
+		address := "block"
 		if s.Subscribe != "block" {
 			address = s.getAdd()
 		}
@@ -307,12 +312,21 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 				}
 				continue
 			} else if err != nil {
+				err = c.wsConnect()
+				if err != nil {
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
+					break
+				}
+			}
+			subName, err := restParser(resp)
+			if err != nil {
 				errCh <- &ErrorInfo{
 					Error: err,
 				}
 				break
 			}
-			subName, _ := restParser(resp)
 			b := subscribeInfo{
 				name:    subName,
 				account: s.getAdd(),
@@ -323,7 +337,6 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 					Error: err,
 				}
 			}
-
 		}
 	}()
 	return nil
@@ -339,6 +352,7 @@ func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) 
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
 	c.duration = &timeout
+
 	tout := time.Now().Add(*c.duration * time.Millisecond)
 	c.timeout = &tout
 
