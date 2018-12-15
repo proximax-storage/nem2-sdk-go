@@ -312,10 +312,13 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 				}
 				continue
 			} else if err != nil {
-				errCh <- &ErrorInfo{
-					Error: err,
+				err = c.wsConnect()
+				if err != nil {
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
+					break
 				}
-				break
 			}
 			subName, err := restParser(resp)
 			if err != nil {
