@@ -19,7 +19,7 @@ func (m *MosaicId) String() string {
 	return (*big.Int)(m).String()
 }
 
-func NewMosaicIdFromName(name string) (*MosaicId, error) {
+func NewMosaicIdFromFullName(name string) (*MosaicId, error) {
 	if len(name) == 0 || strings.Contains(name, " {") {
 		return nil, ErrInvalidMosaicName
 	}
@@ -78,58 +78,18 @@ func (m *Mosaic) String() string {
 	)
 }
 
-// Mosaics
-type Mosaics []*Mosaic
-
-func (ref Mosaics) String() string {
-	var s string
-
-	for i, mosaic := range ref {
-		if i > 0 {
-			s += ", "
-		}
-
-		if mosaic != nil {
-			s += mosaic.String()
-		}
-	}
-
-	return "[" + s + "]"
-}
-
-// MosaicIds is a list MosaicId
-type MosaicIds struct {
-	MosaicIds []*MosaicId `json:"mosaicIds"`
-}
-
-func (ref *MosaicIds) MarshalJSON() ([]byte, error) {
-	buf := []byte(`{"mosaicIds": [`)
-
-	for i, nsId := range ref.MosaicIds {
-		if i > 0 {
-			buf = append(buf, ',')
-		}
-
-		buf = append(buf, []byte(`"`+nsId.toHexString()+`"`)...)
-	}
-
-	buf = append(buf, ']', '}')
-
-	return buf, nil
-}
-
 // MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
 type MosaicInfo struct {
-	MosaicId    *MosaicId
-	FullName    string
-	Active      bool
-	Index       int
-	MetaId      string
-	NamespaceId *NamespaceId
-	Supply      *big.Int
-	Height      *big.Int
-	Owner       *PublicAccount
-	Properties  *MosaicProperties
+	MosaicId   *MosaicId
+	FullName   string
+	Active     bool
+	Index      int
+	MetaId     string
+	Namespace  *NamespaceInfo
+	Supply     *big.Int
+	Height     *big.Int
+	Owner      *PublicAccount
+	Properties *MosaicProperties
 }
 
 func (m *MosaicInfo) String() string {
@@ -140,7 +100,7 @@ func (m *MosaicInfo) String() string {
 		str.NewField("Active", str.BooleanPattern, m.Active),
 		str.NewField("Index", str.IntPattern, m.Index),
 		str.NewField("MetaId", str.StringPattern, m.MetaId),
-		str.NewField("NamespaceId", str.StringPattern, m.NamespaceId),
+		str.NewField("Namespace", str.StringPattern, m.Namespace),
 		str.NewField("Supply", str.StringPattern, m.Supply),
 		str.NewField("Height", str.StringPattern, m.Height),
 		str.NewField("Owner", str.StringPattern, m.Owner),
@@ -149,29 +109,13 @@ func (m *MosaicInfo) String() string {
 }
 
 func (m *MosaicInfo) ShortName() string {
-	if lastIndex := strings.LastIndex(m.FullName, ":"); lastIndex == -1 || lastIndex+1 >= len(m.FullName) {
+	parts := strings.Split(m.FullName, ":")
+
+	if len(parts) != 2 {
 		return ""
-	} else {
-		return m.FullName[lastIndex+1:]
-	}
-}
-
-type MosaicsInfo []*MosaicInfo
-
-func (ref MosaicsInfo) String() string {
-	var s string
-
-	for i, mscInfo := range ref {
-		if i > 0 {
-			s += ", "
-		}
-
-		if mscInfo != nil {
-			s += mscInfo.String()
-		}
 	}
 
-	return "[" + s + "]"
+	return parts[1]
 }
 
 // MosaicProperties  structure describes mosaic properties.

@@ -24,7 +24,7 @@ const (
 func TestNetworkService_GetNetworkType(t *testing.T) {
 	t.Run("TEST_NET", func(t *testing.T) {
 		mockServ := newSdkMockWithRouter(&mock.Router{
-			Path:     pathNetwork,
+			Path:     networkRoute,
 			RespBody: testNetRoute,
 		})
 
@@ -39,7 +39,7 @@ func TestNetworkService_GetNetworkType(t *testing.T) {
 
 	t.Run("NotSupportedNet", func(t *testing.T) {
 		mock := newSdkMockWithRouter(&mock.Router{
-			Path:     pathNetwork,
+			Path:     networkRoute,
 			RespBody: notSupportedRoute,
 		})
 

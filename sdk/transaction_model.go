@@ -587,12 +587,12 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 type TransferTransaction struct {
 	AbstractTransaction
 	*Message
-	Mosaics   Mosaics
+	Mosaics   []*Mosaic
 	Recipient *Address
 }
 
 // Create a transfer transaction
-func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosaics, message *Message, networkType NetworkType) (*TransferTransaction, error) {
+func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics []*Mosaic, message *Message, networkType NetworkType) (*TransferTransaction, error) {
 	if recipient == nil {
 		return nil, errors.New("recipient must not be nil")
 	}
@@ -700,7 +700,7 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 		return nil, err
 	}
 
-	mosaics := make(Mosaics, len(dto.Tx.Mosaics))
+	mosaics := make([]*Mosaic, len(dto.Tx.Mosaics))
 
 	for i, mosaic := range dto.Tx.Mosaics {
 		msc, err := mosaic.toStruct()

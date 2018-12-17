@@ -99,20 +99,18 @@ func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 
 // NamespaceInfo contains the state information of a Namespace.
 type NamespaceInfo struct {
-	NamespaceId     *NamespaceId
-	FullName        string
-	Active          bool
-	Index           int
-	MetaId          string
-	TypeSpace       NamespaceType
-	Depth           int
-	MosaicIds       []*MosaicId
-	Levels          []*NamespaceId
-	SubNamespaceIds []*NamespaceId
-	ParentId        *NamespaceId
-	Owner           *PublicAccount
-	StartHeight     *big.Int
-	EndHeight       *big.Int
+	NamespaceId *NamespaceId
+	FullName    string
+	Active      bool
+	Index       int
+	MetaId      string
+	TypeSpace   NamespaceType
+	Depth       int
+	Levels      []*NamespaceId
+	Parent      *NamespaceInfo
+	Owner       *PublicAccount
+	StartHeight *big.Int
+	EndHeight   *big.Int
 }
 
 func (ref *NamespaceInfo) String() string {
@@ -125,10 +123,8 @@ func (ref *NamespaceInfo) String() string {
 		str.NewField("MetaId", str.StringPattern, ref.MetaId),
 		str.NewField("TypeSpace", str.IntPattern, ref.TypeSpace),
 		str.NewField("Depth", str.IntPattern, ref.Depth),
-		str.NewField("MosaicIds", str.StringPattern, ref.MosaicIds),
 		str.NewField("Levels", str.StringPattern, ref.Levels),
-		str.NewField("SubNamespaceIds", str.StringPattern, ref.SubNamespaceIds),
-		str.NewField("ParentId", str.StringPattern, ref.ParentId),
+		str.NewField("Parent", str.StringPattern, ref.Parent),
 		str.NewField("Owner", str.StringPattern, ref.Owner),
 		str.NewField("StartHeight", str.StringPattern, ref.StartHeight),
 		str.NewField("EndHeight", str.StringPattern, ref.EndHeight),

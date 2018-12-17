@@ -144,7 +144,7 @@ func init() {
 
 func TestBlockchainService_GetBlocksByHeightWithLimit(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(pathBlockInfo, testHeight, testLimit),
+		Path:     fmt.Sprintf(blockInfoRoute, testHeight, testLimit),
 		RespBody: "[" + blockInfoJSON + "]",
 	})
 
@@ -159,7 +159,7 @@ func TestBlockchainService_GetBlockchainHeight(t *testing.T) {
 	want := uint64DTO{11235, 0}.toBigInt()
 
 	mockServer.AddRouter(&mock.Router{
-		Path:     pathBlockHeight,
+		Path:     blockHeightRoute,
 		RespBody: `{"height":[11235,0]}`,
 	})
 
@@ -174,7 +174,7 @@ func TestBlockchainService_GetBlockchainStorage(t *testing.T) {
 	want := &BlockchainStorageInfo{NumBlocks: 62094, NumTransactions: 56, NumAccounts: 25}
 
 	mockServer.AddRouter(&mock.Router{
-		Path:     pathBlockStorage,
+		Path:     blockStorageRoute,
 		RespBody: `{"numBlocks":62094,"numTransactions":56,"numAccounts":25}`,
 	})
 
@@ -189,7 +189,7 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 	dto := chainScoreDTO{ScoreHigh: uint64DTO{0, 0}, ScoreLow: uint64DTO{3999308498, 121398739}}
 
 	mockServer.AddRouter(&mock.Router{
-		Path:     pathBlockScore,
+		Path:     blockScoreRoute,
 		RespBody: `{"scoreHigh": [0,0],"scoreLow": [3999308498,121398739]}`,
 	})
 
@@ -202,7 +202,7 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(pathBlockByHeight, testHeight.String()),
+		Path:     fmt.Sprintf(blockByHeightRoute, testHeight.String()),
 		RespBody: blockInfoJSON,
 	})
 
@@ -215,7 +215,7 @@ func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(pathBlockGetTransaction, testHeight.String()),
+		Path:     fmt.Sprintf(blockGetTransactionRoute, testHeight.String()),
 		RespBody: blockTransactionsJSON,
 	})
 

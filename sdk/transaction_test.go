@@ -36,8 +36,8 @@ var transaction = &TransferTransaction{
 			Id:                  "5B686E97F0C0EA00017B9437",
 		},
 	},
-	Mosaics: Mosaics{
-		&Mosaic{bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), uint64DTO{10000000, 0}.toBigInt()},
+	Mosaics: []*Mosaic{
+		{bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), uint64DTO{10000000, 0}.toBigInt()},
 	},
 	Recipient: &Address{MijinTest, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
 	Message:   &Message{Type: 0, Payload: ""},
@@ -256,7 +256,7 @@ func TestAggregateTransactionSerialization(t *testing.T) {
 	ttx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", MijinTest),
-		Mosaics{Xem(10000000)},
+		[]*Mosaic{Xem(10000000)},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -283,7 +283,7 @@ func TestAggregateTransactionSigningWithMultipleCosignatures(t *testing.T) {
 	ttx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", MijinTest),
-		Mosaics{},
+		[]*Mosaic{},
 		NewPlainMessage("test-message"),
 		MijinTest,
 	)
@@ -367,7 +367,7 @@ func TestTransferTransactionSerialization(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{
+		[]*Mosaic{
 			{
 				MosaicId: bigIntToMosaicId(big.NewInt(95442763262823)),
 				Amount:   big.NewInt(100),
@@ -391,7 +391,7 @@ func TestTransferTransactionToAggregate(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
+		[]*Mosaic{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -414,7 +414,7 @@ func TestTransferTransactionSigning(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
+		[]*Mosaic{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
 		NewPlainMessage(""),
 		MijinTest,
 	)

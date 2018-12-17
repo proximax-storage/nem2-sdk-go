@@ -23,7 +23,7 @@ func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (
 		return nil, ErrBlankAddress
 	}
 
-	url := net.NewUrl(fmt.Sprintf("/"+mainAccountRoute+"/%s", address.Address))
+	url := net.NewUrl(fmt.Sprintf(accountRoute, address.Address))
 
 	dto := &accountInfoDTO{}
 
@@ -45,19 +45,19 @@ func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses []*Addre
 		return nil, ErrEmptyAddressesIds
 	}
 
-	type addrsDTO struct {
+	addrs := struct {
 		Messages []string `json:"addresses"`
+	}{
+		Messages: make([]string, len(addresses)),
 	}
-
-	addrs := addrsDTO{Messages: make([]string, len(addresses))}
 
 	for i, address := range addresses {
 		addrs.Messages[i] = address.Address
 	}
 
-	dtos := make([]*accountInfoDTO, 0)
+	dtos := accountInfoDTOs(make([]*accountInfoDTO, 0))
 
-	resp, err := a.client.DoNewRequest(ctx, http.MethodPost, mainAccountRoute, addrs, &dtos)
+	resp, err := a.client.DoNewRequest(ctx, http.MethodPost, accountsRoute, addrs, &dtos)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses []*Addre
 		return nil, err
 	}
 
-	return accountInfoDTOsToAccountInfos(dtos)
+	return dtos.toStruct()
 }
 
 // Gets a MultisigAccountInfo for an account.
@@ -75,7 +75,7 @@ func (a *AccountService) GetMultisigAccountInfo(ctx context.Context, address *Ad
 		return nil, ErrNilAddress
 	}
 
-	url := net.NewUrl(fmt.Sprintf("/"+mainAccountRoute+"/%s/"+multisigAccountInfoRoute, address.Address))
+	url := net.NewUrl(fmt.Sprintf(multisigAccountRoute, address.Address))
 
 	dto := &multisigAccountInfoDTO{}
 
@@ -97,7 +97,7 @@ func (a *AccountService) GetMultisigAccountGraphInfo(ctx context.Context, addres
 		return nil, ErrNilAddress
 	}
 
-	url := net.NewUrl(fmt.Sprintf("/"+mainAccountRoute+"/%s/"+multisigAccountGraphInfoRoute, address.Address))
+	url := net.NewUrl(fmt.Sprintf(multisigAccountGraphInfoRoute, address.Address))
 
 	dto := &multisigAccountGraphInfoDTOS{}
 
@@ -115,7 +115,7 @@ func (a *AccountService) GetMultisigAccountGraphInfo(ctx context.Context, addres
 
 // Gets an array of confirmed transactions for which an account is signer or receiver.
 func (a *AccountService) Transactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, error) {
-	return a.findTransactions(ctx, account, opt, transactionsRoute)
+	return a.findTransactions(ctx, account, opt, accountTransactionsRoute)
 }
 
 // Gets an array of transactions for which an account is the recipient of a transaction.
@@ -160,7 +160,7 @@ func (a *AccountService) findTransactions(ctx context.Context, account *PublicAc
 
 	var b bytes.Buffer
 
-	u, err := addOptions(fmt.Sprintf("%s/%s/%s", mainAccountRoute, account.PublicKey, path), opt)
+	u, err := addOptions(fmt.Sprintf(transactionsByAccountRoute, account.PublicKey, path), opt)
 	if err != nil {
 		return nil, err
 	}

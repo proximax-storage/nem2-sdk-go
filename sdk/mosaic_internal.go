@@ -41,11 +41,12 @@ func generateMosaicId(namespaceName string, mosaicName string) (*MosaicId, error
 		return nil, ErrInvalidMosaicName
 	}
 
-	if bigInt, err := generateId(mosaicName, namespacePath[len(namespacePath)-1]); err != nil {
+	bigInt, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
+	if err != nil {
 		return nil, err
-	} else {
-		return bigIntToMosaicId(bigInt), nil
 	}
+
+	return bigIntToMosaicId(bigInt), nil
 }
 
 // mosaicInfoDTO is temporary struct for reading response & fill MosaicName
@@ -73,10 +74,13 @@ func (m *mosaicNameDTO) toStruct() (*MosaicName, error) {
 	}, nil
 }
 
-func mosaicNameDTOsToMosaicNames(mscNameDTOs []*mosaicNameDTO) ([]*MosaicName, error) {
-	mscNames := make([]*MosaicName, 0, len(mscNameDTOs))
+type mosaicNameDTOs []*mosaicNameDTO
 
-	for _, dto := range mscNameDTOs {
+func (m *mosaicNameDTOs) toStruct() ([]*MosaicName, error) {
+	dtos := *m
+	mscNames := make([]*MosaicName, 0, len(dtos))
+
+	for _, dto := range dtos {
 		mscName, err := dto.toStruct()
 		if err != nil {
 			return nil, err
@@ -157,28 +161,33 @@ func (ref *mosaicInfoDTO) toStruct(networkType NetworkType) (*MosaicInfo, error)
 
 	mosaicId, err := NewMosaicId(ref.Mosaic.MosaicId.toBigInt())
 
-	return &MosaicInfo{
-		Active:      ref.Meta.Active,
-		Index:       ref.Meta.Index,
-		FullName:    ref.Mosaic.Name,
-		MetaId:      ref.Meta.Id,
-		NamespaceId: nsId,
-		MosaicId:    mosaicId,
-		Supply:      ref.Mosaic.Supply.toBigInt(),
-		Height:      ref.Mosaic.Height.toBigInt(),
-		Owner:       publicAcc,
-		Properties:  ref.Mosaic.Properties.toStruct(),
-	}, nil
-}
-
-func mosaicInfoDTOsToMosaicInfos(mosaicInfoDTOs []*mosaicInfoDTO, networkType NetworkType) ([]*MosaicInfo, error) {
-	mscInfos := make([]*MosaicInfo, 0, len(mosaicInfoDTOs))
-
-	if len(mosaicInfoDTOs) == 0 {
-		return mscInfos, nil
+	mscInfo := &MosaicInfo{
+		Active:     ref.Meta.Active,
+		Index:      ref.Meta.Index,
+		FullName:   ref.Mosaic.Name,
+		MetaId:     ref.Meta.Id,
+		MosaicId:   mosaicId,
+		Supply:     ref.Mosaic.Supply.toBigInt(),
+		Height:     ref.Mosaic.Height.toBigInt(),
+		Owner:      publicAcc,
+		Properties: ref.Mosaic.Properties.toStruct(),
 	}
 
-	for _, dto := range mosaicInfoDTOs {
+	if nsId != nil && namespaceIdToBigInt(nsId).Int64() != 0 {
+		mscInfo.Namespace = &NamespaceInfo{NamespaceId: nsId}
+	}
+
+	return mscInfo, nil
+}
+
+type mosaicInfoDTOs []*mosaicInfoDTO
+
+func (m *mosaicInfoDTOs) toStruct(networkType NetworkType) ([]*MosaicInfo, error) {
+	dtos := *m
+
+	mscInfos := make([]*MosaicInfo, 0, len(dtos))
+
+	for _, dto := range dtos {
 		mscInfo, err := dto.toStruct(networkType)
 		if err != nil {
 			return nil, err
@@ -188,4 +197,24 @@ func mosaicInfoDTOsToMosaicInfos(mosaicInfoDTOs []*mosaicInfoDTO, networkType Ne
 	}
 
 	return mscInfos, nil
+}
+
+type mosaicIds struct {
+	MosaicIds []*MosaicId `json:"mosaicIds"`
+}
+
+func (ref *mosaicIds) MarshalJSON() ([]byte, error) {
+	buf := []byte(`{"mosaicIds": [`)
+
+	for i, nsId := range ref.MosaicIds {
+		if i > 0 {
+			buf = append(buf, ',')
+		}
+
+		buf = append(buf, []byte(`"`+nsId.toHexString()+`"`)...)
+	}
+
+	buf = append(buf, ']', '}')
+
+	return buf, nil
 }

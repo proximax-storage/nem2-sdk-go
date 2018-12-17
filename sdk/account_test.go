@@ -18,8 +18,8 @@ var (
 		uint64DTO{0, 0}.toBigInt(),
 		uint64DTO{409090909, 0}.toBigInt(),
 		uint64DTO{1, 0}.toBigInt(),
-		Mosaics{
-			&Mosaic{MosaicId: bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), Amount: uint64DTO{3863990592, 95248}.toBigInt()},
+		[]*Mosaic{
+			{MosaicId: bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), Amount: uint64DTO{3863990592, 95248}.toBigInt()},
 		},
 	}
 

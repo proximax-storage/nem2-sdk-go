@@ -84,5 +84,13 @@ func HexDecode(src []byte) ([]byte, error) {
 }
 
 func EqualsBigInts(first, second *big.Int) bool {
-	return first.String() == second.String()
+	if first == nil && second == nil {
+		return true
+	}
+
+	if first != nil {
+		return first.Cmp(second) == 0
+	}
+
+	return second.Cmp(first) == 0
 }

@@ -18,7 +18,7 @@ type TransactionService service
 func (txs *TransactionService) GetTransaction(ctx context.Context, id string) (Transaction, error) {
 	var b bytes.Buffer
 
-	url := net.NewUrl(fmt.Sprintf("/"+mainTransactionRoute+"/%s", id))
+	url := net.NewUrl(fmt.Sprintf(transactionRoute, id))
 
 	resp, err := txs.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &b)
 	if err != nil {
@@ -39,7 +39,7 @@ func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string
 		ids,
 	}
 
-	resp, err := txs.client.DoNewRequest(ctx, http.MethodPost, mainTransactionRoute, txIds, &b)
+	resp, err := txs.client.DoNewRequest(ctx, http.MethodPost, transactionsRoute, txIds, &b)
 	if err != nil {
 		return nil, err
 	}
@@ -53,24 +53,24 @@ func (txs *TransactionService) GetTransactions(ctx context.Context, ids []string
 
 // Announce a transaction to the network
 func (txs *TransactionService) Announce(ctx context.Context, tx *SignedTransaction) (string, error) {
-	return txs.announceTransaction(ctx, tx, mainTransactionRoute)
+	return txs.announceTransaction(ctx, tx, transactionsRoute)
 }
 
 // Announce a partial transaction to the network
 func (txs *TransactionService) AnnounceAggregateBonded(ctx context.Context, tx *SignedTransaction) (string, error) {
-	return txs.announceTransaction(ctx, tx, fmt.Sprintf("%s/%s", mainTransactionRoute, announceAggregateRoute))
+	return txs.announceTransaction(ctx, tx, announceAggregateRoute)
 }
 
 // Announce a cosignature transaction to the network
 func (txs *TransactionService) AnnounceAggregateBondedCosignature(ctx context.Context, c *CosignatureSignedTransaction) (string, error) {
-	return txs.announceTransaction(ctx, c, fmt.Sprintf("%s/%s", mainTransactionRoute, announceAggregateCosignatureRoute))
+	return txs.announceTransaction(ctx, c, announceAggregateCosignatureRoute)
 }
 
 // Returns transaction status for a given transaction id or hash
 func (txs *TransactionService) GetTransactionStatus(ctx context.Context, id string) (*TransactionStatus, error) {
 	ts := &transactionStatusDTO{}
 
-	resp, err := txs.client.DoNewRequest(ctx, http.MethodGet, fmt.Sprintf("%s/%s/%s", mainTransactionRoute, id, transactionStatusRoute), nil, ts)
+	resp, err := txs.client.DoNewRequest(ctx, http.MethodGet, fmt.Sprintf(transactionStatusRoute, id), nil, ts)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +88,8 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 		hashes,
 	}
 
-	url := net.NewUrl("/" + mainTransactionRoute + "/" + transactionStatusesRoute)
-
-	dtos := make([]*transactionStatusDTO, len(hashes))
-	resp, err := txs.client.DoNewRequest(ctx, http.MethodPost, url.Encode(), txIds, &dtos)
+	dtos := transactionStatusDTOs(make([]*transactionStatusDTO, len(hashes)))
+	resp, err := txs.client.DoNewRequest(ctx, http.MethodPost, transactionsStatusRoute, txIds, &dtos)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +98,7 @@ func (txs *TransactionService) GetTransactionStatuses(ctx context.Context, hashe
 		return nil, err
 	}
 
-	return transactionStatusDTOsToTransactionStatuses(dtos)
+	return dtos.toStruct()
 }
 
 func (txs *TransactionService) announceTransaction(ctx context.Context, tx interface{}, path string) (string, error) {

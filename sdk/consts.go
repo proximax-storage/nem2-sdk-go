@@ -6,57 +6,61 @@ package sdk
 
 import "regexp"
 
-var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
+var XemMosaicId, _ = NewMosaicIdFromFullName("nem:xem")
 
 // const routers path for methods AccountService
 const (
-	mainAccountRoute              = "account"
-	transactionsRoute             = "transactions"
-	incomingTransactionsRoute     = "transactions/incoming"
-	outgoingTransactionsRoute     = "transactions/outgoing"
-	unconfirmedTransactionsRoute  = "transactions/unconfirmed"
-	aggregateTransactionsRoute    = "transactions/aggregateBondedTransactions"
-	multisigAccountInfoRoute      = "multisig"
-	multisigAccountGraphInfoRoute = "multisig/graph"
+	accountsRoute                 = "/account"
+	accountRoute                  = "/account/%s"
+	multisigAccountRoute          = "/account/%s/multisig"
+	multisigAccountGraphInfoRoute = "/account/%s/multisig/graph"
+	transactionsByAccountRoute    = "/account/%s/%s"
+	accountTransactionsRoute      = "/transactions"
+	incomingTransactionsRoute     = "/transactions/incoming"
+	outgoingTransactionsRoute     = "/transactions/outgoing"
+	unconfirmedTransactionsRoute  = "/transactions/unconfirmed"
+	aggregateTransactionsRoute    = "/transactions/aggregateBondedTransactions"
 )
 
 // const routers path for methods NamespaceService
 const (
-	pathNamespacesFromAccounts = "/account/namespaces"
-	pathNamespace              = "/namespace"
-	pathNamespaceNames         = "/namespace/names"
-	pathNamespacesFromAccount  = "/account/%s/namespaces"
+	namespaceRoute              = "/namespace/%s"
+	namespacesFromAccountsRoute = "/account/namespaces"
+	namespaceNamesRoute         = "/namespace/names"
+	namespacesFromAccountRoutes = "/account/%s/namespaces"
 )
 
 // const routers path for methods MosaicService
 const (
-	pathMosaic              = "/mosaic"
-	pathMosaicNames         = "/mosaic/names"
-	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
+	mosaicsRoute              = "/mosaic"
+	mosaicRoute               = "/mosaic/%s"
+	mosaicNamesRoute          = "/mosaic/names"
+	mosaicsFromNamespaceRoute = "/namespace/%s/mosaics"
 )
 
 // const routers path for methods BlockchainService
 const (
-	pathBlockHeight         = "/chain/height"
-	pathBlockByHeight       = "/block/%s"
-	pathBlockScore          = "/chain/score"
-	pathBlockGetTransaction = "/block/%s/transactions"
-	pathBlockInfo           = "/blocks/%s/limit/%s"
-	pathBlockStorage        = "/diagnostic/storage"
+	blockHeightRoute         = "/chain/height"
+	blockByHeightRoute       = "/block/%s"
+	blockScoreRoute          = "/chain/score"
+	blockGetTransactionRoute = "/block/%s/transactions"
+	blockInfoRoute           = "/blocks/%s/limit/%s"
+	blockStorageRoute        = "/diagnostic/storage"
 )
 
 // const routers path for methods MosaicService
 const (
-	pathNetwork = "/network"
+	networkRoute = "/network"
 )
 
 // const routers path for methods TransactionService
 const (
-	mainTransactionRoute              = "transaction"
-	announceAggregateRoute            = "partial"
-	announceAggregateCosignatureRoute = "cosignature"
-	transactionStatusRoute            = "status"
-	transactionStatusesRoute          = "statuses"
+	transactionsRoute                 = "/transaction"
+	transactionRoute                  = "/transaction/%s"
+	transactionStatusRoute            = "/transaction/%s/status"
+	transactionsStatusRoute           = "/transaction/statuses"
+	announceAggregateRoute            = "/transaction/partial"
+	announceAggregateCosignatureRoute = "/transaction/cosignature"
 )
 
 type NamespaceType uint8

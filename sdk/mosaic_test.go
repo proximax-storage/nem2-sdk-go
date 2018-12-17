@@ -25,7 +25,6 @@ var (
 const (
 	testMosaicPathID         = "d525ad41d95fcf29"
 	testMosaicNamespaceEmpty = "a887d82dfeb659b0"
-	testMosaicFromNamesaceId = "5B55E02EACCB7B00015DB6EC"
 )
 
 var (
@@ -74,13 +73,13 @@ var (
 }`
 
 	mosaicCorr = &MosaicInfo{
-		MosaicId:    bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()),
-		MetaId:      "5B55E02EACCB7B00015DB6EC",
-		NamespaceId: bigIntToNamespaceId(uint64DTO{929036875, 2226345261}.toBigInt()),
-		Supply:      uint64DTO{3403414400, 2095475}.toBigInt(),
-		Active:      true,
-		Height:      big.NewInt(1),
-		FullName:    "SuperMosaic",
+		MosaicId:  bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()),
+		MetaId:    "5B55E02EACCB7B00015DB6EC",
+		Namespace: namespaceCorr,
+		Supply:    uint64DTO{3403414400, 2095475}.toBigInt(),
+		Active:    true,
+		Height:    big.NewInt(1),
+		FullName:  "SuperMosaic",
 		Owner: &PublicAccount{
 			Address: &Address{
 				Type:    mosaicClient.client.config.NetworkType,
@@ -105,7 +104,7 @@ var (
 
 func TestMosaicService_GetMosaic(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(pathMosaic+"/%s", testMosaicPathID),
+		Path:     fmt.Sprintf(mosaicRoute, testMosaicPathID),
 		RespBody: tplMosaic,
 	})
 
@@ -118,7 +117,7 @@ func TestMosaicService_GetMosaic(t *testing.T) {
 func TestMosaicService_GetMosaics(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockServer.AddRouter(&mock.Router{
-			Path:     pathMosaic,
+			Path:     mosaicsRoute,
 			RespBody: "[" + tplMosaic + "]",
 			ReqJsonBodyStruct: struct {
 				MosaicIds []string `json:"mosaicIds"`
@@ -143,7 +142,7 @@ func TestMosaicService_GetMosaics(t *testing.T) {
 
 func TestMosaicService_GetMosaicNames(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path: pathMosaicNames,
+		Path: mosaicNamesRoute,
 		RespBody: `[
 						  {
 							"mosaicId": [
@@ -174,7 +173,7 @@ func TestMosaicService_GetMosaicNames(t *testing.T) {
 func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 	t.Run("regular case", func(t *testing.T) {
 		mockServer.AddRouter(&mock.Router{
-			Path:     fmt.Sprintf(pathMosaicFromNamespace, mosaicNamespace),
+			Path:     fmt.Sprintf(mosaicsFromNamespaceRoute, mosaicNamespace),
 			RespBody: "[" + tplMosaic + "]",
 		})
 
@@ -189,7 +188,7 @@ func TestMosaicService_GetMosaicsFromNamespace(t *testing.T) {
 
 	t.Run("no mosaic id", func(t *testing.T) {
 		mockServer.AddRouter(&mock.Router{
-			Path:     fmt.Sprintf(pathMosaicFromNamespace, testMosaicNamespaceEmpty),
+			Path:     fmt.Sprintf(mosaicsFromNamespaceRoute, testMosaicNamespaceEmpty),
 			RespBody: "[]",
 		})
 

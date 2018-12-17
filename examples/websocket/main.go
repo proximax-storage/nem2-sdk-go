@@ -81,7 +81,7 @@ func main() {
 	ttx, err := sdk.NewTransferTransaction(
 		sdk.NewDeadline(time.Hour*1),
 		sdk.NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", networkType),
-		sdk.Mosaics{sdk.Xem(10000000)},
+		[]*sdk.Mosaic{sdk.Xem(10000000)},
 		sdk.NewPlainMessage(""),
 		networkType,
 	)

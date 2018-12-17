@@ -1,6 +1,9 @@
 package sdk
 
-func transactionStatusDTOsToTransactionStatuses(dtos []*transactionStatusDTO) ([]*TransactionStatus, error) {
+type transactionStatusDTOs []*transactionStatusDTO
+
+func (t *transactionStatusDTOs) toStruct() ([]*TransactionStatus, error) {
+	dtos := *t
 	statuses := make([]*TransactionStatus, 0, len(dtos))
 
 	for _, dto := range dtos {

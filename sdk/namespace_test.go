@@ -23,6 +23,11 @@ func init() {
 
 	namespaceCorr.Levels = []*NamespaceId{testNamespaceId}
 	namespaceNameCorr.NamespaceId = testNamespaceId
+
+	mockServer.AddRouter(&mock.Router{
+		Path:     fmt.Sprintf(namespaceRoute, testNamespaceId.toHexString()),
+		RespBody: tplInfo,
+	})
 }
 
 // test data
@@ -55,18 +60,14 @@ var (
 			  ,
 			  "namespace": {
 				"namespaceId": [
-				  0,
-				  0
+				  929036875,
+				  2226345261
 				], 
 				"type": 0,
 				"depth": 1,
 				"level0": [
 				  929036875,
 				  2226345261
-				],
-				"parentId": [
-				  0,
-				  0
 				],
 				"owner": "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
 				"ownerAddress": "904A1B7A7432C968202264C2CBDE0E8E5547EED3AD66E52BAC",
@@ -94,7 +95,7 @@ var (
 			}`
 
 	namespaceCorr = &NamespaceInfo{
-		NamespaceId: bigIntToNamespaceId(big.NewInt(0)),
+		NamespaceId: bigIntToNamespaceId(uint64DTO{929036875, 2226345261}.toBigInt()),
 		Active:      true,
 		Index:       0,
 		MetaId:      "5B55E02EACCB7B00015DB6EB",
@@ -107,15 +108,9 @@ var (
 			},
 			PublicKey: "321DE652C4D3362FC2DDF7800F6582F4A10CFEA134B81F8AB6E4BE78BBA4D18E",
 		},
-		SubNamespaceIds: []*NamespaceId{
-			bigIntToNamespaceId(big.NewInt(0)),
-		},
-		MosaicIds: []*MosaicId{
-			bigIntToMosaicId(big.NewInt(0)),
-		},
 		EndHeight:   uint64DTO{4294967295, 4294967295}.toBigInt(),
 		StartHeight: big.NewInt(1),
-		ParentId:    bigIntToNamespaceId(big.NewInt(0)),
+		Parent:      nil,
 	}
 
 	namespaceNameCorr = &NamespaceName{
@@ -128,11 +123,6 @@ var (
 )
 
 func TestNamespaceService_GetNamespace(t *testing.T) {
-	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf("/namespace/%s", testNamespaceId.toHexString()),
-		RespBody: tplInfo,
-	})
-
 	nsInfo, err := namespaceClient.GetNamespace(ctx, testNamespaceId)
 
 	assert.Nilf(t, err, "NamespaceService.GetNamespace returned error: %s", err)
@@ -141,15 +131,13 @@ func TestNamespaceService_GetNamespace(t *testing.T) {
 
 func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(pathNamespacesFromAccount, testAddress.Address),
+		Path:     fmt.Sprintf(namespacesFromAccountRoutes, testAddress.Address),
 		RespBody: tplInfoArr,
 	})
 
 	nsInfoArr, err := namespaceClient.GetNamespacesFromAccount(ctx, &testAddress, nil, pageSize)
 
 	assert.Nilf(t, err, "NamespaceService.GetNamespacesFromAccount returned error: %s", err)
-
-	fmt.Println(nsInfoArr)
 
 	for _, nsInfo := range nsInfoArr {
 		tests.ValidateStringers(t, namespaceCorr, nsInfo)
@@ -159,7 +147,7 @@ func TestNamespaceService_GetNamespacesFromAccount(t *testing.T) {
 func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockServer.AddRouter(&mock.Router{
-			Path:     pathNamespacesFromAccounts,
+			Path:     namespacesFromAccountsRoute,
 			RespBody: tplInfoArr,
 		})
 
@@ -182,7 +170,7 @@ func TestNamespaceService_GetNamespacesFromAccounts(t *testing.T) {
 func TestNamespaceService_GetNamespaceNames(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockServer.AddRouter(&mock.Router{
-			Path: pathNamespaceNames,
+			Path: namespaceNamesRoute,
 			RespBody: `[
 			  {
 				"namespaceId": [

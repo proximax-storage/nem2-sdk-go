@@ -56,14 +56,13 @@ func (ref *namespaceNameDTO) toStruct() (*NamespaceName, error) {
 	}, nil
 }
 
-func namespaceNameDTOsToNamespaceNames(namespaceNameDTOs []*namespaceNameDTO) ([]*NamespaceName, error) {
-	nsNames := make([]*NamespaceName, 0, len(namespaceNameDTOs))
+type namespaceNameDTOs []*namespaceNameDTO
 
-	if len(namespaceNameDTOs) == 0 {
-		return nsNames, nil
-	}
+func (n *namespaceNameDTOs) toStruct() ([]*NamespaceName, error) {
+	dtos := *n
+	nsNames := make([]*NamespaceName, 0, len(dtos))
 
-	for _, dto := range namespaceNameDTOs {
+	for _, dto := range dtos {
 		nsName, err := dto.toStruct()
 		if err != nil {
 			return nil, err
@@ -77,20 +76,19 @@ func namespaceNameDTOsToNamespaceNames(namespaceNameDTOs []*namespaceNameDTO) ([
 
 // namespaceDTO temporary struct for reading responce & fill NamespaceInfo
 type namespaceDTO struct {
-	NamespaceId   uint64DTO
-	FullName      string
-	Type          int
-	Depth         int
-	Level0        *uint64DTO
-	Level1        *uint64DTO
-	Level2        *uint64DTO
-	ParentId      uint64DTO
-	MosaicIds     []uint64DTO
-	SubNamespaces []uint64DTO
-	Owner         string
-	OwnerAddress  string
-	StartHeight   uint64DTO
-	EndHeight     uint64DTO
+	NamespaceId  uint64DTO
+	FullName     string
+	Type         int
+	Depth        int
+	Level0       *uint64DTO
+	Level1       *uint64DTO
+	Level2       *uint64DTO
+	ParentId     uint64DTO
+	MosaicIds    []uint64DTO
+	Owner        string
+	OwnerAddress string
+	StartHeight  uint64DTO
+	EndHeight    uint64DTO
 }
 
 // namespaceInfoDTO temporary struct for reading response & fill NamespaceInfo
@@ -121,17 +119,6 @@ func (ref *namespaceInfoDTO) toStruct() (*NamespaceInfo, error) {
 		return nil, err
 	}
 
-	subNses := make([]*NamespaceId, 0, len(ref.Namespace.SubNamespaces))
-
-	for _, nsIdDTO := range ref.Namespace.SubNamespaces {
-		nsId, err := NewNamespaceId(nsIdDTO.toBigInt())
-		if err != nil {
-			return nil, err
-		}
-
-		subNses = append(subNses, nsId)
-	}
-
 	mscIds := make([]*MosaicId, 0, len(ref.Namespace.MosaicIds))
 
 	for _, mscIdDTO := range ref.Namespace.MosaicIds {
@@ -143,22 +130,25 @@ func (ref *namespaceInfoDTO) toStruct() (*NamespaceInfo, error) {
 		mscIds = append(mscIds, mscId)
 	}
 
-	return &NamespaceInfo{
-		NamespaceId:     nsId,
-		FullName:        ref.Namespace.FullName,
-		Active:          ref.Meta.Active,
-		Index:           ref.Meta.Index,
-		MetaId:          ref.Meta.Id,
-		TypeSpace:       NamespaceType(ref.Namespace.Type),
-		Depth:           ref.Namespace.Depth,
-		Levels:          levels,
-		ParentId:        parentId,
-		Owner:           pubAcc,
-		MosaicIds:       mscIds,
-		SubNamespaceIds: subNses,
-		StartHeight:     ref.Namespace.StartHeight.toBigInt(),
-		EndHeight:       ref.Namespace.EndHeight.toBigInt(),
-	}, nil
+	ns := &NamespaceInfo{
+		NamespaceId: nsId,
+		FullName:    ref.Namespace.FullName,
+		Active:      ref.Meta.Active,
+		Index:       ref.Meta.Index,
+		MetaId:      ref.Meta.Id,
+		TypeSpace:   NamespaceType(ref.Namespace.Type),
+		Depth:       ref.Namespace.Depth,
+		Levels:      levels,
+		Owner:       pubAcc,
+		StartHeight: ref.Namespace.StartHeight.toBigInt(),
+		EndHeight:   ref.Namespace.EndHeight.toBigInt(),
+	}
+
+	if parentId != nil && namespaceIdToBigInt(parentId).Int64() != 0 {
+		ns.Parent = &NamespaceInfo{NamespaceId: parentId}
+	}
+
+	return ns, nil
 }
 
 func (ref *namespaceInfoDTO) extractLevels() ([]*NamespaceId, error) {
@@ -194,10 +184,13 @@ func (ref *namespaceInfoDTO) extractLevels() ([]*NamespaceId, error) {
 	return levels, nil
 }
 
-func namespaceDTOsToNamespaceInfos(res []*namespaceInfoDTO) ([]*NamespaceInfo, error) {
-	nsInfos := make([]*NamespaceInfo, 0, len(res))
+type namespaceInfoDTOs []*namespaceInfoDTO
 
-	for _, nsInfoDTO := range res {
+func (n *namespaceInfoDTOs) toStruct() ([]*NamespaceInfo, error) {
+	dtos := *n
+	nsInfos := make([]*NamespaceInfo, 0, len(dtos))
+
+	for _, nsInfoDTO := range dtos {
 		nsInfo, err := nsInfoDTO.toStruct()
 		if err != nil {
 			return nil, err

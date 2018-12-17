@@ -21,11 +21,11 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId *MosaicId) (*M
 		return nil, ErrNilMosaicId
 	}
 
-	url := net.NewUrl(fmt.Sprintf(pathMosaic+"/%s", mosaicId.toHexString()))
+	url := net.NewUrl(fmt.Sprintf(mosaicRoute, mosaicId.toHexString()))
 
-	mscInfoDTO := &mosaicInfoDTO{}
+	dto := &mosaicInfoDTO{}
 
-	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, mscInfoDTO)
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, dto)
 	if err != nil {
 		return nil, err
 	}
@@ -34,19 +34,28 @@ func (ref *MosaicService) GetMosaic(ctx context.Context, mosaicId *MosaicId) (*M
 		return nil, err
 	}
 
-	return mscInfoDTO.toStruct(ref.client.config.NetworkType)
+	mscInfo, err := dto.toStruct(ref.client.config.NetworkType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ref.buildMosaicHierarchy(ctx, mscInfo); err != nil {
+		return nil, err
+	}
+
+	return mscInfo, nil
 }
 
 // GetMosaics get list mosaics Info
 // post @/mosaic/
-func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds []*MosaicId) ([]*MosaicInfo, error) {
-	if len(mosaicIds) == 0 {
+func (ref *MosaicService) GetMosaics(ctx context.Context, mscIds []*MosaicId) ([]*MosaicInfo, error) {
+	if len(mscIds) == 0 {
 		return nil, ErrEmptyMosaicIds
 	}
 
-	nsInfosDTO := make([]*mosaicInfoDTO, 0)
+	dtos := mosaicInfoDTOs(make([]*mosaicInfoDTO, 0))
 
-	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, pathMosaic, &MosaicIds{mosaicIds}, &nsInfosDTO)
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, mosaicsRoute, &mosaicIds{mscIds}, &dtos)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +64,16 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mosaicIds []*MosaicId)
 		return nil, err
 	}
 
-	return mosaicInfoDTOsToMosaicInfos(nsInfosDTO, ref.client.config.NetworkType)
+	mscInfos, err := dtos.toStruct(ref.client.config.NetworkType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ref.buildMosaicsHierarchy(ctx, mscInfos); err != nil {
+		return nil, err
+	}
+
+	return mscInfos, nil
 }
 
 // GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
@@ -65,7 +83,7 @@ func (ref *MosaicService) GetMosaicsFromNamespaceUpToMosaic(ctx context.Context,
 		return nil, ErrNilNamespaceId
 	}
 
-	url := net.NewUrl(fmt.Sprintf(pathMosaicFromNamespace, namespaceId.toHexString()))
+	url := net.NewUrl(fmt.Sprintf(mosaicsFromNamespaceRoute, namespaceId.toHexString()))
 
 	if pageSize > 0 {
 		url.SetParam("pageSize", strconv.Itoa(pageSize))
@@ -75,9 +93,9 @@ func (ref *MosaicService) GetMosaicsFromNamespaceUpToMosaic(ctx context.Context,
 		url.SetParam("id", mosaicId.toHexString())
 	}
 
-	mscInfoDTOArr := make([]*mosaicInfoDTO, 0)
+	dtos := mosaicInfoDTOs(make([]*mosaicInfoDTO, 0))
 
-	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &mscInfoDTOArr)
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &dtos)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +104,16 @@ func (ref *MosaicService) GetMosaicsFromNamespaceUpToMosaic(ctx context.Context,
 		return nil, err
 	}
 
-	return mosaicInfoDTOsToMosaicInfos(mscInfoDTOArr, ref.client.config.NetworkType)
+	mscInfos, err := dtos.toStruct(ref.client.config.NetworkType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ref.buildMosaicsHierarchy(ctx, mscInfos); err != nil {
+		return nil, err
+	}
+
+	return mscInfos, nil
 }
 
 // GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
@@ -96,14 +123,14 @@ func (ref *MosaicService) GetMosaicsFromNamespace(ctx context.Context, namespace
 
 // GetMosaicNames Get readable names for a set of mosaics
 // post @/mosaic/names
-func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds []*MosaicId) ([]*MosaicName, error) {
-	if len(mosaicIds) == 0 {
+func (ref *MosaicService) GetMosaicNames(ctx context.Context, mscIds []*MosaicId) ([]*MosaicName, error) {
+	if len(mscIds) == 0 {
 		return nil, ErrEmptyMosaicIds
 	}
 
-	mscNamesDTO := make([]*mosaicNameDTO, 0)
+	dtos := mosaicNameDTOs(make([]*mosaicNameDTO, 0))
 
-	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, pathMosaicNames, &MosaicIds{mosaicIds}, &mscNamesDTO)
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, mosaicNamesRoute, &mosaicIds{mscIds}, &dtos)
 	if err != nil {
 		return nil, err
 	}
@@ -112,5 +139,32 @@ func (ref *MosaicService) GetMosaicNames(ctx context.Context, mosaicIds []*Mosai
 		return nil, err
 	}
 
-	return mosaicNameDTOsToMosaicNames(mscNamesDTO)
+	return dtos.toStruct()
+}
+
+func (ref *MosaicService) buildMosaicHierarchy(ctx context.Context, mscInfo *MosaicInfo) error {
+	if mscInfo == nil || mscInfo.Namespace == nil || namespaceIdToBigInt(mscInfo.Namespace.NamespaceId).Int64() == 0 {
+		return nil
+	}
+
+	nsInfo, err := ref.client.Namespace.GetNamespace(ctx, mscInfo.Namespace.NamespaceId)
+	if err != nil {
+		return err
+	}
+
+	mscInfo.Namespace = nsInfo
+
+	return ref.client.Namespace.buildNamespaceHierarchy(ctx, nsInfo)
+}
+
+func (ref *MosaicService) buildMosaicsHierarchy(ctx context.Context, mscInfos []*MosaicInfo) error {
+	var err error
+
+	for _, mscInfo := range mscInfos {
+		if err = ref.buildMosaicHierarchy(ctx, mscInfo); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
