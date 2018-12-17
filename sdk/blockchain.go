@@ -21,7 +21,7 @@ func (b *BlockchainService) GetBlockByHeight(ctx context.Context, height *big.In
 		return nil, ErrNilOrZeroHeight
 	}
 
-	u := fmt.Sprintf(blockByHeightRoute, height.String())
+	u := fmt.Sprintf(blockByHeightRoute, height)
 
 	dto := &blockInfoDTO{}
 
@@ -43,7 +43,7 @@ func (b *BlockchainService) GetBlockTransactions(ctx context.Context, height *bi
 		return nil, ErrNilOrZeroHeight
 	}
 
-	url := net.NewUrl(fmt.Sprintf(blockGetTransactionRoute, height.String()))
+	url := net.NewUrl(fmt.Sprintf(blockGetTransactionRoute, height))
 
 	var data bytes.Buffer
 
@@ -69,7 +69,7 @@ func (b *BlockchainService) GetBlocksByHeightWithLimit(ctx context.Context, heig
 		return nil, ErrNilOrZeroLimit
 	}
 
-	url := net.NewUrl(fmt.Sprintf(blockInfoRoute, height.String(), limit.String()))
+	url := net.NewUrl(fmt.Sprintf(blockInfoRoute, height, limit))
 
 	dtos := blockInfoDTOs(make([]*blockInfoDTO, 0))
 

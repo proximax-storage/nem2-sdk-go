@@ -202,7 +202,7 @@ func TestBlockchainService_GetBlockchainScore(t *testing.T) {
 
 func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(blockByHeightRoute, testHeight.String()),
+		Path:     fmt.Sprintf(blockByHeightRoute, testHeight),
 		RespBody: blockInfoJSON,
 	})
 
@@ -215,7 +215,7 @@ func TestBlockchainService_GetBlockByHeight(t *testing.T) {
 
 func TestBlockchainService_GetBlockTransactions(t *testing.T) {
 	mockServer.AddRouter(&mock.Router{
-		Path:     fmt.Sprintf(blockGetTransactionRoute, testHeight.String()),
+		Path:     fmt.Sprintf(blockGetTransactionRoute, testHeight),
 		RespBody: blockTransactionsJSON,
 	})
 

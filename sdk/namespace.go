@@ -151,7 +151,11 @@ func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds []*Nam
 }
 
 func (ref *NamespaceService) buildNamespaceHierarchy(ctx context.Context, nsInfo *NamespaceInfo) error {
-	if nsInfo == nil || nsInfo.Parent == nil || namespaceIdToBigInt(nsInfo.Parent.NamespaceId).Int64() == 0 {
+	if nsInfo == nil || nsInfo.Parent == nil {
+		return nil
+	}
+
+	if nsInfo.Parent.NamespaceId == nil || namespaceIdToBigInt(nsInfo.Parent.NamespaceId).Int64() == 0 {
 		return nil
 	}
 

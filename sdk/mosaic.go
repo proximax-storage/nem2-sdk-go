@@ -143,7 +143,11 @@ func (ref *MosaicService) GetMosaicNames(ctx context.Context, mscIds []*MosaicId
 }
 
 func (ref *MosaicService) buildMosaicHierarchy(ctx context.Context, mscInfo *MosaicInfo) error {
-	if mscInfo == nil || mscInfo.Namespace == nil || namespaceIdToBigInt(mscInfo.Namespace.NamespaceId).Int64() == 0 {
+	if mscInfo == nil || mscInfo.Namespace == nil {
+		return nil
+	}
+
+	if mscInfo.Namespace.NamespaceId == nil || namespaceIdToBigInt(mscInfo.Namespace.NamespaceId).Int64() == 0 {
 		return nil
 	}
 

@@ -41,10 +41,10 @@ const (
 // const routers path for methods BlockchainService
 const (
 	blockHeightRoute         = "/chain/height"
-	blockByHeightRoute       = "/block/%s"
+	blockByHeightRoute       = "/block/%d"
 	blockScoreRoute          = "/chain/score"
-	blockGetTransactionRoute = "/block/%s/transactions"
-	blockInfoRoute           = "/blocks/%s/limit/%s"
+	blockGetTransactionRoute = "/block/%d/transactions"
+	blockInfoRoute           = "/blocks/%d/limit/%d"
 	blockStorageRoute        = "/diagnostic/storage"
 )
 

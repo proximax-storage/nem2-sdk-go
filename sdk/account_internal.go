@@ -4,7 +4,6 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"github.com/proximax-storage/nem2-sdk-go/crypto"
-	"sync"
 )
 
 var addressNet = map[uint8]NetworkType{
@@ -27,15 +26,16 @@ type accountInfoDTO struct {
 }
 
 func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
-	var err error
-	ms := make([]*Mosaic, len(dto.Account.Mosaics))
-	for i, m := range dto.Account.Mosaics {
-		msc, err := m.toStruct()
+	var (
+		ms  = make([]*Mosaic, len(dto.Account.Mosaics))
+		err error
+	)
+
+	for idx, m := range dto.Account.Mosaics {
+		ms[idx], err = m.toStruct()
 		if err != nil {
 			return nil, err
 		}
-
-		ms[i] = msc
 	}
 
 	add, err := NewAddressFromEncoded(dto.Account.Address)
@@ -44,29 +44,29 @@ func (dto *accountInfoDTO) toStruct() (*AccountInfo, error) {
 	}
 
 	return &AccountInfo{
-		add,
-		dto.Account.AddressHeight.toBigInt(),
-		dto.Account.PublicKey,
-		dto.Account.PublicKeyHeight.toBigInt(),
-		dto.Account.Importance.toBigInt(),
-		dto.Account.ImportanceHeight.toBigInt(),
-		ms,
+		Address:          add,
+		AddressHeight:    dto.Account.AddressHeight.toBigInt(),
+		PublicKey:        dto.Account.PublicKey,
+		PublicKeyHeight:  dto.Account.PublicKeyHeight.toBigInt(),
+		Importance:       dto.Account.Importance.toBigInt(),
+		ImportanceHeight: dto.Account.ImportanceHeight.toBigInt(),
+		Mosaics:          ms,
 	}, nil
 }
 
 type accountInfoDTOs []*accountInfoDTO
 
-func (a *accountInfoDTOs) toStruct() ([]*AccountInfo, error) {
-	accsDTO := *a
-	accountInfos := make([]*AccountInfo, 0, len(accsDTO))
+func (a accountInfoDTOs) toStruct() ([]*AccountInfo, error) {
+	var (
+		accountInfos = make([]*AccountInfo, len(a))
+		err          error
+	)
 
-	for _, dto := range accsDTO {
-		accountInfo, err := dto.toStruct()
+	for idx, dto := range a {
+		accountInfos[idx], err = dto.toStruct()
 		if err != nil {
 			return nil, err
 		}
-
-		accountInfos = append(accountInfos, accountInfo)
 	}
 
 	return accountInfos, nil
@@ -83,7 +83,6 @@ type multisigAccountInfoDTO struct {
 }
 
 func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigAccountInfo, error) {
-	var wg sync.WaitGroup
 	cs := make([]*PublicAccount, len(dto.Multisig.Cosignatories))
 	ms := make([]*PublicAccount, len(dto.Multisig.MultisigAccounts))
 
@@ -92,33 +91,30 @@ func (dto *multisigAccountInfoDTO) toStruct(networkType NetworkType) (*MultisigA
 		return nil, err
 	}
 
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		for i, c := range dto.Multisig.Cosignatories {
-			cs[i], err = NewAccountFromPublicKey(c, networkType)
+	for i, c := range dto.Multisig.Cosignatories {
+		cs[i], err = NewAccountFromPublicKey(c, networkType)
+		if err != nil {
+			return nil, err
 		}
-	}()
+	}
 
-	go func() {
-		defer wg.Done()
-		for i, m := range dto.Multisig.MultisigAccounts {
-			ms[i], err = NewAccountFromPublicKey(m, networkType)
+	for i, m := range dto.Multisig.MultisigAccounts {
+		ms[i], err = NewAccountFromPublicKey(m, networkType)
+		if err != nil {
+			return nil, err
 		}
-	}()
-
-	wg.Wait()
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &MultisigAccountInfo{
-		*acc,
-		dto.Multisig.MinApproval,
-		dto.Multisig.MinRemoval,
-		cs,
-		ms,
+		Account:          *acc,
+		MinApproval:      dto.Multisig.MinApproval,
+		MinRemoval:       dto.Multisig.MinRemoval,
+		Cosignatories:    cs,
+		MultisigAccounts: ms,
 	}, nil
 }
 
@@ -130,32 +126,22 @@ type multisigAccountGraphInfoDTOEntry struct {
 type multisigAccountGraphInfoDTOS []multisigAccountGraphInfoDTOEntry
 
 func (dto multisigAccountGraphInfoDTOS) toStruct(networkType NetworkType) (*MultisigAccountGraphInfo, error) {
-	var ms map[int32][]*MultisigAccountInfo
-	var wg1 sync.WaitGroup
-	var err error
+	var (
+		ms  = make(map[int32][]*MultisigAccountInfo)
+		err error
+	)
 
 	for _, m := range dto {
-		wg1.Add(1)
-		go func(m multisigAccountGraphInfoDTOEntry) {
-			defer wg1.Done()
-			var wg2 sync.WaitGroup
-			var mdto []*MultisigAccountInfo
+		mAccInfos := make([]*MultisigAccountInfo, len(m.Multisigs))
 
-			for i, c := range m.Multisigs {
-				wg2.Add(1)
-				go func(i int, c multisigAccountInfoDTO) {
-					defer wg2.Done()
-					mdto[i], err = c.toStruct(networkType)
-				}(i, c)
+		for idx, c := range m.Multisigs {
+			mAccInfos[idx], err = c.toStruct(networkType)
+			if err != nil {
+				return nil, err
 			}
-			wg2.Wait()
+		}
 
-			ms[m.Level] = mdto
-		}(m)
-	}
-	wg1.Wait()
-	if err != nil {
-		return nil, err
+		ms[m.Level] = mAccInfos
 	}
 
 	return &MultisigAccountGraphInfo{ms}, nil
