@@ -36,8 +36,8 @@ var transaction = &TransferTransaction{
 			Id:                  "5B686E97F0C0EA00017B9437",
 		},
 	},
-	Mosaics: Mosaics{
-		&Mosaic{&MosaicId{uint64DTO{3646934825, 3576016193}.toBigInt(), ""}, uint64DTO{10000000, 0}.toBigInt()},
+	Mosaics: []*Mosaic{
+		{bigIntToMosaicId(uint64DTO{3646934825, 3576016193}.toBigInt()), uint64DTO{10000000, 0}.toBigInt()},
 	},
 	Recipient: &Address{MijinTest, "SBJUINHAC3FKCMVLL2WHBQFPPXYEHOMQY6E2SPVR"},
 	Message:   &Message{Type: 0, Payload: ""},
@@ -190,13 +190,11 @@ func TestTransactionService_GetTransaction_TransferTransaction(t *testing.T) {
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	tx, resp, err := cl.Transaction.GetTransaction(context.Background(), transactionId)
+	tx, err := cl.Transaction.GetTransaction(context.Background(), transactionId)
 
 	assert.Nilf(t, err, "TransactionService.GetTransaction returned error: %v", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, transaction, tx)
-	}
+	tests.ValidateStringers(t, transaction, tx)
 }
 
 func TestTransactionService_GetTransactions(t *testing.T) {
@@ -207,16 +205,14 @@ func TestTransactionService_GetTransactions(t *testing.T) {
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	transactions, resp, err := cl.Transaction.GetTransactions(context.Background(), []string{
+	transactions, err := cl.Transaction.GetTransactions(context.Background(), []string{
 		transactionId,
 	})
 
 	assert.Nilf(t, err, "TransactionService.GetTransactions returned error: %v", err)
 
-	if tests.IsOkResponse(t, resp) {
-		for _, tx := range transactions {
-			tests.ValidateStringers(t, transaction, tx)
-		}
+	for _, tx := range transactions {
+		tests.ValidateStringers(t, transaction, tx)
 	}
 }
 
@@ -228,13 +224,11 @@ func TestTransactionService_GetTransactionStatus(t *testing.T) {
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	txStatus, resp, err := cl.Transaction.GetTransactionStatus(context.Background(), transactionHash)
+	txStatus, err := cl.Transaction.GetTransactionStatus(context.Background(), transactionHash)
 
 	assert.Nilf(t, err, "TransactionService.GetTransactionStatus returned error: %v", err)
 
-	if tests.IsOkResponse(t, resp) {
-		tests.ValidateStringers(t, status, txStatus)
-	}
+	tests.ValidateStringers(t, status, txStatus)
 }
 
 func TestTransactionService_GetTransactionStatuses(t *testing.T) {
@@ -245,14 +239,12 @@ func TestTransactionService_GetTransactionStatuses(t *testing.T) {
 
 	cl := mockServer.getTestNetClientUnsafe()
 
-	txStatuses, resp, err := cl.Transaction.GetTransactionStatuses(context.Background(), []string{transactionHash})
+	txStatuses, err := cl.Transaction.GetTransactionStatuses(context.Background(), []string{transactionHash})
 
 	assert.Nilf(t, err, "TransactionService.GetTransactionStatuses returned error: %v", err)
 
-	if tests.IsOkResponse(t, resp) {
-		for _, txStatus := range txStatuses {
-			tests.ValidateStringers(t, status, txStatus)
-		}
+	for _, txStatus := range txStatuses {
+		tests.ValidateStringers(t, status, txStatus)
 	}
 }
 
@@ -264,7 +256,7 @@ func TestAggregateTransactionSerialization(t *testing.T) {
 	ttx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", MijinTest),
-		Mosaics{Xem(10000000)},
+		[]*Mosaic{Xem(10000000)},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -291,7 +283,7 @@ func TestAggregateTransactionSigningWithMultipleCosignatures(t *testing.T) {
 	ttx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", MijinTest),
-		Mosaics{},
+		[]*Mosaic{},
 		NewPlainMessage("test-message"),
 		MijinTest,
 	)
@@ -345,7 +337,11 @@ func TestCosisignatureTransactionSigning(t *testing.T) {
 }
 
 func TestMosaicDefinitionTransactionSerialization(t *testing.T) {
-	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, &MosaicId{FullName: "mosaics"}, &NamespaceId{FullName: "sname"}, NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
+	nsId, err := NewNamespaceIdFromName("sname")
+
+	assert.Nilf(t, err, "NewNamespaceIdFromName returned error: %s", err)
+
+	tx, err := NewMosaicDefinitionTransaction(fakeDeadline, "mosaics", nsId, NewMosaicProperties(true, true, true, 4, big.NewInt(10000)), MijinTest)
 
 	assert.Nilf(t, err, "NewMosaicDefinitionTransaction returned error: %s", err)
 
@@ -356,7 +352,7 @@ func TestMosaicDefinitionTransactionSerialization(t *testing.T) {
 }
 
 func TestMosaicSupplyChangeTransactionSerialization(t *testing.T) {
-	id := NewMosaicId(big.NewInt(6300565133566699912))
+	id := bigIntToMosaicId(big.NewInt(6300565133566699912))
 	tx, err := NewMosaicSupplyChangeTransaction(fakeDeadline, id, Increase, big.NewInt(10), MijinTest)
 
 	assert.Nilf(t, err, "NewMosaicSupplyChangeTransaction returned error: %s", err)
@@ -371,7 +367,12 @@ func TestTransferTransactionSerialization(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{{&MosaicId{Id: big.NewInt(95442763262823)}, big.NewInt(100)}},
+		[]*Mosaic{
+			{
+				MosaicId: bigIntToMosaicId(big.NewInt(95442763262823)),
+				Amount:   big.NewInt(100),
+			},
+		},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -390,7 +391,7 @@ func TestTransferTransactionToAggregate(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{{&MosaicId{Id: big.NewInt(95442763262823)}, big.NewInt(100)}},
+		[]*Mosaic{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -413,7 +414,7 @@ func TestTransferTransactionSigning(t *testing.T) {
 	tx, err := NewTransferTransaction(
 		fakeDeadline,
 		NewAddress("SDUP5PLHDXKBX3UU5Q52LAY4WYEKGEWC6IB3VBFM", MijinTest),
-		Mosaics{{&MosaicId{Id: big.NewInt(95442763262823)}, big.NewInt(100)}},
+		[]*Mosaic{{bigIntToMosaicId(big.NewInt(95442763262823)), big.NewInt(100)}},
 		NewPlainMessage(""),
 		MijinTest,
 	)
@@ -464,7 +465,7 @@ func TestModifyMultisigAccountTransactionSerialization(t *testing.T) {
 func TestRegisterRootNamespaceTransactionSerialization(t *testing.T) {
 	tx, err := NewRegisterRootNamespaceTransaction(
 		fakeDeadline,
-		&NamespaceId{FullName: "newnamespace"},
+		"newnamespace",
 		big.NewInt(10000),
 		MijinTest,
 	)
@@ -480,8 +481,8 @@ func TestRegisterRootNamespaceTransactionSerialization(t *testing.T) {
 func TestRegisterSubNamespaceTransactionSerialization(t *testing.T) {
 	tx, err := NewRegisterSubNamespaceTransaction(
 		fakeDeadline,
-		&NamespaceId{FullName: "subnamespace"},
-		&NamespaceId{Id: big.NewInt(4635294387305441662)},
+		"subnamespace",
+		bigIntToNamespaceId(big.NewInt(4635294387305441662)),
 		MijinTest,
 	)
 

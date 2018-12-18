@@ -6,7 +6,6 @@ package sdk
 
 import (
 	"github.com/proximax-storage/proximax-utils-go/mock"
-	"github.com/proximax-storage/proximax-utils-go/tests"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -25,30 +24,28 @@ const (
 func TestNetworkService_GetNetworkType(t *testing.T) {
 	t.Run("TEST_NET", func(t *testing.T) {
 		mockServ := newSdkMockWithRouter(&mock.Router{
-			Path:     pathNetwork,
+			Path:     networkRoute,
 			RespBody: testNetRoute,
 		})
 
 		defer mockServ.Close()
 
-		netType, resp, err := mockServ.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
+		netType, err := mockServ.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
 
 		assert.Nilf(t, err, "NetworkService.GetNetworkType returned error=%s", err)
 
-		if tests.IsOkResponse(t, resp) {
-			assert.Equal(t, netType, TestNet)
-		}
+		assert.Equal(t, netType, TestNet)
 	})
 
 	t.Run("NotSupportedNet", func(t *testing.T) {
 		mock := newSdkMockWithRouter(&mock.Router{
-			Path:     pathNetwork,
+			Path:     networkRoute,
 			RespBody: notSupportedRoute,
 		})
 
 		defer mock.Close()
 
-		netType, _, err := mock.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
+		netType, err := mock.getTestNetClientUnsafe().Network.GetNetworkType(ctx)
 
 		assert.NotNil(t, err, "NetworkService.GetNetworkType should return error")
 		assert.Equal(t, netType, NotSupportedNet)

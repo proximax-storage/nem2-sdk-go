@@ -11,21 +11,19 @@ import (
 )
 
 func TestNewMosaicId(t *testing.T) {
-	assert.Equal(t, big.NewInt(-3087871471161192663).Int64(), XemMosaicId.Id.Int64())
-	assert.Equal(t, XemMosaicId.FullName, "nem:xem")
+	assert.Equal(t, big.NewInt(-3087871471161192663).Int64(), mosaicIdToBigInt(XemMosaicId).Int64())
 }
 
 func TestNewMosaicIdFromIdViaConstructor(t *testing.T) {
-	mosaicId := NewMosaicId(big.NewInt(-8884663987180930485))
+	mosaicId := bigIntToMosaicId(big.NewInt(-8884663987180930485))
 
-	assert.Equal(t, big.NewInt(-8884663987180930485), mosaicId.Id)
-	assert.False(t, mosaicId.FullName != "")
+	assert.Equal(t, big.NewInt(-8884663987180930485).Int64(), mosaicIdToBigInt(mosaicId).Int64())
 }
 
 //
 func TestNewMosaic_ShouldCompareMosaicIdsForEquality(t *testing.T) {
-	mosaicId := NewMosaicId(big.NewInt(-8884663987180930485))
-	mosaicId2 := NewMosaicId(big.NewInt(-8884663987180930485))
+	mosaicId := bigIntToMosaicId(big.NewInt(-8884663987180930485))
+	mosaicId2 := bigIntToMosaicId(big.NewInt(-8884663987180930485))
 
-	assert.Equal(t, mosaicId, mosaicId2)
+	assert.Equal(t, mosaicId.String(), mosaicId2.String())
 }

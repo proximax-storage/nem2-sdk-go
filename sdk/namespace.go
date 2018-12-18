@@ -15,231 +15,167 @@ import (
 // NamespaceService provides a set of methods for obtaining information about the namespace
 type NamespaceService service
 
-//GetNamespace
+// GetNamespace
 // @/namespace/
-func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId) (nsInfo *NamespaceInfo, resp *http.Response, err error) {
+func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId) (*NamespaceInfo, error) {
+	if nsId == nil {
+		return nil, ErrNilNamespaceId
+	}
 
 	nsInfoDTO := &namespaceInfoDTO{}
-	url := pathNamespace + nsId.toHexString()
-	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, nsInfoDTO)
 
+	url := net.NewUrl(fmt.Sprintf(namespaceRoute, nsId.toHexString()))
+
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, nsInfoDTO)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
-	nsInfo, err = nsInfoDTO.getNamespaceInfo()
+
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
+	}
+
+	nsInfo, err := nsInfoDTO.toStruct()
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return nsInfo, resp, err
-}
-
-// GetNamespaceNames
-//@/namespace/names
-func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds NamespaceIds) (nsList []*NamespaceName, resp *http.Response, err error) {
-
-	if len(nsIds.List) == 0 {
-		return nil, nil, errEmptyNamespaceIds
-	}
-	res := make([]*namespaceNameDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "POST", pathNamespacenames, &nsIds, &res)
-
-	if err != nil {
-		return nil, resp, err
+	if err = ref.buildNamespaceHierarchy(ctx, nsInfo); err != nil {
+		return nil, err
 	}
 
-	for _, dto := range res {
-		nsName, err := dto.getNamespaceName()
-		if err != nil {
-			return nil, resp, err
-		}
-		nsList = append(nsList, nsName)
-	}
-	return nsList, resp, err
+	return nsInfo, nil
 }
 
 // GetNamespacesFromAccount get required params addresses, other skipped if value < 0
 // @/account/%s/namespaces
-func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId string,
-	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
-
+func (ref *NamespaceService) GetNamespacesFromAccount(ctx context.Context, address *Address, nsId *NamespaceId,
+	pageSize int) ([]*NamespaceInfo, error) {
 	if address == nil {
-		return nsList, nil, errNullAddress
+		return nil, ErrNilAddress
 	}
 
-	url, comma := "", "?"
+	url := net.NewUrl(fmt.Sprintf(namespacesFromAccountRoutes, address.Address))
 
-	if nsId > "" {
-		url = comma + "id=" + nsId
-		comma = "&"
+	if nsId != nil {
+		url.SetParam("id", nsId.toHexString())
 	}
 
 	if pageSize > 0 {
-		url += comma + "pageSize=" + strconv.Itoa(pageSize)
+		url.SetParam("pageSize", strconv.Itoa(pageSize))
 	}
 
-	url = fmt.Sprintf(pathNamespacesFromAccount, address.Address) + url
+	dtos := namespaceInfoDTOs(make([]*namespaceInfoDTO, 0))
 
-	res := make([]*namespaceInfoDTO, 0)
-	resp, err = ref.client.DoNewRequest(ctx, "GET", url, nil, &res)
-
-	if (err != nil) || (listNamespaceInfoFromDTO(res, &nsList) != nil) {
-		//	err occurent
-		return nsList, resp, err
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, &dtos)
+	if err != nil {
+		return nil, err
 	}
 
-	return nsList, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{409: ErrArgumentNotValid}); err != nil {
+		return nil, err
+	}
+
+	nsInfos, err := dtos.toStruct()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = ref.buildNamespacesHierarchy(ctx, nsInfos); err != nil {
+		return nil, err
+	}
+
+	return nsInfos, nil
 }
 
 // GetNamespacesFromAccounts get required params addresses, other skipped if value is empty
 // @/account/namespaces
-func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addresses *Addresses, nsId string,
-	pageSize int) (nsList ListNamespaceInfo, resp *http.Response, err error) {
-	if addresses == nil || len(addresses.List) == 0 {
-		return nsList, nil, errEmptyAddressesIds
+func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addrs []*Address, nsId *NamespaceId,
+	pageSize int) ([]*NamespaceInfo, error) {
+	if len(addrs) == 0 {
+		return nil, ErrEmptyAddressesIds
 	}
 
-	url := net.NewUrl(pathNamespacesFromAccounts)
+	url := net.NewUrl(namespacesFromAccountsRoute)
+
+	if nsId != nil {
+		url.AddParam("id", nsId.toHexString())
+	}
 
 	if pageSize > 0 {
 		url.AddParam("pageSize", strconv.Itoa(pageSize))
 	}
 
-	if len(nsId) != 0 {
-		url.AddParam("id", nsId)
-	}
+	dtos := namespaceInfoDTOs(make([]*namespaceInfoDTO, 0))
 
-	res := make([]*namespaceInfoDTO, 0)
-
-	resp, err = ref.client.DoNewRequest(ctx, "POST", url.Encode(), &addresses, &res)
-
-	if (err != nil) || (listNamespaceInfoFromDTO(res, &nsList) != nil) {
-		//	err occurent
-		return nsList, resp, err
-	}
-
-	return nsList, resp, err
-}
-
-type namespaceIdDTO uint64DTO
-
-func (dto *namespaceIdDTO) toStruct() (*NamespaceId, error) {
-	return NewNamespaceId(uint64DTO(*dto).toBigInt())
-}
-
-// namespaceNameDTO temporary struct for reading responce & fill NamespaceName
-type namespaceNameDTO struct {
-	NamespaceId uint64DTO
-	Name        string
-	ParentId    uint64DTO
-}
-
-func (ref *namespaceNameDTO) getNamespaceName() (*NamespaceName, error) {
-	nsId, err := NewNamespaceId(ref.NamespaceId.toBigInt())
-	if err != nil {
-		return nil, err
-	}
-	parentId, err := NewNamespaceId(ref.ParentId.toBigInt())
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, url.Encode(), addresses(addrs), &dtos)
 	if err != nil {
 		return nil, err
 	}
 
-	return &NamespaceName{
-		nsId,
-		ref.Name,
-		parentId,
-	}, nil
-}
+	if err = handleResponseStatusCode(resp, map[int]error{400: ErrInvalidRequest, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
+	}
 
-// namespaceDTO temporary struct for reading responce & fill NamespaceInfo
-type namespaceDTO struct {
-	Type         int
-	Depth        int
-	Level0       *uint64DTO
-	Level1       *uint64DTO
-	Level2       *uint64DTO
-	ParentId     uint64DTO
-	Owner        string
-	OwnerAddress string
-	StartHeight  uint64DTO
-	EndHeight    uint64DTO
-}
-
-// namespaceInfoDTO temporary struct for reading responce & fill NamespaceInfo
-type namespaceInfoDTO struct {
-	Meta      namespaceMosaicMetaDTO
-	Namespace namespaceDTO
-}
-
-//getNamespaceInfo create & return new NamespaceInfo from namespaceInfoDTO
-func (ref *namespaceInfoDTO) getNamespaceInfo() (*NamespaceInfo, error) {
-	pubAcc, err := NewAccountFromPublicKey(ref.Namespace.Owner, NetworkType(ref.Namespace.Type))
+	nsInfos, err := dtos.toStruct()
 	if err != nil {
 		return nil, err
 	}
 
-	parentId, err := NewNamespaceId(ref.Namespace.ParentId.toBigInt())
+	if err = ref.buildNamespacesHierarchy(ctx, nsInfos); err != nil {
+		return nil, err
+	}
+
+	return nsInfos, nil
+}
+
+// GetNamespaceNames
+// @/namespace/names
+func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds []*NamespaceId) ([]*NamespaceName, error) {
+	if len(nsIds) == 0 {
+		return nil, ErrEmptyNamespaceIds
+	}
+
+	dtos := namespaceNameDTOs(make([]*namespaceNameDTO, 0))
+
+	resp, err := ref.client.DoNewRequest(ctx, http.MethodPost, namespaceNamesRoute, &NamespaceIds{nsIds}, &dtos)
 	if err != nil {
 		return nil, err
 	}
 
-	levels, err := ref.extractLevels()
-	if err != nil {
+	if err = handleResponseStatusCode(resp, map[int]error{400: ErrInvalidRequest, 409: ErrArgumentNotValid}); err != nil {
 		return nil, err
 	}
-	return &NamespaceInfo{
-		ref.Meta.Active,
-		ref.Meta.Index,
-		ref.Meta.Id,
-		NamespaceType(ref.Namespace.Type),
-		ref.Namespace.Depth,
-		levels,
-		parentId,
-		pubAcc,
-		ref.Namespace.StartHeight.toBigInt(),
-		ref.Namespace.EndHeight.toBigInt(),
-	}, nil
+
+	return dtos.toStruct()
 }
 
-func (ref *namespaceInfoDTO) extractLevels() ([]*NamespaceId, error) {
-
-	levels := make([]*NamespaceId, 0)
-
-	if ref.Namespace.Level0 != nil {
-		nsName, err := NewNamespaceId(ref.Namespace.Level0.toBigInt())
-		if err != nil {
-			return nil, err
-		}
-		levels = append(levels, nsName)
+func (ref *NamespaceService) buildNamespaceHierarchy(ctx context.Context, nsInfo *NamespaceInfo) error {
+	if nsInfo == nil || nsInfo.Parent == nil {
+		return nil
 	}
 
-	if ref.Namespace.Level1 != nil {
-		nsName, err := NewNamespaceId(ref.Namespace.Level1.toBigInt())
-		if err != nil {
-			return nil, err
-		}
-		levels = append(levels, nsName)
+	if nsInfo.Parent.NamespaceId == nil || namespaceIdToBigInt(nsInfo.Parent.NamespaceId).Int64() == 0 {
+		return nil
 	}
 
-	if ref.Namespace.Level2 != nil {
-		nsName, err := NewNamespaceId(ref.Namespace.Level2.toBigInt())
-		if err != nil {
-			return nil, err
-		}
-		levels = append(levels, nsName)
+	parentNsInfo, err := ref.GetNamespace(ctx, nsInfo.Parent.NamespaceId)
+	if err != nil {
+		return err
 	}
 
-	return levels, nil
+	nsInfo.Parent = parentNsInfo
+
+	return ref.buildNamespaceHierarchy(ctx, nsInfo.Parent)
 }
 
-func listNamespaceInfoFromDTO(res []*namespaceInfoDTO, nsList *ListNamespaceInfo) error {
+func (ref *NamespaceService) buildNamespacesHierarchy(ctx context.Context, nsInfos []*NamespaceInfo) error {
+	var err error
 
-	for _, nsInfoDTO := range res {
-		nsInfo, err := nsInfoDTO.getNamespaceInfo()
-		if err != nil {
+	for _, nsInfo := range nsInfos {
+		if err = ref.buildNamespaceHierarchy(ctx, nsInfo); err != nil {
 			return err
 		}
-		nsList.List = append(nsList.List, nsInfo)
 	}
 
 	return nil

@@ -180,3 +180,21 @@ func addOptions(s string, opt interface{}) (string, error) {
 	u.RawQuery = qs.Encode()
 	return u.String(), nil
 }
+
+func handleResponseStatusCode(resp *http.Response, codeToErrs map[int]error) error {
+	if resp == nil {
+		return ErrInternalError
+	}
+
+	if codeToErrs != nil {
+		if err, ok := codeToErrs[resp.StatusCode]; ok {
+			return err
+		}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return ErrNotAcceptedResponseStatusCode
+	}
+
+	return nil
+}
