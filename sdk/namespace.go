@@ -159,8 +159,6 @@ func (ref *NamespaceService) buildNamespaceHierarchy(ctx context.Context, nsInfo
 		return nil
 	}
 
-	fmt.Printf("getting hierarchy of namespace, parent: %s\n", nsInfo.Parent)
-
 	parentNsInfo, err := ref.GetNamespace(ctx, nsInfo.Parent.NamespaceId)
 	if err != nil {
 		return err
