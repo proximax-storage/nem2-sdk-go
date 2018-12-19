@@ -12,7 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/flatbuffers/go"
-	"github.com/proximax-storage/nem2-sdk-go/crypto"
+	"github.com/proximax-storage/nem2-crypto-go"
 	"github.com/proximax-storage/nem2-sdk-go/transactions"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
 	"github.com/proximax-storage/proximax-utils-go/str"

@@ -3,7 +3,7 @@ package sdk
 import (
 	"encoding/base32"
 	"encoding/hex"
-	"github.com/proximax-storage/nem2-sdk-go/crypto"
+	"github.com/proximax-storage/nem2-crypto-go"
 )
 
 var addressNet = map[uint8]NetworkType{
