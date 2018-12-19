@@ -192,7 +192,7 @@ func handleResponseStatusCode(resp *http.Response, codeToErrs map[int]error) err
 		}
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return ErrNotAcceptedResponseStatusCode
 	}
 
