@@ -51,7 +51,6 @@ type subscribe struct {
 type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
-	timeout   *time.Time
 	duration  *time.Duration
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
@@ -247,7 +246,11 @@ func (c *ClientWebsocket) buildSubscribe(destination string) *subscribe {
 
 func (c *ClientWebsocket) wsConnect() error {
 	c.changeURLPort()
-	timeout := time.After(*c.duration * time.Millisecond)
+	var timeout <-chan time.Time
+	if *c.duration != time.Duration(0) {
+		timeout = time.After(*c.duration * time.Millisecond)
+	}
+
 	tick := time.Tick(time.Millisecond)
 
 	for {
@@ -257,6 +260,7 @@ func (c *ClientWebsocket) wsConnect() error {
 
 		case <-tick:
 			conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
+
 			if err != nil {
 				return err
 			}
@@ -373,9 +377,6 @@ func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) 
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
 	c.duration = &timeout
-
-	tout := time.Now().Add(*c.duration * time.Millisecond)
-	c.timeout = &tout
 
 	err = c.wsConnect()
 	if err != nil {
