@@ -6,7 +6,6 @@ package sdk
 
 import (
 	"errors"
-	"fmt"
 	"golang.org/x/net/websocket"
 )
 
@@ -114,8 +113,9 @@ func (c *SubscribeService) getClient(add string) *ClientWebsocket {
 		return c.client
 	} else {
 		client, err := NewConnectWs(c.client.config.BaseURL.String(), *c.client.duration)
+
 		if err != nil {
-			fmt.Println(err)
+			panic(err)
 		}
 		connectsWs[add] = client.client
 		return client
@@ -129,9 +129,12 @@ func (c *SubscribeService) Block() (*SubscribeBlock, error) {
 	Block = subBlock
 	subBlock.Ch = make(chan *BlockInfo)
 	subscribe, err := c.newSubscribe(pathBlock)
+	if err != nil {
+		return nil, err
+	}
 	subBlock.subscribe = subscribe
 	subscribe.Ch = subBlock.Ch
-	return subBlock, err
+	return subBlock, nil
 }
 
 // ConfirmedAdded notifies when a transaction related to an
@@ -143,9 +146,12 @@ func (c *SubscribeService) ConfirmedAdded(add *Address) (*SubscribeTransaction, 
 	subTransaction.Ch = make(chan Transaction)
 	confirmedAddedChannels[add.Address] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathConfirmedAdded + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subTransaction.subscribe = subscribe
 	subscribe.Ch = subTransaction.Ch
-	return subTransaction, err
+	return subTransaction, nil
 }
 
 // UnconfirmedAdded notifies when a transaction related to an
@@ -157,9 +163,12 @@ func (c *SubscribeService) UnconfirmedAdded(add *Address) (*SubscribeTransaction
 	subTransaction.Ch = make(chan Transaction)
 	unconfirmedAddedChannels[add.Address] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathUnconfirmedAdded + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subTransaction.subscribe = subscribe
 	subscribe.Ch = unconfirmedAddedChannels[add.Address]
-	return subTransaction, err
+	return subTransaction, nil
 }
 
 // UnconfirmedRemoved notifies when a transaction related to an
@@ -171,9 +180,12 @@ func (c *SubscribeService) UnconfirmedRemoved(add *Address) (*SubscribeHash, err
 	subHash.Ch = make(chan *HashInfo)
 	unconfirmedRemovedChannels[add.Address] = subHash.Ch
 	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subHash.subscribe = subscribe
 	subscribe.Ch = unconfirmedRemovedChannels[add.Address]
-	return subHash, err
+	return subHash, nil
 }
 
 // Status notifies when a transaction related to an address rises an error.
@@ -184,9 +196,12 @@ func (c *SubscribeService) Status(add *Address) (*SubscribeStatus, error) {
 	subStatus.Ch = make(chan *StatusInfo)
 	statusInfoChannels[add.Address] = subStatus.Ch
 	subscribe, err := c.newSubscribe(pathStatus + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subStatus.subscribe = subscribe
 	subscribe.Ch = statusInfoChannels[add.Address]
-	return subStatus, err
+	return subStatus, nil
 }
 
 // PartialAdded notifies when an aggregate bonded transaction related to an
@@ -198,9 +213,12 @@ func (c *SubscribeService) PartialAdded(add *Address) (*SubscribeTransaction, er
 	subTransaction.Ch = make(chan Transaction)
 	partialAddedChannels[add.Address] = subTransaction.Ch
 	subscribe, err := c.newSubscribe(pathPartialAdded + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subTransaction.subscribe = subscribe
 	subscribe.Ch = partialAddedChannels[add.Address]
-	return subTransaction, err
+	return subTransaction, nil
 }
 
 // PartialRemoved notifies when a transaction related to an
@@ -212,9 +230,12 @@ func (c *SubscribeService) PartialRemoved(add *Address) (*SubscribePartialRemove
 	subPartialRemoved.Ch = make(chan *PartialRemovedInfo)
 	partialRemovedInfoChannels[add.Address] = subPartialRemoved.Ch
 	subscribe, err := c.newSubscribe(pathPartialRemoved + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subPartialRemoved.subscribe = subscribe
 	subscribe.Ch = partialRemovedInfoChannels[add.Address]
-	return subPartialRemoved, err
+	return subPartialRemoved, nil
 }
 
 // Cosignature notifies when a cosignature signed transaction related to an
@@ -226,9 +247,12 @@ func (c *SubscribeService) Cosignature(add *Address) (*SubscribeSigner, error) {
 	subCosignature.Ch = make(chan *SignerInfo)
 	signerInfoChannels[add.Address] = subCosignature.Ch
 	subscribe, err := c.newSubscribe(pathCosignature + "/" + add.Address)
+	if err != nil {
+		return nil, err
+	}
 	subCosignature.subscribe = subscribe
 	subscribe.Ch = signerInfoChannels[add.Address]
-	return subCosignature, err
+	return subCosignature, nil
 }
 
 func (c *SubscribeService) Error(add string) *SubscribeError {

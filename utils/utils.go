@@ -65,7 +65,6 @@ func BigIntToByteArray(value *big.Int, numBytes int) []byte {
 
 // BytesToBigInteger converts a little endian byte array to a BigInteger.
 func BytesToBigInteger(bytes []byte) *big.Int {
-
 	bigEndianBytes := make([]byte, len(bytes)+1)
 	//reverse & copy
 	for i := range bytes {
@@ -74,6 +73,7 @@ func BytesToBigInteger(bytes []byte) *big.Int {
 
 	return (&big.Int{}).SetBytes(bigEndianBytes)
 }
+
 func HexDecode(src []byte) ([]byte, error) {
 	dst := make([]byte, len(src))
 	_, err := hex.Decode(dst, src)

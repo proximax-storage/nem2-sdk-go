@@ -247,30 +247,53 @@ func (c *ClientWebsocket) buildSubscribe(destination string) *subscribe {
 
 func (c *ClientWebsocket) wsConnect() error {
 	c.changeURLPort()
-	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
-	if err != nil {
+	timeout := time.After(*c.duration * time.Millisecond)
+	tick := time.Tick(time.Millisecond)
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("timed out")
+
+		case <-tick:
+			conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
+			if err != nil {
+				return err
+			}
+			c.client = conn
+
+			var msg []byte
+			if err = websocket.Message.Receive(c.client, &msg); err != nil {
+				return err
+			}
+
+			imsg, err := msgParser(msg)
+			if err != nil {
+				return err
+			}
+			c.Uid = imsg.Uid
+			return nil
+		}
+	}
+}
+
+func (c *ClientWebsocket) reconnectWs(s *subscribe) error {
+	fmt.Println("Reconnecting Websocket....")
+
+	if err := c.wsConnect(); err != nil {
 		return err
 	}
-	c.client = conn
 
-	if *c.duration != time.Duration(0) {
-		conn.SetDeadline(*c.timeout)
-	}
+	s.Uid = c.Uid
 
-	var msg []byte
-	if err = websocket.Message.Receive(c.client, &msg); err != nil {
+	if err := websocket.JSON.Send(c.client, sendJson{
+		Uid:       s.Uid,
+		Subscribe: s.Subscribe,
+	}); err != nil {
 		return err
 	}
 
-	imsg, err := msgParser(msg)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	if err != nil {
-		return err
-	}
-	c.Uid = imsg.Uid
+	fmt.Println("New Websocket negotiated uid:", s.Uid)
 
 	return nil
 }
@@ -294,48 +317,46 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 
 		for {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
-				err = c.wsConnect()
+				err = c.reconnectWs(s)
 				if err != nil {
 					errCh <- &ErrorInfo{
 						Error: err,
 					}
 					return
 				}
-				if err = websocket.JSON.Send(c.client, sendJson{
-					Uid:       s.Uid,
-					Subscribe: s.Subscribe,
-				}); err != nil {
-					errCh <- &ErrorInfo{
-						Error: err,
-					}
-					return
-				}
-				continue
+
 			} else if err != nil {
-				err = c.wsConnect()
+				err = c.reconnectWs(s)
 				if err != nil {
 					errCh <- &ErrorInfo{
 						Error: err,
 					}
 					break
 				}
-			}
-			subName, err := restParser(resp)
-			if err != nil {
-				errCh <- &ErrorInfo{
-					Error: err,
-				}
-				break
-			}
-			b := subscribeInfo{
-				name:    subName,
-				account: s.getAdd(),
-			}
 
-			if err := b.buildType(resp); err != nil {
-				errCh <- &ErrorInfo{
-					Error: err,
+			} else {
+				subName, err := restParser(resp)
+				if err != nil {
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
+					break
 				}
+
+				b := subscribeInfo{
+					name:    subName,
+					account: s.getAdd(),
+				}
+
+				if err := b.buildType(resp); err != nil {
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
+				}
+			}
+			if *c.duration != time.Duration(0) {
+				tout := time.Now().Add(*c.duration * time.Millisecond)
+				c.client.SetDeadline(tout)
 			}
 		}
 	}()
