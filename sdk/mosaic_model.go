@@ -5,154 +5,117 @@
 package sdk
 
 import (
-	"errors"
 	"fmt"
+	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
-	"regexp"
 	"strings"
 )
 
-// Mosaic
+// MosaicId
+type MosaicId big.Int
+
+func (m *MosaicId) String() string {
+	return (*big.Int)(m).String()
+}
+
+func NewMosaicIdFromFullName(name string) (*MosaicId, error) {
+	if len(name) == 0 || strings.Contains(name, " {") {
+		return nil, ErrInvalidMosaicName
+	}
+
+	parts := strings.Split(name, ":")
+
+	if len(parts) != 2 {
+		return nil, ErrInvalidMosaicName
+	}
+
+	return generateMosaicId(parts[0], parts[1])
+}
+
+func NewMosaicId(id *big.Int) (*MosaicId, error) {
+	if id == nil {
+		return nil, ErrNilMosaicId
+	}
+
+	return bigIntToMosaicId(id), nil
+}
+
+func (m *MosaicId) toHexString() string {
+	return BigIntegerToHex(mosaicIdToBigInt(m))
+}
+
+// MosaicId
 type Mosaic struct {
 	MosaicId *MosaicId
 	Amount   *big.Int
 }
 
 func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
-
 	if mosaicId == nil {
-		return nil, errNilMosaicAmount
+		return nil, ErrNilMosaicId
 	}
+
 	if amount == nil {
-		return nil, errNilMosaicId
+		return nil, ErrNilMosaicAmount
+	}
+
+	if utils.EqualsBigInts(amount, big.NewInt(0)) {
+		return nil, ErrNilMosaicAmount
 	}
 
 	return &Mosaic{
-		mosaicId,
-		amount,
+		MosaicId: mosaicId,
+		Amount:   amount,
 	}, nil
 }
+
 func (m *Mosaic) String() string {
-	return fmt.Sprintf(
-		`
-			"MosaicId": %v,
-			"Amount": %d 
-		`,
-		m.MosaicId,
-		m.Amount,
+	return str.StructToString(
+		"MosaicId",
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Amount", str.IntPattern, m.Amount),
 	)
-}
-
-// Mosaics
-type Mosaics []*Mosaic
-
-func (ref Mosaics) String() string {
-	s := "["
-	for i, mosaic := range ref {
-		if i > 0 {
-			s += ", "
-		}
-		s += mosaic.String()
-	}
-	return s + "]"
-}
-
-// MosaicId
-type MosaicId struct {
-	Id       *big.Int
-	FullName string
-}
-
-func NewMosaicIdFromName(name string) (*MosaicId, error) {
-	if (name == "") || strings.Contains(name, " {") {
-		return nil, errors.New(name + " is not valid")
-	}
-
-	parts := strings.Split(name, ":")
-	if len(parts) != 2 {
-		return nil, errors.New(name + " is not valid")
-	}
-
-	id, err := generateMosaicId(parts[0], parts[1])
-	if err != nil {
-		return nil, err
-	}
-
-	return &MosaicId{id, name}, nil
-}
-
-func NewMosaicId(id *big.Int) *MosaicId {
-	return &MosaicId{Id: id}
-}
-
-func (m *MosaicId) toHexString() string {
-	return BigIntegerToHex(m.Id)
-}
-
-var regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
-
-func generateMosaicId(namespaceName string, mosaicName string) (*big.Int, error) {
-
-	if mosaicName == "" {
-		return nil, errors.New(mosaicName + " having zero length")
-	}
-
-	namespacePath, err := GenerateNamespacePath(namespaceName)
-	if err != nil {
-		return nil, err
-	}
-
-	if !regValidMosaicName.MatchString(mosaicName) {
-		return nil, errors.New(mosaicName + "invalid mosaic name")
-	}
-
-	b, err := generateId(mosaicName, namespacePath[len(namespacePath)-1])
-	return b, err
-}
-
-// MosaicIds is a list MosaicId
-type MosaicIds struct {
-	MosaicIds []*MosaicId `json:"mosaicIds"`
-}
-
-func (ref *MosaicIds) MarshalJSON() (buf []byte, err error) {
-	buf = []byte(`{"mosaicIds": [`)
-	for i, nsId := range ref.MosaicIds {
-		if i > 0 {
-			buf = append(buf, ',')
-		}
-		buf = append(buf, []byte(`"`+nsId.toHexString()+`"`)...)
-	}
-
-	buf = append(buf, ']', '}')
-	return
 }
 
 // MosaicInfo info structure contains its properties, the owner and the namespace to which it belongs to.
 type MosaicInfo struct {
-	Active      bool
-	Index       int
-	MetaId      string
-	NamespaceId *NamespaceId
-	MosaicId    *MosaicId
-	Supply      *big.Int
-	Height      *big.Int
-	Owner       *PublicAccount
-	Properties  *MosaicProperties
+	MosaicId   *MosaicId
+	FullName   string
+	Active     bool
+	Index      int
+	MetaId     string
+	Namespace  *NamespaceInfo
+	Supply     *big.Int
+	Height     *big.Int
+	Owner      *PublicAccount
+	Properties *MosaicProperties
 }
-type MosaicsInfo []*MosaicInfo
 
-func (ref MosaicsInfo) String() string {
-	s := "["
-	for i, mscInfo := range ref {
-		if i > 0 {
-			s += ", "
-		}
-		s += fmt.Sprintf("%#v", mscInfo)
+func (m *MosaicInfo) String() string {
+	return str.StructToString(
+		"MosaicInfo",
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("FullName", str.StringPattern, m.FullName),
+		str.NewField("Active", str.BooleanPattern, m.Active),
+		str.NewField("Index", str.IntPattern, m.Index),
+		str.NewField("MetaId", str.StringPattern, m.MetaId),
+		str.NewField("Namespace", str.StringPattern, m.Namespace),
+		str.NewField("Supply", str.StringPattern, m.Supply),
+		str.NewField("Height", str.StringPattern, m.Height),
+		str.NewField("Owner", str.StringPattern, m.Owner),
+		str.NewField("Properties", str.StringPattern, m.Properties),
+	)
+}
 
+func (m *MosaicInfo) ShortName() string {
+	parts := strings.Split(m.FullName, ":")
+
+	if len(parts) != 2 {
+		return ""
 	}
 
-	return s
+	return parts[1]
 }
 
 // MosaicProperties  structure describes mosaic properties.
@@ -172,22 +135,33 @@ func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool
 		divisibility,
 		duration,
 	}
+
 	return ref
 }
+
 func (mp *MosaicProperties) String() string {
-	return fmt.Sprintf(
-		`
-			"SupplyMutable": %t,
-			"Transferable": %t,
-			"LevyMutable": %t,
-			"Divisibility": %d,
-			"Duration": %d
-		`,
-		mp.SupplyMutable,
-		mp.Transferable,
-		mp.LevyMutable,
-		mp.Divisibility,
-		mp.Duration,
+	return str.StructToString(
+		"MosaicProperties",
+		str.NewField("SupplyMutable", str.BooleanPattern, mp.SupplyMutable),
+		str.NewField("Transferable", str.BooleanPattern, mp.Transferable),
+		str.NewField("LevyMutable", str.BooleanPattern, mp.LevyMutable),
+		str.NewField("Divisibility", str.IntPattern, mp.Divisibility),
+		str.NewField("Duration", str.StringPattern, mp.Duration),
+	)
+}
+
+type MosaicName struct {
+	MosaicId *MosaicId
+	Name     string
+	ParentId *NamespaceId
+}
+
+func (m *MosaicName) String() string {
+	return str.StructToString(
+		"MosaicName",
+		str.NewField("MosaicId", str.StringPattern, m.MosaicId),
+		str.NewField("Name", str.StringPattern, m.Name),
+		str.NewField("ParentId", str.StringPattern, m.ParentId),
 	)
 }
 
@@ -204,14 +178,6 @@ const (
 func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
 }
-
-type MosaicName struct {
-	MosaicId *MosaicId
-	Name     string
-	ParentId *NamespaceId
-}
-
-var XemMosaicId, _ = NewMosaicIdFromName("nem:xem")
 
 // Create xem with using xem as unit
 func Xem(amount int64) *Mosaic {

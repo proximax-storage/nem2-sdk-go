@@ -12,9 +12,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/flatbuffers/go"
-	"github.com/proximax-storage/nem2-sdk-go/crypto"
+	"github.com/proximax-storage/nem2-crypto-go"
 	"github.com/proximax-storage/nem2-sdk-go/transactions"
 	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"github.com/proximax-storage/proximax-utils-go/str"
 	"math/big"
 	"strconv"
 	"strings"
@@ -354,35 +355,18 @@ type MosaicDefinitionTransaction struct {
 	MosaicName string
 }
 
-func NewMosaicDefinitionTransaction(deadline *Deadline, mosaic *MosaicId, namespace *NamespaceId, mosaicProps *MosaicProperties, networkType NetworkType) (*MosaicDefinitionTransaction, error) {
-	if namespace == nil || (namespace.FullName == "" && (namespace.Id == nil || namespace.Id.Int64() == 0)) {
-		return nil, errors.New("namespace must not be nil and must have id or name")
-	} else {
-		if namespace.Id == nil || namespace.Id.Int64() == 0 {
-			id, err := generateNamespaceId(namespace.FullName)
-			if err != nil {
-				return nil, err
-			}
-
-			namespace.Id = id
-		}
-	}
-
-	if mosaic == nil || mosaic.FullName == "" {
-		return nil, errors.New("mosaic must not be nil and must have name")
-	} else {
-		if mosaic.Id == nil || mosaic.Id.Int64() == 0 {
-			id, err := generateId(mosaic.FullName, namespace.Id)
-			if err != nil {
-				return nil, err
-			}
-
-			mosaic.Id = id
-		}
+func NewMosaicDefinitionTransaction(deadline *Deadline, mosaicName string, namespaceId *NamespaceId, mosaicProps *MosaicProperties, networkType NetworkType) (*MosaicDefinitionTransaction, error) {
+	if namespaceId == nil || namespaceIdToBigInt(namespaceId).Int64() == 0 {
+		return nil, ErrNilNamespaceId
 	}
 
 	if mosaicProps == nil {
-		return nil, errors.New("mosaicProps must not be nil")
+		return nil, ErrNilMosaicProperties
+	}
+
+	mosaicIdBigInt, err := generateId(mosaicName, namespaceIdToBigInt(namespaceId))
+	if err != nil {
+		return nil, err
 	}
 
 	return &MosaicDefinitionTransaction{
@@ -392,9 +376,9 @@ func NewMosaicDefinitionTransaction(deadline *Deadline, mosaic *MosaicId, namesp
 			Type:        MosaicDefinition,
 			NetworkType: networkType,
 		},
-		MosaicName:       mosaic.FullName,
-		NamespaceId:      namespace,
-		MosaicId:         mosaic,
+		MosaicName:       mosaicName,
+		NamespaceId:      namespaceId,
+		MosaicId:         bigIntToMosaicId(mosaicIdBigInt),
 		MosaicProperties: mosaicProps,
 	}, nil
 }
@@ -431,9 +415,9 @@ func (tx *MosaicDefinitionTransaction) generateBytes() ([]byte, error) {
 		f += 4
 	}
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicId.Id))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(mosaicIdToBigInt(tx.MosaicId)))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicProperties.Duration))
-	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.NamespaceId.Id))
+	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(namespaceIdToBigInt(tx.NamespaceId)))
 
 	n := builder.CreateString(tx.MosaicName)
 
@@ -481,11 +465,16 @@ func (dto *mosaicDefinitionTransactionDTO) toStruct() (*MosaicDefinitionTransact
 		return nil, err
 	}
 
+	mosaicId, err := NewMosaicId(dto.Tx.MosaicId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
+
 	return &MosaicDefinitionTransaction{
 		*atx,
 		dto.Tx.Properties.toStruct(),
 		nsId,
-		NewMosaicId(dto.Tx.MosaicId.toBigInt()),
+		mosaicId,
 		dto.Tx.MosaicName,
 	}, nil
 }
@@ -498,17 +487,9 @@ type MosaicSupplyChangeTransaction struct {
 	Delta *big.Int
 }
 
-func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaic *MosaicId, supplyType MosaicSupplyType, delta *big.Int, networkType NetworkType) (*MosaicSupplyChangeTransaction, error) {
-	if mosaic == nil || (mosaic.FullName == "" && (mosaic.Id == nil || mosaic.Id.Int64() == 0)) {
-		return nil, errors.New("mosaic must not be nil and have id or name")
-	} else {
-		if mosaic.Id == nil || mosaic.Id.Int64() == 0 {
-			var err error
-			mosaic, err = NewMosaicIdFromName(mosaic.FullName)
-			if err != nil {
-				return nil, err
-			}
-		}
+func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaicId *MosaicId, supplyType MosaicSupplyType, delta *big.Int, networkType NetworkType) (*MosaicSupplyChangeTransaction, error) {
+	if mosaicId == nil || mosaicIdToBigInt(mosaicId).Int64() == 0 {
+		return nil, ErrNilMosaicId
 	}
 
 	if !(supplyType == Increase || supplyType == Decrease) {
@@ -525,7 +506,7 @@ func NewMosaicSupplyChangeTransaction(deadline *Deadline, mosaic *MosaicId, supp
 			Type:        MosaicSupplyChange,
 			NetworkType: networkType,
 		},
-		MosaicId:         mosaic,
+		MosaicId:         mosaicId,
 		MosaicSupplyType: supplyType,
 		Delta:            delta,
 	}, nil
@@ -553,7 +534,7 @@ func (tx *MosaicSupplyChangeTransaction) String() string {
 func (tx *MosaicSupplyChangeTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.MosaicId.Id))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(mosaicIdToBigInt(tx.MosaicId)))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Delta))
 
 	v, signatureV, signerV, deadlineV, fV, err := tx.AbstractTransaction.generateVectors(builder)
@@ -589,10 +570,15 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 		return nil, err
 	}
 
+	mosaicId, err := NewMosaicId(dto.Tx.MosaicId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
+
 	return &MosaicSupplyChangeTransaction{
 		*atx,
 		dto.Tx.MosaicSupplyType,
-		NewMosaicId(dto.Tx.MosaicId.toBigInt()),
+		mosaicId,
 		dto.Tx.Delta.toBigInt(),
 	}, nil
 }
@@ -601,12 +587,12 @@ func (dto *mosaicSupplyChangeTransactionDTO) toStruct() (*MosaicSupplyChangeTran
 type TransferTransaction struct {
 	AbstractTransaction
 	*Message
-	Mosaics   Mosaics
+	Mosaics   []*Mosaic
 	Recipient *Address
 }
 
 // Create a transfer transaction
-func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics Mosaics, message *Message, networkType NetworkType) (*TransferTransaction, error) {
+func NewTransferTransaction(deadline *Deadline, recipient *Address, mosaics []*Mosaic, message *Message, networkType NetworkType) (*TransferTransaction, error) {
 	if recipient == nil {
 		return nil, errors.New("recipient must not be nil")
 	}
@@ -655,7 +641,7 @@ func (tx *TransferTransaction) generateBytes() ([]byte, error) {
 	ml := len(tx.Mosaics)
 	mb := make([]flatbuffers.UOffsetT, ml)
 	for i, mos := range tx.Mosaics {
-		id := transactions.MosaicBufferCreateIdVector(builder, FromBigInt(mos.MosaicId.Id))
+		id := transactions.MosaicBufferCreateIdVector(builder, FromBigInt(mosaicIdToBigInt(mos.MosaicId)))
 		am := transactions.MosaicBufferCreateAmountVector(builder, FromBigInt(mos.Amount))
 		transactions.MosaicBufferStart(builder)
 		transactions.MosaicBufferAddId(builder, id)
@@ -714,9 +700,15 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 		return nil, err
 	}
 
-	txs := make(Mosaics, len(dto.Tx.Mosaics))
-	for i, tx := range dto.Tx.Mosaics {
-		txs[i] = tx.toStruct()
+	mosaics := make([]*Mosaic, len(dto.Tx.Mosaics))
+
+	for i, mosaic := range dto.Tx.Mosaics {
+		msc, err := mosaic.toStruct()
+		if err != nil {
+			return nil, err
+		}
+
+		mosaics[i] = msc
 	}
 
 	a, err := NewAddressFromEncoded(dto.Tx.Address)
@@ -727,7 +719,7 @@ func (dto *transferTransactionDTO) toStruct() (*TransferTransaction, error) {
 	return &TransferTransaction{
 		*atx,
 		dto.Tx.Message.toStruct(),
-		txs,
+		mosaics,
 		a,
 	}, nil
 }
@@ -854,18 +846,14 @@ type RegisterNamespaceTransaction struct {
 	ParentId     *NamespaceId
 }
 
-func NewRegisterRootNamespaceTransaction(deadline *Deadline, namespace *NamespaceId, duration *big.Int, networkType NetworkType) (*RegisterNamespaceTransaction, error) {
-	if namespace == nil || namespace.FullName == "" {
-		return nil, errors.New("namespace must not be nil and must have name")
-	} else {
-		if namespace.Id == nil || namespace.Id.Int64() == 0 {
-			id, err := generateNamespaceId(namespace.FullName)
-			if err != nil {
-				return nil, err
-			}
+func NewRegisterRootNamespaceTransaction(deadline *Deadline, namespaceName string, duration *big.Int, networkType NetworkType) (*RegisterNamespaceTransaction, error) {
+	if len(namespaceName) == 0 {
+		return nil, ErrInvalidNamespaceName
+	}
 
-			namespace.Id = id
-		}
+	nsId, err := generateNamespaceId(namespaceName)
+	if err != nil {
+		return nil, err
 	}
 
 	if duration == nil {
@@ -879,38 +867,25 @@ func NewRegisterRootNamespaceTransaction(deadline *Deadline, namespace *Namespac
 			Type:        RegisterNamespace,
 			NetworkType: networkType,
 		},
-		NamspaceName:  namespace.FullName,
-		NamespaceId:   namespace,
+		NamspaceName:  namespaceName,
+		NamespaceId:   bigIntToNamespaceId(nsId),
 		NamespaceType: Root,
 		Duration:      duration,
 	}, nil
 }
 
-func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespace *NamespaceId, parent *NamespaceId, networkType NetworkType) (*RegisterNamespaceTransaction, error) {
-	if parent == nil || (parent.FullName == "" && (parent.Id == nil || parent.Id.Int64() == 0)) {
-		return nil, errors.New("parent must not be nil and must have id or name")
-	} else {
-		if parent.Id == nil || parent.Id.Int64() == 0 {
-			id, err := generateNamespaceId(parent.FullName)
-			if err != nil {
-				return nil, err
-			}
-
-			parent.Id = id
-		}
+func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespaceName string, parentId *NamespaceId, networkType NetworkType) (*RegisterNamespaceTransaction, error) {
+	if len(namespaceName) == 0 {
+		return nil, ErrInvalidNamespaceName
 	}
 
-	if namespace == nil || namespace.FullName == "" {
-		return nil, errors.New("namespace must not be nil and have name")
-	} else {
-		if namespace.Id == nil || namespace.Id.Int64() == 0 {
-			id, err := generateId(namespace.FullName, parent.Id)
-			if err != nil {
-				return nil, err
-			}
+	if parentId == nil || namespaceIdToBigInt(parentId).Int64() == 0 {
+		return nil, ErrNilNamespaceId
+	}
 
-			namespace.Id = id
-		}
+	nsId, err := generateId(namespaceName, namespaceIdToBigInt(parentId))
+	if err != nil {
+		return nil, err
 	}
 
 	return &RegisterNamespaceTransaction{
@@ -920,10 +895,10 @@ func NewRegisterSubNamespaceTransaction(deadline *Deadline, namespace *Namespace
 			Type:        RegisterNamespace,
 			NetworkType: networkType,
 		},
-		NamspaceName:  namespace.FullName,
-		NamespaceId:   namespace,
+		NamspaceName:  namespaceName,
+		NamespaceId:   bigIntToNamespaceId(nsId),
 		NamespaceType: Sub,
-		ParentId:      parent,
+		ParentId:      parentId,
 	}, nil
 }
 
@@ -947,12 +922,12 @@ func (tx *RegisterNamespaceTransaction) String() string {
 func (tx *RegisterNamespaceTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Id))
+	nV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(namespaceIdToBigInt(tx.NamespaceId)))
 	var dV flatbuffers.UOffsetT
 	if tx.NamespaceType == Root {
 		dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 	} else {
-		dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.ParentId.Id))
+		dV = transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(namespaceIdToBigInt(tx.ParentId)))
 	}
 	n := builder.CreateString(tx.NamspaceName)
 
@@ -1063,7 +1038,7 @@ func (tx *LockFundsTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaic": %s,
+			"MosaicId": %s,
 			"Duration": %d,
 			"SignedTxHash": %s
 		`,
@@ -1077,7 +1052,7 @@ func (tx *LockFundsTransaction) String() string {
 func (tx *LockFundsTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mv := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.MosaicId.Id))
+	mv := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(mosaicIdToBigInt(tx.Mosaic.MosaicId)))
 	maV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.Amount))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 
@@ -1121,9 +1096,14 @@ func (dto *lockFundsTransactionDTO) toStruct() (*LockFundsTransaction, error) {
 		return nil, err
 	}
 
+	mosaic, err := dto.Tx.Mosaic.toStruct()
+	if err != nil {
+		return nil, err
+	}
+
 	return &LockFundsTransaction{
 		*atx,
-		dto.Tx.Mosaic.toStruct(),
+		mosaic,
 		dto.Tx.Duration.toBigInt(),
 		&SignedTransaction{Lock, "", dto.Tx.Hash},
 	}, nil
@@ -1176,7 +1156,7 @@ func (tx *SecretLockTransaction) String() string {
 	return fmt.Sprintf(
 		`
 			"AbstractTransaction": %s,
-			"Mosaic": %s,
+			"MosaicId": %s,
 			"Duration": %d,
 			"HashType": %s,
 			"Secret": %s,
@@ -1194,7 +1174,7 @@ func (tx *SecretLockTransaction) String() string {
 func (tx *SecretLockTransaction) generateBytes() ([]byte, error) {
 	builder := flatbuffers.NewBuilder(0)
 
-	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.MosaicId.Id))
+	mV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(mosaicIdToBigInt(tx.Mosaic.MosaicId)))
 	maV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Mosaic.Amount))
 	dV := transactions.TransactionBufferCreateUint32Vector(builder, FromBigInt(tx.Duration))
 
@@ -1254,9 +1234,14 @@ func (dto *secretLockTransactionDTO) toStruct() (*SecretLockTransaction, error) 
 		return nil, err
 	}
 
+	mosaic, err := dto.Tx.Mosaic.toStruct()
+	if err != nil {
+		return nil, err
+	}
+
 	return &SecretLockTransaction{
 		*atx,
-		dto.Tx.Mosaic.toStruct(),
+		mosaic,
 		dto.Tx.HashType,
 		dto.Tx.Duration.toBigInt(),
 		dto.Tx.Secret,
@@ -1569,13 +1554,10 @@ func NewPlainMessage(payload string) *Message {
 }
 
 func (m *Message) String() string {
-	return fmt.Sprintf(
-		`
-			"Type": %d,
-			"Payload": %s
-		`,
-		m.Type,
-		m.Payload,
+	return str.StructToString(
+		"Message",
+		str.NewField("Type", str.IntPattern, m.Type),
+		str.NewField("Payload", str.StringPattern, m.Payload),
 	)
 }
 

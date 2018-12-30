@@ -81,7 +81,7 @@ func main() {
 	ttx, err := sdk.NewTransferTransaction(
 		sdk.NewDeadline(time.Hour*1),
 		sdk.NewAddress("SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC", networkType),
-		sdk.Mosaics{sdk.Xem(10000000)},
+		[]*sdk.Mosaic{sdk.Xem(10000000)},
 		sdk.NewPlainMessage(""),
 		networkType,
 	)
@@ -92,12 +92,11 @@ func main() {
 	}
 
 	// Get the chain height
-	restTx, resp, err := client.Transaction.Announce(context.Background(), stx)
+	restTx, err := client.Transaction.Announce(context.Background(), stx)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("%s\n", restTx)
-	fmt.Printf("Response Status Code == %d\n\n", resp.StatusCode)
 	fmt.Printf("Hash: \t\t%v\n", stx.Hash)
 	fmt.Printf("Signer: \t%X\n\n", acc.KeyPair.PublicKey.Raw)
 

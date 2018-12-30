@@ -8,142 +8,171 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/proximax-storage/proximax-utils-go/net"
 	"net/http"
 )
 
 type AccountService service
 
+func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, error) {
+	if address == nil {
+		return nil, ErrNilAddress
+	}
 
+	if len(address.Address) == 0 {
+		return nil, ErrBlankAddress
+	}
 
-func (a *AccountService) GetAccountInfo(ctx context.Context, address *Address) (*AccountInfo, *http.Response, error) {
+	url := net.NewUrl(fmt.Sprintf(accountRoute, address.Address))
+
 	dto := &accountInfoDTO{}
 
-	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s", mainAccountRoute, address.Address), nil, dto)
+	resp, err := a.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, dto)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	acc, err := dto.toStruct()
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return acc, resp, nil
+	return dto.toStruct()
 }
 
 // Gets AccountsInfo for different accounts.
-func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses []*Address) ([]*AccountInfo, *http.Response, error) {
-	ads := make([]string, len(addresses))
-	for i, ad := range addresses {
-		ads[i] = ad.Address
+func (a *AccountService) GetAccountsInfo(ctx context.Context, addresses []*Address) ([]*AccountInfo, error) {
+	if len(addresses) == 0 {
+		return nil, ErrEmptyAddressesIds
 	}
+
 	addrs := struct {
 		Messages []string `json:"addresses"`
-	}{ads}
+	}{
+		Messages: make([]string, len(addresses)),
+	}
 
-	dtos := make([]*accountInfoDTO, len(addresses))
-	resp, err := a.client.DoNewRequest(ctx, "POST", mainAccountRoute, addrs, &dtos)
+	for i, address := range addresses {
+		addrs.Messages[i] = address.Address
+	}
+
+	dtos := accountInfoDTOs(make([]*accountInfoDTO, 0))
+
+	resp, err := a.client.DoNewRequest(ctx, http.MethodPost, accountsRoute, addrs, &dtos)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	infos := make([]*AccountInfo, len(dtos))
-	for i, dto := range dtos {
-		infos[i], err = dto.toStruct()
-	}
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return infos, resp, nil
+	return dtos.toStruct()
 }
 
 // Gets a MultisigAccountInfo for an account.
-func (a *AccountService) GetMultisigAccountInfo(ctx context.Context, address *Address) (*MultisigAccountInfo, *http.Response, error) {
+func (a *AccountService) GetMultisigAccountInfo(ctx context.Context, address *Address) (*MultisigAccountInfo, error) {
+	if address == nil {
+		return nil, ErrNilAddress
+	}
+
+	url := net.NewUrl(fmt.Sprintf(multisigAccountRoute, address.Address))
+
 	dto := &multisigAccountInfoDTO{}
-	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/%s", mainAccountRoute, address.Address, multisigAccountInfoRoute), nil, dto)
+
+	resp, err := a.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, dto)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	info, err := dto.toStruct(a.client.config.NetworkType)
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return info, resp, nil
+	return dto.toStruct(a.client.config.NetworkType)
 }
 
 // Gets a MultisigAccountGraphInfo for an account.
-func (a *AccountService) GetMultisigAccountGraphInfo(ctx context.Context, address *Address) (*MultisigAccountGraphInfo, *http.Response, error) {
+func (a *AccountService) GetMultisigAccountGraphInfo(ctx context.Context, address *Address) (*MultisigAccountGraphInfo, error) {
+	if address == nil {
+		return nil, ErrNilAddress
+	}
+
+	url := net.NewUrl(fmt.Sprintf(multisigAccountGraphInfoRoute, address.Address))
+
 	dto := &multisigAccountGraphInfoDTOS{}
-	resp, err := a.client.DoNewRequest(ctx, "GET", fmt.Sprintf("%s/%s/%s", mainAccountRoute, address.Address, multisigAccountGraphInfoRoute), nil, dto)
+
+	resp, err := a.client.DoNewRequest(ctx, http.MethodGet, url.Encode(), nil, dto)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	info, err := dto.toStruct(a.client.config.NetworkType)
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{404: ErrResourceNotFound, 409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return info, resp, nil
+	return dto.toStruct(a.client.config.NetworkType)
 }
 
 // Gets an array of confirmed transactions for which an account is signer or receiver.
-func (a *AccountService) Transactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
-	return a.findTransactions(ctx, account, opt, transactionsRoute)
+func (a *AccountService) Transactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, error) {
+	return a.findTransactions(ctx, account, opt, accountTransactionsRoute)
 }
 
 // Gets an array of transactions for which an account is the recipient of a transaction.
 // A transaction is said to be incoming with respect to an account if the account is the recipient of a transaction.
-func (a *AccountService) IncomingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+func (a *AccountService) IncomingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, error) {
 	return a.findTransactions(ctx, account, opt, incomingTransactionsRoute)
 }
 
 // Gets an array of transactions for which an account is the sender a transaction.
 // A transaction is said to be outgoing with respect to an account if the account is the sender of a transaction.
-func (a *AccountService) OutgoingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+func (a *AccountService) OutgoingTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, error) {
 	return a.findTransactions(ctx, account, opt, outgoingTransactionsRoute)
 }
 
 // Gets the array of transactions for which an account is the sender or receiver and which have not yet been included in a block.
 // Unconfirmed transactions are those transactions that have not yet been included in a block.
 // Unconfirmed transactions are not guaranteed to be included in any block.
-func (a *AccountService) UnconfirmedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, *http.Response, error) {
+func (a *AccountService) UnconfirmedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]Transaction, error) {
 	return a.findTransactions(ctx, account, opt, unconfirmedTransactionsRoute)
 }
 
 // Gets an array of transactions for which an account is the sender or has sign the transaction.
 // A transaction is said to be aggregate bonded with respect to an account if there are missing signatures.
-func (a *AccountService) AggregateBondedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]*AggregateTransaction, *http.Response, error) {
-	txs, resp, err := a.findTransactions(ctx, account, opt, aggregateTransactionsRoute)
+func (a *AccountService) AggregateBondedTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption) ([]*AggregateTransaction, error) {
+	txs, err := a.findTransactions(ctx, account, opt, aggregateTransactionsRoute)
+	if err != nil {
+		return nil, err
+	}
 
 	atxs := make([]*AggregateTransaction, len(txs))
 	for i, tx := range txs {
 		atxs[i] = tx.(*AggregateTransaction)
 	}
 
-	return atxs, resp, err
+	return atxs, nil
 }
 
-func (a *AccountService) findTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption, path string) ([]Transaction, *http.Response, error) {
+func (a *AccountService) findTransactions(ctx context.Context, account *PublicAccount, opt *AccountTransactionsOption, path string) ([]Transaction, error) {
+	if account == nil {
+		return nil, ErrNilAccount
+	}
+
 	var b bytes.Buffer
 
-	u, err := addOptions(fmt.Sprintf("%s/%s/%s", mainAccountRoute, account.PublicKey, path), opt)
+	u, err := addOptions(fmt.Sprintf(transactionsByAccountRoute, account.PublicKey, path), opt)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	resp, err := a.client.DoNewRequest(ctx, "GET", u, nil, &b)
+	resp, err := a.client.DoNewRequest(ctx, http.MethodGet, u, nil, &b)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	txs, err := MapTransactions(&b)
-	if err != nil {
-		return nil, resp, err
+	if err = handleResponseStatusCode(resp, map[int]error{409: ErrArgumentNotValid}); err != nil {
+		return nil, err
 	}
 
-	return txs, resp, nil
+	return MapTransactions(&b)
 }

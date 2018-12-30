@@ -6,78 +6,62 @@ package sdk
 
 import "regexp"
 
+var XemMosaicId, _ = NewMosaicIdFromFullName("nem:xem")
+
 // const routers path for methods AccountService
 const (
-	mainAccountRoute              = "account"
-	transactionsRoute             = "transactions"
-	incomingTransactionsRoute     = "transactions/incoming"
-	outgoingTransactionsRoute     = "transactions/outgoing"
-	unconfirmedTransactionsRoute  = "transactions/unconfirmed"
-	aggregateTransactionsRoute    = "transactions/aggregateBondedTransactions"
-	multisigAccountInfoRoute      = "multisig"
-	multisigAccountGraphInfoRoute = "multisig/graph"
+	accountsRoute                 = "/account"
+	accountRoute                  = "/account/%s"
+	multisigAccountRoute          = "/account/%s/multisig"
+	multisigAccountGraphInfoRoute = "/account/%s/multisig/graph"
+	transactionsByAccountRoute    = "/account/%s/%s"
+	accountTransactionsRoute      = "/transactions"
+	incomingTransactionsRoute     = "/transactions/incoming"
+	outgoingTransactionsRoute     = "/transactions/outgoing"
+	unconfirmedTransactionsRoute  = "/transactions/unconfirmed"
+	aggregateTransactionsRoute    = "/transactions/aggregateBondedTransactions"
 )
 
 // const routers path for methods NamespaceService
 const (
-	pathNamespacesFromAccounts = "/account/namespaces"
-	pathNamespace              = "/namespace/"
-	pathNamespacenames         = "/namespace/names"
-	pathNamespacesFromAccount  = "/account/%s/namespaces"
+	namespaceRoute              = "/namespace/%s"
+	namespacesFromAccountsRoute = "/account/namespaces"
+	namespaceNamesRoute         = "/namespace/names"
+	namespacesFromAccountRoutes = "/account/%s/namespaces"
 )
 
 // const routers path for methods MosaicService
 const (
-	pathMosaic              = "/mosaic/"
-	pathMosaicNames         = "/mosaic/names"
-	pathMosaicFromNamespace = "/namespace/%s/mosaics/"
+	mosaicsRoute              = "/mosaic"
+	mosaicRoute               = "/mosaic/%s"
+	mosaicNamesRoute          = "/mosaic/names"
+	mosaicsFromNamespaceRoute = "/namespace/%s/mosaics"
 )
 
 // const routers path for methods BlockchainService
 const (
-	pathBlockHeight         = "/chain/height"
-	pathBlockByHeight       = "/block/%s"
-	pathBlockScore          = "/chain/score"
-	pathBlockGetTransaction = "/block/%s/transactions"
-	pathBlockInfo           = "/blocks/%s/limit/%s"
-	pathBlockStorage        = "/diagnostic/storage"
+	blockHeightRoute         = "/chain/height"
+	blockByHeightRoute       = "/block/%d"
+	blockScoreRoute          = "/chain/score"
+	blockGetTransactionRoute = "/block/%d/transactions"
+	blockInfoRoute           = "/blocks/%d/limit/%d"
+	blockStorageRoute        = "/diagnostic/storage"
 )
 
 // const routers path for methods MosaicService
 const (
-	pathNetwork = "/network"
+	networkRoute = "/network"
 )
 
 // const routers path for methods TransactionService
 const (
-	mainTransactionRoute               = "transaction"
-	announceAggreagateRoute            = "partial"
-	announceAggreagateCosignatureRoute = "cosignature"
-	transactionStatusRoute             = "status"
-	transactionStatusesRoute           = "statuses"
+	transactionsRoute                 = "/transaction"
+	transactionRoute                  = "/transaction/%s"
+	transactionStatusRoute            = "/transaction/%s/status"
+	transactionsStatusRoute           = "/transaction/statuses"
+	announceAggregateRoute            = "/transaction/partial"
+	announceAggregateCosignatureRoute = "/transaction/cosignature"
 )
-
-const tplNamespaceInfo = `"active": %v,
-    "index": %d,
-    "id": "%s",
-	"type": %d,
-    "depth": %d,
-    "levels": [
-      %v
-    ],
-    "parentId": [
-      %v
-    ],
-    "owner": "%v",
-    "ownerAddress": "%s",
-    "startHeight": [
-      %v
-    ],
-    "endHeight": [
-      %v
-    ]
-  }
-`
 
 type NamespaceType uint8
 
@@ -87,4 +71,7 @@ const (
 )
 
 // regValidNamespace check namespace on valid symbols
-var regValidNamespace = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+var (
+	regValidNamespace  = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+	regValidMosaicName = regexp.MustCompile(`^[a-z0-9][a-z0-9-_]*$`)
+)

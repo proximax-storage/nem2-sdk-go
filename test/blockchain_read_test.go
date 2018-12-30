@@ -6,10 +6,8 @@ package test
 
 import (
 	"github.com/proximax-storage/nem2-sdk-go/sdk"
-	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"math/big"
-	"net/http"
 	"testing"
 )
 
@@ -18,13 +16,12 @@ const (
 	pageSize = 32
 )
 
-func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
-
+func TestMosaicService_GetMosaicsFromNamespaceExt(t *testing.T) {
 	cfg, _ := sdk.NewConfig("http://190.216.224.11:3000", sdk.MijinTest)
 	ctx := context.TODO()
 
 	serv := sdk.NewClient(nil, cfg)
-	h, _, err := serv.Blockchain.GetBlockchainHeight(ctx)
+	h, err := serv.Blockchain.GetBlockchainHeight(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +29,7 @@ func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
 	for i := uint64(1); i < h.Uint64() && i <= iter; i++ {
 
 		h := big.NewInt(int64(i))
-		trans, _, err := serv.Blockchain.GetBlockTransactions(ctx, h)
+		trans, err := serv.Blockchain.GetBlockTransactions(ctx, h)
 		if err != nil {
 			t.Fatal(err)
 			continue
@@ -57,13 +54,13 @@ func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
 					t.Log(tran)
 					continue
 				}
-				mscInfoArr, resp, err := serv.Mosaic.GetMosaicsFromNamespace(ctx, tran.NamespaceId, tran.MosaicId, pageSize)
+				mscInfoArr, err := serv.Mosaic.GetMosaicsFromNamespaceUpToMosaic(ctx, tran.NamespaceId, tran.MosaicId, pageSize)
 				if err != nil {
 					t.Error(err)
-				} else if validateResp(resp, t) {
-					for _, mscInfo := range mscInfoArr {
-						t.Logf("%+v", mscInfo)
-					}
+				}
+
+				for _, mscInfo := range mscInfoArr {
+					t.Logf("%+v", mscInfo)
 				}
 			case sdk.MosaicSupplyChange:
 				tran := val.(*sdk.MosaicSupplyChangeTransaction)
@@ -73,12 +70,12 @@ func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
 					t.Log(tran)
 					continue
 				}
-				mscInfo, resp, err := serv.Mosaic.GetMosaic(ctx, tran.MosaicId)
+				mscInfo, err := serv.Mosaic.GetMosaic(ctx, tran.MosaicId)
 				if err != nil {
 					t.Error(err)
-				} else if validateResp(resp, t) {
-					t.Logf("%+v", mscInfo)
 				}
+
+				t.Logf("%+v", mscInfo)
 			case sdk.Transfer:
 				tran := val.(*sdk.TransferTransaction)
 				if tran.Mosaics == nil {
@@ -86,43 +83,30 @@ func TestMosaicService_GetMosaicsFromNamespasceExt(t *testing.T) {
 					t.Log(tran)
 					continue
 				}
-				mosaicIDs := sdk.MosaicIds{}
+				mosaicIDs := make([]*sdk.MosaicId, len(tran.Mosaics))
 				for _, val := range tran.Mosaics {
-					mosaicIDs.MosaicIds = append(mosaicIDs.MosaicIds, val.MosaicId)
+					mosaicIDs = append(mosaicIDs, val.MosaicId)
 				}
-				mscInfoArr, resp, err := serv.Mosaic.GetMosaicNames(ctx, mosaicIDs)
+				mscInfoArr, err := serv.Mosaic.GetMosaicNames(ctx, mosaicIDs)
 				if err != nil {
 					t.Error(err)
-				} else if validateResp(resp, t) {
-					for _, mscInfo := range mscInfoArr {
-						t.Logf("%+v", mscInfo)
+				}
 
-					}
+				for _, mscInfo := range mscInfoArr {
+					t.Logf("%+v", mscInfo)
 				}
 			case sdk.RegisterNamespace:
 				tran := val.(*sdk.RegisterNamespaceTransaction)
-				nsInfo, resp, err := serv.Namespace.GetNamespace(ctx, tran.NamespaceId)
+				nsInfo, err := serv.Namespace.GetNamespace(ctx, tran.NamespaceId)
 				if err != nil {
 					t.Error(err)
-				} else if validateResp(resp, t) {
-					t.Logf("%#v", nsInfo)
 				}
+
+				t.Logf("%#v", nsInfo)
 			default:
 				t.Log(val)
 			}
 		}
 
 	}
-
-}
-
-func validateResp(resp *http.Response, t *testing.T) bool {
-	if !assert.NotNil(t, resp) {
-		return false
-	}
-	if !assert.Equal(t, 200, resp.StatusCode) {
-		t.Logf("%#v", resp.Body)
-		return false
-	}
-	return true
 }
