@@ -6,6 +6,7 @@ package sdk
 
 import "regexp"
 
+// XemMosaicId is mosaic ID on 'nem:xem' address
 var XemMosaicId, _ = NewMosaicIdFromFullName("nem:xem")
 
 // const routers path for methods AccountService
@@ -63,6 +64,7 @@ const (
 	announceAggregateCosignatureRoute = "/transaction/cosignature"
 )
 
+// NamespaceType includes constants namespaces types
 type NamespaceType uint8
 
 const (

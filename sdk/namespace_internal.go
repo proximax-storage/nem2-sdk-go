@@ -31,7 +31,7 @@ func (dto *namespaceIdDTO) toStruct() (*NamespaceId, error) {
 	return NewNamespaceId(uint64DTO(*dto).toBigInt())
 }
 
-// namespaceNameDTO temporary struct for reading responce & fill NamespaceName
+// namespaceNameDTO temporary struct for reading response & fill NamespaceName
 type namespaceNameDTO struct {
 	NamespaceId uint64DTO
 	Name        string
@@ -74,7 +74,7 @@ func (n *namespaceNameDTOs) toStruct() ([]*NamespaceName, error) {
 	return nsNames, nil
 }
 
-// namespaceDTO temporary struct for reading responce & fill NamespaceInfo
+// namespaceDTO temporary struct for reading response & fill NamespaceInfo
 type namespaceDTO struct {
 	NamespaceId  uint64DTO
 	FullName     string

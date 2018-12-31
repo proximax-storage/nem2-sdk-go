@@ -12,6 +12,7 @@ import (
 	"unsafe"
 )
 
+// NamespaceId encapsulates namespace id operations
 type NamespaceId big.Int
 
 //NewNamespaceId generate new NamespaceId from bigInt
@@ -33,8 +34,8 @@ func NewNamespaceIdFromName(namespaceName string) (*NamespaceId, error) {
 	return bigIntToNamespaceId(id), nil
 }
 
-func (m *NamespaceId) String() string {
-	return (*big.Int)(m).String()
+func (n *NamespaceId) String() string {
+	return (*big.Int)(n).String()
 }
 
 func (n *NamespaceId) toHexString() string {
@@ -46,6 +47,7 @@ type NamespaceIds struct {
 	List []*NamespaceId
 }
 
+// MarshalJSON serialize namespaceId list
 func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 	buf = []byte(`{"namespaceIds": [`)
 
@@ -62,10 +64,12 @@ func (ref *NamespaceIds) MarshalJSON() (buf []byte, err error) {
 	return
 }
 
+// IsEmpty returns true is list not empty for JSON operation
 func (ref *NamespaceIds) IsEmpty(ptr unsafe.Pointer) bool {
 	return len((*NamespaceIds)(ptr).List) == 0
 }
 
+// Decode get namespace list from JSON stream
 func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	if (*NamespaceIds)(ptr) == nil {
 		ptr = (unsafe.Pointer)(&NamespaceIds{})
@@ -88,11 +92,12 @@ func (ref *NamespaceIds) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	}
 }
 
+// Encode serialize NamespaceIds to JSON stream
 func (ref *NamespaceIds) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	//	todo: log error in future
 	buf, err := (*NamespaceIds)(ptr).MarshalJSON()
 	if err == nil {
 		_, err = stream.Write(buf)
-		//	todo: log error in future
 	}
 
 }
@@ -133,11 +138,12 @@ func (ref *NamespaceInfo) String() string {
 
 // generateNamespaceId create NamespaceId from namespace string name (ex: nem or domain.subdom.subdome)
 func generateNamespaceId(namespaceName string) (*big.Int, error) {
-	if list, err := GenerateNamespacePath(namespaceName); err != nil {
+	list, err := GenerateNamespacePath(namespaceName)
+	if err != nil {
 		return nil, err
-	} else {
-		return list[len(list)-1], nil
 	}
+
+	return list[len(list)-1], nil
 }
 
 // NamespaceName name info structure describes basic information of a namespace and name.
@@ -181,9 +187,9 @@ func GenerateNamespacePath(name string) ([]*big.Int, error) {
 
 		if namespaceId, err = generateId(part, (*big.Int)(namespaceId)); err != nil {
 			return nil, err
-		} else {
-			path = append(path, namespaceId)
 		}
+
+		path = append(path, namespaceId)
 	}
 
 	return path, nil

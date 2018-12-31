@@ -45,7 +45,7 @@ func TestUint64DTO_GetBigInteger(t *testing.T) {
 		t.Error("wrong result convert DTO {10000, 0}")
 	}
 
-	//todo: check algoritm set BigInteger from string - test don't work
+	//todo: check algorithm set BigInteger from string - test don't work
 	bInt = uint64DTO{1094650402, 17}.toBigInt()
 	bIntArr := FromBigInt(bInt)
 	want := []uint32{1094650402, 17}
