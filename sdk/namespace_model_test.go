@@ -72,6 +72,8 @@ func TestMosaicIdSupportMultiLevelMosaics(t *testing.T) {
 	assert.Nil(t, err)
 	ids[3], err = generateId("tokens", ids[2])
 	assert.Nil(t, err)
+
 	ids1, err := generateMosaicId("foo.bar.baz", "tokens")
+	assert.Nil(t, err)
 	assert.Equal(t, mosaicIdToBigInt(ids1).Int64(), ids[3].Int64(), `GenerateMosaicId("foo.bar.baz" and "tokens" must by equal !`)
 }

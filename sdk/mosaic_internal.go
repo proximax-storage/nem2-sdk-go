@@ -160,6 +160,9 @@ func (ref *mosaicInfoDTO) toStruct(networkType NetworkType) (*MosaicInfo, error)
 	}
 
 	mosaicId, err := NewMosaicId(ref.Mosaic.MosaicId.toBigInt())
+	if err != nil {
+		return nil, err
+	}
 
 	mscInfo := &MosaicInfo{
 		Active:     ref.Meta.Active,

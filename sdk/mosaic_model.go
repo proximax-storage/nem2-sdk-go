@@ -12,13 +12,14 @@ import (
 	"strings"
 )
 
-// MosaicId
+// MosaicId encapsulates mosaic ID operations
 type MosaicId big.Int
 
 func (m *MosaicId) String() string {
 	return (*big.Int)(m).String()
 }
 
+// NewMosaicIdFromFullName return generate mosaic ID from name
 func NewMosaicIdFromFullName(name string) (*MosaicId, error) {
 	if len(name) == 0 || strings.Contains(name, " {") {
 		return nil, ErrInvalidMosaicName
@@ -33,6 +34,7 @@ func NewMosaicIdFromFullName(name string) (*MosaicId, error) {
 	return generateMosaicId(parts[0], parts[1])
 }
 
+// NewMosaicId return mosaic ID from big.Int
 func NewMosaicId(id *big.Int) (*MosaicId, error) {
 	if id == nil {
 		return nil, ErrNilMosaicId
@@ -45,12 +47,13 @@ func (m *MosaicId) toHexString() string {
 	return BigIntegerToHex(mosaicIdToBigInt(m))
 }
 
-// MosaicId
+// Mosaic encapsulates mosaic operations
 type Mosaic struct {
 	MosaicId *MosaicId
 	Amount   *big.Int
 }
 
+// NewMosaic create new Mosaic
 func NewMosaic(mosaicId *MosaicId, amount *big.Int) (*Mosaic, error) {
 	if mosaicId == nil {
 		return nil, ErrNilMosaicId
@@ -108,6 +111,7 @@ func (m *MosaicInfo) String() string {
 	)
 }
 
+// ShortName return final part of name Mosaic
 func (m *MosaicInfo) ShortName() string {
 	parts := strings.Split(m.FullName, ":")
 
@@ -127,6 +131,7 @@ type MosaicProperties struct {
 	Duration      *big.Int
 }
 
+// NewMosaicProperties return MosaicProperties
 func NewMosaicProperties(supplyMutable bool, transferable bool, levyMutable bool, divisibility int64, duration *big.Int) *MosaicProperties {
 	ref := &MosaicProperties{
 		supplyMutable,
@@ -150,6 +155,7 @@ func (mp *MosaicProperties) String() string {
 	)
 }
 
+// MosaicName include mosaic ID, name & parent namespace ID
 type MosaicName struct {
 	MosaicId *MosaicId
 	Name     string
@@ -170,6 +176,7 @@ func (m *MosaicName) String() string {
 // Increase the supply - INCREASE.
 type MosaicSupplyType uint8
 
+// MosaicSupplyType values
 const (
 	Decrease MosaicSupplyType = iota
 	Increase
@@ -179,11 +186,12 @@ func (tx MosaicSupplyType) String() string {
 	return fmt.Sprintf("%d", tx)
 }
 
-// Create xem with using xem as unit
+// Xem create xem with using xem as unit
 func Xem(amount int64) *Mosaic {
 	return &Mosaic{XemMosaicId, big.NewInt(amount)}
 }
 
+// XemRelative create relative xem with using xem as unit
 func XemRelative(amount int64) *Mosaic {
 	return Xem(big.NewInt(0).Mul(big.NewInt(1000000), big.NewInt(amount)).Int64())
 }

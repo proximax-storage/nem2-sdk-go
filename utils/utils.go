@@ -9,11 +9,8 @@ import (
 	"math/big"
 )
 
+// ReverseByteArray rearranges the bytes in reverse order
 func ReverseByteArray(a []byte) {
-	//for i := len(a)/2 - 1; i >= 0; i-- {
-	//	opp := len(a) - 1 - i
-	//	a[i], a[opp] = a[opp], a[i]
-	//}
 	lenA := len(a)
 	j := lenA
 	for i := range a[lenA/2:] {
@@ -21,6 +18,8 @@ func ReverseByteArray(a []byte) {
 		a[i], a[j] = a[j], a[i]
 	}
 }
+
+// MustHexDecodeString return hex representation of string
 func MustHexDecodeString(s string) []byte {
 	b, err := hex.DecodeString(s)
 	if err != nil {
@@ -28,6 +27,8 @@ func MustHexDecodeString(s string) []byte {
 	}
 	return b
 }
+
+// HexDecodeStringOdd return padding hex representation of string
 func HexDecodeStringOdd(s string) ([]byte, error) {
 	if len(s)%2 != 0 {
 		s = "0" + s
@@ -37,7 +38,7 @@ func HexDecodeStringOdd(s string) ([]byte, error) {
 
 //BigIntToByteArray converts a BigInteger to a little endian byte array.
 func BigIntToByteArray(value *big.Int, numBytes int) []byte {
-	// output must tohave lenght NumBytes!
+	// output must have length NumBytes!
 	outputBytes := make([]byte, numBytes)
 	bigIntegerBytes := value.Bytes()
 	copyStartIndex := 0
@@ -74,15 +75,7 @@ func BytesToBigInteger(bytes []byte) *big.Int {
 	return (&big.Int{}).SetBytes(bigEndianBytes)
 }
 
-func HexDecode(src []byte) ([]byte, error) {
-	dst := make([]byte, len(src))
-	_, err := hex.Decode(dst, src)
-	if err != nil {
-		return nil, err
-	}
-	return dst, nil
-}
-
+//  EqualsBigInts return true is first & second equals
 func EqualsBigInts(first, second *big.Int) bool {
 	if first == nil && second == nil {
 		return true

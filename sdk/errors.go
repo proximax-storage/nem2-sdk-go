@@ -19,7 +19,6 @@ func (r *RespErr) Error() string {
 }
 
 // Catapult REST API errors
-
 var (
 	ErrResourceNotFound              = newRespError("resource is not found")
 	ErrArgumentNotValid              = newRespError("argument is not valid")
@@ -58,3 +57,6 @@ var (
 	ErrNilAccount        = errors.New("account should not be nil")
 	ErrInvalidAddress    = errors.New("wrong address")
 )
+
+// NetworkType error
+var errWrongNetworkType = errors.New("wrong raw NetworkType value")

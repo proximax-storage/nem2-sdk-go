@@ -25,13 +25,14 @@ func (dto uint64DTO) toBigInt() *big.Int {
 	return &int
 }
 
-// analog JAVA Uint64.bigIntegerToHex
+// BigIntegerToHex is analog JAVA Uint64.bigIntegerToHex
 func BigIntegerToHex(id *big.Int) string {
 	u := FromBigInt(id)
 
 	return strconv.FormatInt(int64(u[1]), 16) + strconv.FormatInt(int64(u[0]), 16)
 }
 
+// FromBigInt split big.Int to slice int32
 func FromBigInt(int *big.Int) []uint32 {
 	b := int.Bytes()
 	ln := len(b)
