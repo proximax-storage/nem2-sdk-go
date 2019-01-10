@@ -13,10 +13,6 @@ pipeline {
   }
 
   stages {
-    agent {
-      docker { image 'golang:1.11-alpine' }
-    }
-
     stage('Build') {
       steps {
           echo 'Installing dependencies'
