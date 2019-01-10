@@ -6,9 +6,8 @@ package sdk
 
 import (
 	"encoding/binary"
-	"github.com/proximax-storage/nem2-sdk-go/utils"
+	"fmt"
 	"math/big"
-	"strconv"
 )
 
 type uint64DTO [2]uint32
@@ -25,34 +24,27 @@ func (dto uint64DTO) toBigInt() *big.Int {
 	return &int
 }
 
-// BigIntegerToHex is analog JAVA Uint64.bigIntegerToHex
-func BigIntegerToHex(id *big.Int) string {
-	u := FromBigInt(id)
+func IntToHex(u uint32) string {
+	s := fmt.Sprintf("%x", u)
 
-	return strconv.FormatInt(int64(u[1]), 16) + strconv.FormatInt(int64(u[0]), 16)
+	if len(s)%2 == 1 {
+		return "0" + s
+	} else {
+		return s
+	}
 }
 
-// FromBigInt split big.Int to slice int32
+// analog JAVA Uint64.bigIntegerToHex
+func BigIntegerToHex(id *big.Int) string {
+	u := FromBigInt(id)
+	return IntToHex(u[1]) + IntToHex(u[0])
+}
+
 func FromBigInt(int *big.Int) []uint32 {
-	b := int.Bytes()
-	ln := len(b)
-	utils.ReverseByteArray(b)
-	l, h, s := uint32(0), uint32(0), 4
-	if ln < 4 {
-		s = ln
-	}
-	lb := make([]byte, 4)
-	copy(lb[:s], b[:s])
-	l = binary.LittleEndian.Uint32(lb)
-	if ln > 4 {
-		if ln-4 < 4 {
-			s = ln - 4
-		}
-		hb := make([]byte, 4)
-		copy(hb[:s], b[4:])
-		h = binary.LittleEndian.Uint32(hb)
-	}
-	return []uint32{l, h}
+	var u64 uint64 = uint64(int.Int64())
+	l := uint32(u64 & 0xFFFFFFFF)
+	r := uint32(u64 >> 32)
+	return []uint32{l, r}
 }
 
 type AccountTransactionsOption struct {
