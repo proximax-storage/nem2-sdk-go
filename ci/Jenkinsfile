@@ -1,0 +1,54 @@
+pipeline {
+
+  agent {
+    node {
+      // slave with Docker
+      label 'docker-build-node'
+    }
+  }
+
+  // using the Timestamper plugin we can add timestamps to the console log
+  options {
+    timestamps()
+  }
+
+  stages {
+    agent { docker 'golang:1.11-alpine' }
+
+    stage('Build') {
+      steps {
+          echo 'Installing dependencies'
+          sh '(cd sdk; go get)'
+
+          echo 'Building'
+          sh 'go build'
+      }
+      post {
+        success {
+          echo 'Build Success'
+        }
+      }
+    }
+
+    stage('Unit Test') {
+      steps {
+        echo 'Running Unit Tests'
+        sh '(cd sdk; go test)'
+      }
+    }
+
+    stage('Integration Test') {
+      steps {
+        echo 'Running Integration Test'
+      }
+    }
+  }
+
+  post {
+    failure {
+        slackSend channel: '#sdk_builds',
+            color: 'bad',
+            message: "Branch *${env.GIT_BRANCH}* of *${currentBuild.fullDisplayName}* FAILED :scream:"
+    }
+  }
+}
