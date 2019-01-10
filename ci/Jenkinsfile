@@ -1,9 +1,9 @@
 pipeline {
 
   agent {
-    node {
-      // slave with Docker
-      label 'docker-build-node'
+    docker {
+      image 'proximax/golang-alpine-build-image:latest'
+      args '-u root'
     }
   }
 
@@ -15,11 +15,11 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-          echo 'Installing dependencies'
-          sh '(cd sdk; go get)'
+            echo 'Installing dependencies'
+            sh '(cd sdk; go get -t -d)'
 
-          echo 'Building'
-          sh 'go build'
+            echo 'Building'
+            sh 'go build'
       }
       post {
         success {
@@ -30,8 +30,8 @@ pipeline {
 
     stage('Unit Test') {
       steps {
-        echo 'Running Unit Tests'
-        sh '(cd sdk; go test)'
+          echo 'Running Unit Tests'
+          sh '(cd sdk; go test)'
       }
     }
 
@@ -43,6 +43,11 @@ pipeline {
   }
 
   post {
+    success {
+        slackSend channel: '#sdk_builds',
+            color: 'good',
+            message: "Branch *${env.GIT_BRANCH}* build of *${currentBuild.fullDisplayName}* completed successfully :100:"
+    }
     failure {
         slackSend channel: '#sdk_builds',
             color: 'bad',
