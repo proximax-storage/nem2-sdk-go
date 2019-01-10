@@ -40,7 +40,7 @@ func main() {
 	// The UnconfirmedAdded channel notifies when a transaction related to an
 	// address is in unconfirmed state and waiting to be included in a block.
 	// The message contains the transaction.
-	chUnconfirmedAdded, _ := ws.Subscribe.UnconfirmedAdded(acc.Address.Address)
+	chUnconfirmedAdded, _ := ws.Subscribe.UnconfirmedAdded(acc.Address)
 	go func() {
 		for {
 			data := <-chUnconfirmedAdded.Ch
@@ -51,7 +51,7 @@ func main() {
 	//
 	//// The confirmedAdded channel notifies when a transaction related to an
 	//// address is included in a block. The message contains the transaction.
-	chConfirmedAdded, _ := ws.Subscribe.ConfirmedAdded(acc.Address.Address)
+	chConfirmedAdded, _ := ws.Subscribe.ConfirmedAdded(acc.Address)
 	go func() {
 		for {
 			data := <-chConfirmedAdded.Ch
@@ -63,7 +63,7 @@ func main() {
 
 	//The status channel notifies when a transaction related to an address rises an error.
 	//The message contains the error message and the transaction hash.
-	chStatus, _ := ws.Subscribe.Status(acc.Address.Address)
+	chStatus, _ := ws.Subscribe.Status(acc.Address)
 
 	go func() {
 		for {
