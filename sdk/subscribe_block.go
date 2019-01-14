@@ -135,6 +135,11 @@ func (c *SubscribeService) getClient(add string) (*ClientWebsocket, error) {
 // Block notifies for every new block.
 // The message contains the BlockInfo struct.
 func (c *SubscribeService) Block() (*SubscribeBlock, error) {
+	if client, err := c.getClient("block"); err != nil {
+		return nil, err
+	} else {
+		c.client = client
+	}
 	subBlock := new(SubscribeBlock)
 	Block = subBlock
 	subBlock.Ch = make(chan *BlockInfo)
