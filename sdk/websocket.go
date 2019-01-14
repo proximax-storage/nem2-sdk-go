@@ -138,7 +138,6 @@ func restParser(data []byte) (string, error) {
 }
 
 func (s *subscribeInfo) buildType(t []byte) error {
-	//fmt.Printf("UID[%v] --> ACC[%v] \n", s.name, s.account)
 	switch s.name {
 	case "block":
 		var b blockInfoDTO
@@ -322,14 +321,11 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 		address := "block"
 		if s.Subscribe != "block" {
 			address = s.getAdd()
+			c.client = connectsWs[address].conn
 		}
 		errCh := errChannels[address]
 
-		c.client = connectsWs[address].conn
-
 		for {
-			//fmt.Printf("REC: %v %v %v %v \n", address, s.getSubscribe(), s.Uid, c.client)
-
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
 				err = c.reconnectWs(s)
 				if err != nil {
@@ -375,7 +371,6 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 				tout := time.Now().Add(*c.duration * time.Millisecond)
 				c.client.SetDeadline(tout)
 			}
-			//fmt.Println("JOJOJOJOOJOJOJ", s.Uid)
 		}
 	}()
 	return nil
