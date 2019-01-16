@@ -67,6 +67,7 @@ func TestBigIntegerToHex_bigIntegerNEMAndXEMToHex(t *testing.T) {
 	testBigInt(t, "9562080086528621131", "84b3552d375ffa4b")
 	testBigInt(t, "153588726025483589", "0221a821f040f545")
 	testBigInt(t, "-7680974160236284465", "9567b2b2622975cf")
+	testBigInt(t, "23160236284465", "0000151069a81a31")
 }
 
 func testBigInt(t *testing.T, str, hexStr string) {

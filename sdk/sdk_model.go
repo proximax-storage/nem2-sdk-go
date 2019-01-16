@@ -25,13 +25,7 @@ func (dto uint64DTO) toBigInt() *big.Int {
 }
 
 func IntToHex(u uint32) string {
-	s := fmt.Sprintf("%x", u)
-
-	if len(s)%2 == 1 {
-		return "0" + s
-	} else {
-		return s
-	}
+	return fmt.Sprintf("%08x", u)
 }
 
 // analog JAVA Uint64.bigIntegerToHex
