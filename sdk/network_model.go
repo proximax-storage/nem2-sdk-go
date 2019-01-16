@@ -6,11 +6,11 @@ package sdk
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"strings"
 )
 
+// NetworkType provides methods for getting network type
 type NetworkType uint8
 
 // NetworkType enums
@@ -22,6 +22,7 @@ const (
 	NotSupportedNet NetworkType = 0
 )
 
+// NetworkTypeFromString return networkType from string representation
 func NetworkTypeFromString(networkType string) NetworkType {
 	switch strings.ToUpper(networkType) {
 	case "MIJIN":
@@ -40,9 +41,7 @@ func (nt NetworkType) String() string {
 	return fmt.Sprintf("%d", nt)
 }
 
-// Network error
-var networkTypeError = errors.New("wrong raw NetworkType value")
-
+// ExtractNetworkType return networkType from version
 func ExtractNetworkType(version uint64) NetworkType {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, version)

@@ -15,7 +15,7 @@ import (
 // NamespaceService provides a set of methods for obtaining information about the namespace
 type NamespaceService service
 
-// GetNamespace
+// GetNamespace return full info about Namespace according to namespace ID
 // @/namespace/
 func (ref *NamespaceService) GetNamespace(ctx context.Context, nsId *NamespaceId) (*NamespaceInfo, error) {
 	if nsId == nil {
@@ -129,7 +129,7 @@ func (ref *NamespaceService) GetNamespacesFromAccounts(ctx context.Context, addr
 	return nsInfos, nil
 }
 
-// GetNamespaceNames
+// GetNamespaceNames return full info about Namespaces according to slice namespace ID
 // @/namespace/names
 func (ref *NamespaceService) GetNamespaceNames(ctx context.Context, nsIds []*NamespaceId) ([]*NamespaceName, error) {
 	if len(nsIds) == 0 {

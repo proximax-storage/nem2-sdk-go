@@ -1,4 +1,7 @@
 # nem2-sdk-go
+<p align="left">
+    <img src="https://goreportcard.com/badge/github.com/proximax-storage/nem2-sdk-go">
+</p>
 
 nem2-sdk-go is a Golang client library for Catapult API
 

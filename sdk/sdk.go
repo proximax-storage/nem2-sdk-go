@@ -19,13 +19,13 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-// Provides service configuration
+// Config provides service configuration
 type Config struct {
 	BaseURL *url.URL
 	NetworkType
 }
 
-// Config constructor
+// NewConfig is Config constructor according to 'baseURL' & 'networkType'
 func NewConfig(baseUrl string, networkType NetworkType) (*Config, error) {
 	u, err := url.Parse(baseUrl)
 	if err != nil {
@@ -37,7 +37,7 @@ func NewConfig(baseUrl string, networkType NetworkType) (*Config, error) {
 	return c, nil
 }
 
-// Catapult API Client configuration
+// Client is Catapult API Client configuration
 type Client struct {
 	client *http.Client // HTTP client used to communicate with the API.
 	config *Config
@@ -75,13 +75,13 @@ func NewClient(httpClient *http.Client, conf *Config) *Client {
 }
 
 // DoNewRequest creates new request, Do it & return result in V
-func (s *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
-	req, err := s.NewRequest(method, path, body)
+func (c *Client) DoNewRequest(ctx context.Context, method string, path string, body interface{}, v interface{}) (*http.Response, error) {
+	req, err := c.NewRequest(method, path, body)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := s.Do(ctx, req, v)
+	resp, err := c.Do(ctx, req, v)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +131,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	return resp, err
 }
 
+// NewRequest prepare & return new request
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
 
 	u, err := c.config.BaseURL.Parse(urlStr)

@@ -287,6 +287,7 @@ func TestAggregateTransactionSigningWithMultipleCosignatures(t *testing.T) {
 		NewPlainMessage("test-message"),
 		MijinTest,
 	)
+	assert.Nil(t, err)
 
 	ttx.Signer = p
 
@@ -376,6 +377,7 @@ func TestTransferTransactionSerialization(t *testing.T) {
 		NewPlainMessage(""),
 		MijinTest,
 	)
+	assert.Nil(t, err)
 
 	b, err := tx.generateBytes()
 

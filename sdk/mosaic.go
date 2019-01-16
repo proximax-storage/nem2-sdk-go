@@ -12,6 +12,7 @@ import (
 	"strconv"
 )
 
+// MosaicService provides a set of methods for obtaining information about the mosaics
 type MosaicService service
 
 // GetMosaic returns
@@ -76,7 +77,7 @@ func (ref *MosaicService) GetMosaics(ctx context.Context, mscIds []*MosaicId) ([
 	return mscInfos, nil
 }
 
-// GetMosaicsFromNamespace Get mosaics information from namespaceId (nsId)
+// GetMosaicsFromNamespaceUpToMosaic get mosaics information according to namespace ID & mosaic ID
 func (ref *MosaicService) GetMosaicsFromNamespaceUpToMosaic(ctx context.Context, namespaceId *NamespaceId, mosaicId *MosaicId,
 	pageSize int) ([]*MosaicInfo, error) {
 	if namespaceId == nil {
