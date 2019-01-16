@@ -1674,24 +1674,29 @@ func MapTransactions(b *bytes.Buffer) ([]Transaction, error) {
 
 	var m []jsonLib.RawMessage
 
-	json.Unmarshal(b.Bytes(), &m)
-
-	tx := make([]Transaction, len(m))
-	for i, t := range m {
-		wg.Add(1)
-		go func(i int, t jsonLib.RawMessage) {
-			defer wg.Done()
-			json.Marshal(t)
-			tx[i], err = MapTransaction(bytes.NewBuffer([]byte(t)))
-		}(i, t)
-	}
-	wg.Wait()
-
+	err = json.Unmarshal(b.Bytes(), &m)
 	if err != nil {
 		return nil, err
 	}
 
-	return tx, nil
+	txs := make([]Transaction, len(m))
+	errs := make([]error, len(m))
+	for i, t := range m {
+		wg.Add(1)
+		go func(i int, t jsonLib.RawMessage) {
+			defer wg.Done()
+			txs[i], errs[i] = MapTransaction(bytes.NewBuffer([]byte(t)))
+		}(i, t)
+	}
+	wg.Wait()
+
+	for _, err = range errs {
+		if err != nil {
+			return txs, err
+		}
+	}
+
+	return txs, nil
 }
 
 func MapTransaction(b *bytes.Buffer) (Transaction, error) {
