@@ -19,7 +19,7 @@ var (
 	statusInfoChannels         = make(map[string]chan *StatusInfo)
 	partialRemovedInfoChannels = make(map[string]chan *PartialRemovedInfo)
 	signerInfoChannels         = make(map[string]chan *SignerInfo)
-	unconfirmedRemovedChannels = make(map[string]chan *HashInfo)
+	unconfirmedRemovedChannels = make(map[string]chan *UnconfirmedRemoved)
 	partialAddedChannels       = make(map[string]chan Transaction)
 	unconfirmedAddedChannels   = make(map[string]chan Transaction)
 	confirmedAddedChannels     = make(map[string]chan Transaction)
@@ -70,7 +70,7 @@ type SubscribeTransaction struct {
 
 type SubscribeHash struct {
 	*subscribe
-	Ch chan *HashInfo
+	Ch chan *UnconfirmedRemoved
 }
 
 type SubscribePartialRemoved struct {
@@ -160,7 +160,7 @@ func (s *subscribeInfo) buildType(t []byte) error {
 
 	case "signer":
 		var data SignerInfo
-		err := json.Unmarshal(t, data)
+		err := json.Unmarshal(t, &data)
 		if err != nil {
 			return err
 		}
@@ -169,8 +169,8 @@ func (s *subscribeInfo) buildType(t []byte) error {
 		return nil
 
 	case "unconfirmedRemoved":
-		var data HashInfo
-		err := json.Unmarshal(t, data)
+		var data UnconfirmedRemoved
+		err := json.Unmarshal(t, &data)
 		if err != nil {
 			return err
 		}
