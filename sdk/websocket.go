@@ -23,9 +23,14 @@ var (
 	partialAddedChannels       = make(map[string]chan Transaction)
 	unconfirmedAddedChannels   = make(map[string]chan Transaction)
 	confirmedAddedChannels     = make(map[string]chan Transaction)
-	connectsWs                 = make(map[string]*websocket.Conn)
+	connectsWs                 = make(map[string]*uidConn)
 	errChannels                = make(map[string]chan *ErrorInfo)
 )
+
+type uidConn struct {
+	uid  string
+	conn *websocket.Conn
+}
 
 type sendJson struct {
 	Uid       string `json:"uid"`
@@ -51,7 +56,6 @@ type subscribe struct {
 type ClientWebsocket struct {
 	client    *websocket.Conn
 	Uid       string
-	timeout   *time.Time
 	duration  *time.Duration
 	config    *Config
 	common    serviceWs // Reuse a single struct instead of allocating one for each service on the heap.
@@ -247,30 +251,58 @@ func (c *ClientWebsocket) buildSubscribe(destination string) *subscribe {
 
 func (c *ClientWebsocket) wsConnect() error {
 	c.changeURLPort()
-	conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
-	if err != nil {
-		return err
-	}
-	c.client = conn
-
+	var timeout <-chan time.Time
 	if *c.duration != time.Duration(0) {
-		conn.SetDeadline(*c.timeout)
+		timeout = time.After(*c.duration * time.Millisecond)
 	}
 
-	var msg []byte
-	if err = websocket.Message.Receive(c.client, &msg); err != nil {
+	tick := time.Tick(time.Millisecond)
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("timed out")
+
+		case <-tick:
+			conn, err := websocket.Dial(c.config.BaseURL.String(), "", "http://localhost")
+
+			if err != nil {
+				return err
+			}
+			c.client = conn
+
+			var msg []byte
+			if err = websocket.Message.Receive(c.client, &msg); err != nil {
+				return err
+			}
+
+			imsg, err := msgParser(msg)
+			if err != nil {
+				return err
+			}
+			c.Uid = imsg.Uid
+			return nil
+		}
+	}
+}
+
+func (c *ClientWebsocket) reconnectWs(s *subscribe) error {
+	fmt.Println("Reconnecting Websocket....")
+
+	if err := c.wsConnect(); err != nil {
 		return err
 	}
 
-	imsg, err := msgParser(msg)
-	if err != nil {
-		fmt.Println(err)
-	}
+	s.Uid = c.Uid
 
-	if err != nil {
+	if err := websocket.JSON.Send(c.client, sendJson{
+		Uid:       s.Uid,
+		Subscribe: s.Subscribe,
+	}); err != nil {
 		return err
 	}
-	c.Uid = imsg.Uid
+
+	fmt.Println("New Websocket negotiated uid:", s.Uid)
 
 	return nil
 }
@@ -289,53 +321,55 @@ func (c *ClientWebsocket) subsChannel(s *subscribe) error {
 		address := "block"
 		if s.Subscribe != "block" {
 			address = s.getAdd()
+			c.client = connectsWs[address].conn
 		}
 		errCh := errChannels[address]
 
 		for {
 			if err := websocket.Message.Receive(c.client, &resp); err == io.EOF {
-				err = c.wsConnect()
+				err = c.reconnectWs(s)
 				if err != nil {
 					errCh <- &ErrorInfo{
 						Error: err,
 					}
 					return
 				}
-				if err = websocket.JSON.Send(c.client, sendJson{
-					Uid:       s.Uid,
-					Subscribe: s.Subscribe,
-				}); err != nil {
-					errCh <- &ErrorInfo{
-						Error: err,
-					}
-					return
-				}
-				continue
+
 			} else if err != nil {
-				err = c.wsConnect()
+				err = c.reconnectWs(s)
 				if err != nil {
 					errCh <- &ErrorInfo{
 						Error: err,
 					}
 					break
 				}
-			}
-			subName, err := restParser(resp)
-			if err != nil {
-				errCh <- &ErrorInfo{
-					Error: err,
+
+			} else {
+				subName, err := restParser(resp)
+				if err != nil {
+					errCh <- &ErrorInfo{
+						Error: err,
+					}
+					break
 				}
-				break
-			}
-			b := subscribeInfo{
-				name:    subName,
-				account: s.getAdd(),
+
+				b := subscribeInfo{
+					name:    subName,
+					account: s.getAdd(),
+				}
+
+				go func() {
+					if err := b.buildType(resp); err != nil {
+						errCh <- &ErrorInfo{
+							Error: err,
+						}
+					}
+				}()
 			}
 
-			if err := b.buildType(resp); err != nil {
-				errCh <- &ErrorInfo{
-					Error: err,
-				}
+			if *c.duration != time.Duration(0) {
+				tout := time.Now().Add(*c.duration * time.Millisecond)
+				c.client.SetDeadline(tout)
 			}
 		}
 	}()
@@ -352,9 +386,6 @@ func NewConnectWs(host string, timeout time.Duration) (*ClientWebsocket, error) 
 	c.common.client = c
 	c.Subscribe = (*SubscribeService)(&c.common)
 	c.duration = &timeout
-
-	tout := time.Now().Add(*c.duration * time.Millisecond)
-	c.timeout = &tout
 
 	err = c.wsConnect()
 	if err != nil {
