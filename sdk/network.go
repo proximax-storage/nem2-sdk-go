@@ -5,12 +5,12 @@
 package sdk
 
 import (
-	"errors"
 	"fmt"
 	"golang.org/x/net/context"
 	"net/http"
 )
 
+// NetworkService provides a set of methods for obtaining information about the Network
 type NetworkService service
 
 type networkDTO struct {
@@ -18,7 +18,7 @@ type networkDTO struct {
 	Description string
 }
 
-// mosaics get mosaics Info
+// GetNetworkType return current network type
 // @get /network
 func (ref *NetworkService) GetNetworkType(ctx context.Context) (NetworkType, error) {
 	netDTO := &networkDTO{}
@@ -36,7 +36,7 @@ func (ref *NetworkService) GetNetworkType(ctx context.Context) (NetworkType, err
 	networkType := NetworkTypeFromString(netDTO.Name)
 
 	if networkType == NotSupportedNet {
-		err = errors.New(fmt.Sprintf("network %s is not supported yet by the sdk", netDTO.Name))
+		err = fmt.Errorf("network %s is not supported yet by the sdk", netDTO.Name)
 	}
 
 	return networkType, err

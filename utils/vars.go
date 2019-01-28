@@ -4,6 +4,7 @@
 
 package utils
 
+// different representations of boolean type
 var (
 	BoolFromInt = []bool{
 		false, true,

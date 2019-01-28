@@ -287,6 +287,7 @@ func TestAggregateTransactionSigningWithMultipleCosignatures(t *testing.T) {
 		NewPlainMessage("test-message"),
 		MijinTest,
 	)
+	assert.Nil(t, err)
 
 	ttx.Signer = p
 
@@ -376,6 +377,7 @@ func TestTransferTransactionSerialization(t *testing.T) {
 		NewPlainMessage(""),
 		MijinTest,
 	)
+	assert.Nil(t, err)
 
 	b, err := tx.generateBytes()
 
@@ -678,4 +680,13 @@ func TestMapTransaction_MosaicDefinitionTransaction(t *testing.T) {
 	_, err := MapTransaction(bytes.NewBuffer([]byte(txr)))
 
 	assert.Nilf(t, err, "MapTransaction returned error: %s", err)
+}
+
+func TestMapTransactions(t *testing.T) {
+	txr := `[{"transaction":{"signer":"9C2086FE49B7A00578009B705AD719DB7E02A27870C67966AAA40540C136E248","version":43010,"type":16717,"parentId":[2031553063,2912841636],"mosaicId":[1477049789,645988887],"properties":[{"key":0,"value":[2,0]},{"key":1,"value":[0,0]},{"key":2,"value":[5,0]}],"name":"storage_0"}}, {"transaction":{"signer":"9C2086FE49B7A00578009B705AD719DB7E02A27870C67966AAA40540C136E248","version":43010,"type":16717,"parentId":[2031553063,2912841636],"mosaicId":[1477049789,645988887],"properties":[{"key":0,"value":[2,0]},{"key":1,"value":[0,0]},{"key":2,"value":[5,0]}],"name":"storage_0"}}]`
+
+	txs, err := MapTransactions(bytes.NewBuffer([]byte(txr)))
+
+	assert.Nilf(t, err, "MapTransaction returned error: %s", err)
+	assert.True(t, len(txs) == 2)
 }

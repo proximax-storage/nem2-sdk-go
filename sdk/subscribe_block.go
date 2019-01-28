@@ -206,7 +206,7 @@ func (c *SubscribeService) UnconfirmedRemoved(add *Address) (*SubscribeHash, err
 		c.client = client
 	}
 	subHash := new(SubscribeHash)
-	subHash.Ch = make(chan *HashInfo)
+	subHash.Ch = make(chan *UnconfirmedRemoved)
 	unconfirmedRemovedChannels[add.Address] = subHash.Ch
 	subscribe, err := c.newSubscribe(pathUnconfirmedRemoved + "/" + add.Address)
 	if err != nil {

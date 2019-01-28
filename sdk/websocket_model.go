@@ -4,6 +4,7 @@
 
 package sdk
 
+// structure for Subscribe status
 type StatusInfo struct {
 	Status string `json:"status"`
 	Hash   Hash   `json:"hash"`
@@ -19,12 +20,18 @@ type ErrorInfo struct {
 	Error error
 }
 
-// structure for Subscribe status
 type HashInfo struct {
-	Hash Hash `json:"hash"`
+	Meta struct {
+		Hash `json:"hash"`
+	} `json:"meta"`
 }
 
 // structure for Subscribe PartialRemoved
 type PartialRemovedInfo struct {
-	Meta SubscribeHash `json:"meta"`
+	HashInfo
+}
+
+// structure for Subscribe UnconfirmedRemoved
+type UnconfirmedRemoved struct {
+	HashInfo
 }

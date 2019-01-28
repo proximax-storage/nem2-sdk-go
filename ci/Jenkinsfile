@@ -1,0 +1,57 @@
+pipeline {
+
+  agent {
+    docker {
+      image 'proximax/golang-alpine-build-image:latest'
+      args '-u root'
+    }
+  }
+
+  // using the Timestamper plugin we can add timestamps to the console log
+  options {
+    timestamps()
+  }
+
+  stages {
+    stage('Build') {
+      steps {
+            echo 'Installing dependencies'
+            sh '(cd sdk; go get -t -d)'
+
+            echo 'Building'
+            sh 'go build'
+      }
+      post {
+        success {
+          echo 'Build Success'
+        }
+      }
+    }
+
+    stage('Unit Test') {
+      steps {
+          echo 'Running Unit Tests'
+          sh '(cd sdk; go test)'
+      }
+    }
+
+    stage('Integration Test') {
+      steps {
+        echo 'Running Integration Test'
+      }
+    }
+  }
+
+  post {
+    success {
+        slackSend channel: '#sdk_builds',
+            color: 'good',
+            message: "Branch *${env.GIT_BRANCH}* build of *${currentBuild.fullDisplayName}* completed successfully :100:"
+    }
+    failure {
+        slackSend channel: '#sdk_builds',
+            color: 'bad',
+            message: "Branch *${env.GIT_BRANCH}* of *${currentBuild.fullDisplayName}* FAILED :scream:"
+    }
+  }
+}
